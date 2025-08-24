@@ -1,0 +1,42 @@
+/* Model Chips Styles */
+.model-chips {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  /* Ensure proper touch handling on mobile */
+  -webkit-overflow-scrolling: touch;
+  /* Prevent text selection on mobile */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.model-chip-container {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.add-model-button {
+  flex-shrink: 0;
+}
+
+.model-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.model-chips-offset {
+  padding-left: 4rem;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .model-chips-offset {
+    padding-left: 0;
+  }
+}

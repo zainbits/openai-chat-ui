@@ -1,0 +1,29 @@
+/* Reset all default button styles */
+.glass-button {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  box-sizing: border-box;
+  /* Ensure proper touch handling on mobile */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.glass-button:focus-visible {
+  outline: 2px solid var(--color-interactive-focus);
+  outline-offset: 2px;
+}
+
+/* Add active state for better touch feedback */
+.glass-button:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease;
+}

@@ -1,0 +1,45 @@
+/* Fresh CSS implementation for chat app - App level styles only */
+
+/* Layout */
+.app-container {
+  height: 100dvh; /* Use dynamic viewport height for mobile compatibility */
+  display: flex;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
+/* Mobile Toggle Button */
+.mobile-toggle {
+  position: absolute !important;
+  top: 1rem !important;
+  left: 1rem !important;
+  z-index: 20 !important;
+  display: none;
+}
+
+.mobile-toggle.visible {
+  display: block;
+}
+
+.model-chips-offset {
+  padding-left: 4rem;
+  /* Ensure proper touch handling */
+  pointer-events: auto;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .mobile-toggle {
+    display: none !important;
+  }
+
+  .model-chips-offset {
+    padding-left: 0;
+  }
+}

@@ -1,0 +1,109 @@
+/* Chat Area Styles */
+.chat-main {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  overflow: hidden;
+  z-index: 0; /* Ensure chat area is below the mobile toggle button */
+}
+
+.messages-container {
+  height: 100dvh; /* Use dynamic viewport height for mobile compatibility */
+  overflow-y: auto;
+  background: transparent;
+  padding: 4rem 1rem 10rem 1rem;
+}
+
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background-color: var(--color-scrollbar-thumb);
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-scrollbar-thumb-hover);
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  padding: 4rem 0;
+}
+
+.message-bubble {
+  background: var(--color-background-surface);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid var(--color-border-primary);
+  padding: 1rem;
+}
+
+.message-role {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.message-content {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4,
+.message-content h5,
+.message-content h6 {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.75em;
+}
+
+.message-content p {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+}
+
+.message-content code {
+  background-color: var(--color-background-surface);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.message-content pre {
+  background-color: var(--color-interactive-disabled);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.message-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.regenerate-section {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: flex-start;
+}
