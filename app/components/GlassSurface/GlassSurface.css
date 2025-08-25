@@ -5,6 +5,16 @@
   justify-content: center;
   overflow: hidden;
   transition: opacity 0.26s ease-out;
+  /* Hint the compositor to keep this on a separate layer for smoother filters/opacity */
+  will-change: transform, opacity, backdrop-filter;
+  /* Use a 3D transform to promote to a GPU layer across engines */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  /* Create a new stacking context to reduce repaint scope */
+  isolation: isolate;
+  contain: paint;
 }
 
 .glass-surface__filter {
@@ -15,6 +25,8 @@
   inset: 0;
   opacity: 0;
   z-index: -1;
+  /* Keep the SVG off the hit testing and on its own layer */
+  will-change: contents;
 }
 
 .glass-surface__content {
