@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="refresh" content="0; url=./" />
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    <p>Not found. Redirecting…</p>
+    <script>
+      // Hard redirect to index preserving path for SPAs
+      var l = window.location;
+      l.replace(l.origin + l.pathname.replace(/\/[^/]*$/, '/') + (l.search || '') + (l.hash || ''));
+    </script>
+  </body>
+  </html>

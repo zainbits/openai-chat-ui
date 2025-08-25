@@ -1,7 +1,10 @@
-import type { Config } from "@react-router/dev/config";
-
 export default {
   // Config options...
-  // Server-side render by default, to enable SPA mode set this to `false`
-  ssr: true,
-} satisfies Config;
+  // GitHub Pages is static hosting, so use SPA mode (no SSR)
+  ssr: false,
+  // Ensure routes resolve under a sub-path like /<repo>/ on GitHub Pages
+  basename: process.env.BASE_PATH || "/",
+  future: {
+    unstable_viteEnvironmentApi: true,
+  },
+};

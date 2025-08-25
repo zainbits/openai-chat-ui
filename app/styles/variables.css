@@ -2,28 +2,28 @@
 :root {
   /* Text Colors */
   --color-text-primary: #ffffff;
-  --color-text-secondary: rgba(255, 255, 255, 0.9);
-  --color-text-muted: rgba(255, 255, 255, 0.7);
-  --color-text-disabled: rgba(255, 255, 255, 0.5);
+  --color-text-secondary: #ffffffe6; /* 90% */
+  --color-text-muted: #ffffffb3; /* 70% */
+  --color-text-disabled: #ffffff80; /* 50% */
   --color-text-inverse: #000000;
 
   /* Background Colors */
   --color-background-body: #0f172a;
-  --color-background-surface: rgba(255, 255, 255, 0.1);
-  --color-background-surface-hover: rgba(255, 255, 255, 0.15);
-  --color-background-surface-active: rgba(255, 255, 255, 0.2);
-  --color-background-overlay: rgba(0, 0, 0, 0.5);
+  --color-background-surface: #ffffff1a; /* 10% */
+  --color-background-surface-hover: #ffffff26; /* 15% */
+  --color-background-surface-active: #ffffff33; /* 20% */
+  --color-background-overlay: #00000080; /* 50% */
 
   /* Border Colors */
-  --color-border-primary: rgba(255, 255, 255, 0.1);
-  --color-border-secondary: rgba(255, 255, 255, 0.2);
-  --color-border-accent: rgba(255, 255, 255, 0.4);
+  --color-border-primary: #ffffff1a; /* 10% */
+  --color-border-secondary: #ffffff33; /* 20% */
+  --color-border-accent: #ffffff66; /* 40% */
 
   /* Interactive States */
-  --color-interactive-hover: rgba(255, 255, 255, 0.1);
-  --color-interactive-pressed: rgba(255, 255, 255, 0.15);
+  --color-interactive-hover: #ffffff1a; /* 10% */
+  --color-interactive-pressed: #ffffff26; /* 15% */
   --color-interactive-focus: #0a84ff;
-  --color-interactive-disabled: rgba(255, 255, 255, 0.05);
+  --color-interactive-disabled: #ffffff0d; /* 5% */
 
   /* Status Colors */
   --color-status-connected: #10b981;
@@ -39,14 +39,14 @@
 
   /* Scrollbar Colors */
   --color-scrollbar-track: transparent;
-  --color-scrollbar-thumb: rgba(255, 255, 255, 0.2);
-  --color-scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
+  --color-scrollbar-thumb: #ffffff33; /* 20% */
+  --color-scrollbar-thumb-hover: #ffffff4d; /* 30% */
 
   /* Glass Surface Colors (for fallbacks only) */
-  --color-glass-light-background: rgba(255, 255, 255, 0.25);
-  --color-glass-light-border: rgba(255, 255, 255, 0.3);
-  --color-glass-dark-background: rgba(255, 255, 255, 0.1);
-  --color-glass-dark-border: rgba(255, 255, 255, 0.2);
+  --color-glass-light-background: #ffffff40; /* 25% */
+  --color-glass-light-border: #ffffff4d; /* 30% */
+  --color-glass-dark-background: #ffffff1a; /* 10% */
+  --color-glass-dark-border: #ffffff33; /* 20% */
 
   /* Base Color Palette - Available if needed */
   --color-white: #ffffff;

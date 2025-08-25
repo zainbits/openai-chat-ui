@@ -1,10 +1,6 @@
 import React from "react";
 import GlassSurface from "../GlassSurface";
-import {
-  getButtonClasses,
-  type ColorVariant,
-  colors,
-} from "../../theme/colors";
+import { getButtonClasses, type ColorVariant } from "../../theme/colors";
 import "./GlassButton.css";
 
 interface GlassButtonProps

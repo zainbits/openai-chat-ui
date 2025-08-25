@@ -3,104 +3,43 @@
  * All colors should be managed here for easy theme switching
  */
 
-// Base color palette
+// Base color palette (trimmed to only what's used in the app)
 export const colors = {
-  // Primary brand colors
+  // Primary brand colors (used: 400, 500)
   primary: {
-    50: "#eff6ff",
-    100: "#dbeafe",
-    200: "#bfdbfe",
-    300: "#93c5fd",
     400: "#60a5fa",
     500: "#3b82f6",
-    600: "#2563eb",
-    700: "#1d4ed8",
-    800: "#1e40af",
-    900: "#1e3a8a",
   },
 
-  // Semantic state colors
+  // Semantic state colors (used: 400, 500)
   success: {
-    50: "#ecfdf5",
-    100: "#d1fae5",
-    200: "#a7f3d0",
-    300: "#6ee7b7",
     400: "#34d399",
     500: "#10b981",
-    600: "#059669",
-    700: "#047857",
-    800: "#065f46",
-    900: "#064e3b",
   },
 
+  // Danger (used: 500)
   danger: {
-    50: "#fef2f2",
-    100: "#fee2e2",
-    200: "#fecaca",
-    300: "#fca5a5",
-    400: "#f87171",
     500: "#ef4444",
-    600: "#dc2626",
-    700: "#b91c1c",
-    800: "#991b1b",
-    900: "#7f1d1d",
   },
 
+  // Warning (used: 500)
   warning: {
-    50: "#fffbeb",
-    100: "#fef3c7",
-    200: "#fde68a",
-    300: "#fcd34d",
-    400: "#fbbf24",
     500: "#f59e0b",
-    600: "#d97706",
-    700: "#b45309",
-    800: "#92400e",
-    900: "#78350f",
   },
 
-  // Neutral grays for UI elements
+  // Neutral gray (used: 500)
   gray: {
-    50: "#f9fafb",
-    100: "#f3f4f6",
-    200: "#e5e7eb",
-    300: "#d1d5db",
-    400: "#9ca3af",
     500: "#6b7280",
-    600: "#4b5563",
-    700: "#374151",
-    800: "#1f2937",
-    900: "#111827",
-    950: "#030712",
   },
 
-  // Cool accent colors
+  // Cool accent (used: 400)
   sky: {
-    50: "#f0f9ff",
-    100: "#e0f2fe",
-    200: "#bae6fd",
-    300: "#7dd3fc",
     400: "#38bdf8",
-    500: "#0ea5e9",
-    600: "#0284c7",
-    700: "#0369a1",
-    800: "#075985",
-    900: "#0c4a6e",
   },
 
-  // Dark theme base colors
+  // Dark theme base (used: 900)
   slate: {
-    50: "#f8fafc",
-    100: "#f1f5f9",
-    200: "#e2e8f0",
-    300: "#cbd5e1",
-    400: "#94a3b8",
-    500: "#64748b",
-    600: "#475569",
-    700: "#334155",
-    800: "#1e293b",
-    900: "#0f172a",
-    950: "#020617",
+    900: "#212121",
   },
 
   // Pure colors for maximum contrast
@@ -113,34 +52,34 @@ export const appTheme = {
   // Text colors for different contexts
   text: {
     primary: colors.white,
-    secondary: "rgba(255, 255, 255, 0.9)",
-    muted: "rgba(255, 255, 255, 0.7)",
-    disabled: "rgba(255, 255, 255, 0.5)",
+    secondary: "#FFFFFFE6", // 90%
+    muted: "#FFFFFFB3", // 70%
+    disabled: "#FFFFFF80", // 50%
     inverse: colors.black,
   },
 
   // Background colors for the app
   background: {
     body: colors.slate[900], // Main app background (solid, no gradient)
-    surface: "rgba(255, 255, 255, 0.1)", // General surfaces
-    surfaceHover: "rgba(255, 255, 255, 0.15)", // Hovered surfaces
-    surfaceActive: "rgba(255, 255, 255, 0.2)", // Active/selected surfaces
-    overlay: "rgba(0, 0, 0, 0.5)", // Modal overlays
+    surface: "#181818", // 10% General surfaces
+    surfaceHover: "#FFFFFF26", // 15% Hovered surfaces
+    surfaceActive: "#FFFFFF33", // 20% Active/selected surfaces
+    overlay: "#00000080", // 50% Modal overlays
   },
 
   // Border colors for consistency
   border: {
-    primary: "rgba(255, 255, 255, 0.1)",
-    secondary: "rgba(255, 255, 255, 0.2)",
-    accent: "rgba(255, 255, 255, 0.4)",
+    primary: "#FFFFFF1A", // 10%
+    secondary: "#FFFFFF33", // 20%
+    accent: "#FFFFFF66", // 40%
   },
 
   // Interactive states
   interactive: {
-    hover: "rgba(255, 255, 255, 0.1)",
-    pressed: "rgba(255, 255, 255, 0.15)",
+    hover: "#FFFFFF1A", // 10%
+    pressed: "#FFFFFF26", // 15%
     focus: "#0A84FF", // Apple-style focus ring
-    disabled: "rgba(255, 255, 255, 0.05)",
+    disabled: "#FFFFFF0D", // 5%
   },
 
   // Status indicators with actual color values
@@ -162,19 +101,19 @@ export const appTheme = {
   // Scrollbar styling
   scrollbar: {
     track: "transparent",
-    thumb: "rgba(255, 255, 255, 0.2)",
-    thumbHover: "rgba(255, 255, 255, 0.3)",
+    thumb: "#FFFFFF33", // 20%
+    thumbHover: "#FFFFFF4D", // 30%
   },
 
   // Glass surface colors (only component allowed gradients/special effects)
   glass: {
     light: {
-      background: "rgba(255, 255, 255, 0.25)",
-      border: "rgba(255, 255, 255, 0.3)",
+      background: "#FFFFFF40", // 25%
+      border: "#FFFFFF4D", // 30%
     },
     dark: {
-      background: "rgba(255, 255, 255, 0.1)",
-      border: "rgba(255, 255, 255, 0.2)",
+      background: "#FFFFFF1A", // 10%
+      border: "#FFFFFF33", // 20%
     },
   },
 } as const;

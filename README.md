@@ -21,7 +21,7 @@ A modern, production-ready template for building full-stack React applications u
 Install the dependencies:
 
 ```bash
-npm install
+yarn install
 ```
 
 ### Development
@@ -29,7 +29,7 @@ npm install
 Start the development server with HMR:
 
 ```bash
-npm run dev
+yarn dev
 ```
 
 Your application will be available at `http://localhost:5173`.
@@ -39,7 +39,7 @@ Your application will be available at `http://localhost:5173`.
 Create a production build:
 
 ```bash
-npm run build
+yarn build
 ```
 
 ## Deployment
@@ -70,12 +70,38 @@ If you're familiar with deploying Node applications, the built-in app server is 
 
 Make sure to deploy the output of `npm run build`
 
-```
+````
 ├── package.json
 ├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
 ├── build/
-│   ├── client/    # Static assets
+│   ├── client/    # Static assets (deploy this to static hosting / Pages)
 │   └── server/    # Server-side code
+### GitHub Pages (manual)
+
+You can deploy manually from the terminal without GitHub Actions.
+
+Prereqs:
+- One-time: enable Pages in your repo settings, branch: `gh-pages`, folder: `/`.
+- Ensure you have permission to push to `gh-pages`.
+
+Deploy (auto-detects base path `/<repo>/`, uses `/` for `<user>.github.io` repos):
+
+```zsh
+yarn deploy
+````
+
+Options:
+
+- Set a custom subpath: `BASE_PATH=/custom/ yarn deploy`
+- Skip install (faster): `SKIP_INSTALL=1 yarn deploy`
+- Dry-run (no push): `DRY_RUN=1 yarn deploy`
+
+What it does:
+
+- Builds to `build/client` with the correct base path
+- Publishes to `gh-pages` branch using a git worktree
+- Adds `.nojekyll` and `404.html` fallback for SPA routing
+
 ```
 
 ## Styling
@@ -85,3 +111,4 @@ This template comes with [Tailwind CSS](https://tailwindcss.com/) already config
 ---
 
 Built with ❤️ using React Router.
+```

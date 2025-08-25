@@ -6,6 +6,7 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "PORT=4111 react-router-serve ./build/server/index.js",
+    "deploy": "bash ./scripts/deploy-gh-pages.sh",
     "typecheck": "react-router typegen && tsc",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,css,json,md}\""
   },
