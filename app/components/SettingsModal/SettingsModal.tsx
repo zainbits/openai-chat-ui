@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Button, TextInput, Switch } from "@mantine/core";
+import { Modal, Button, TextInput, Switch, Select } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useAppState } from "../../state/AppState";
 import { OpenAICompatibleClient } from "../../api/client";
@@ -19,15 +19,26 @@ export default function SettingsModal({
   const [streamingEnabled, setStreamingEnabled] = useState(
     data.settings.streamingEnabled,
   );
+  const [defaultModel, setDefaultModel] = useState(data.settings.defaultModel);
   const [verifying, setVerifying] = useState(false);
 
   const verify = async () => {
     setVerifying(true);
     const client = new OpenAICompatibleClient({ apiBaseUrl, apiKey });
     const ok = await client.verify();
+    if (ok) {
+      try {
+        // Also load models so the default model selector has options immediately
+        const models = await client.listModels();
+        setData((d) => ({ ...d, availableModels: models }));
+      } catch {
+        // ignore, AppState will try periodically as well
+      }
+      notifications.show({ message: "API verified", color: "green" });
+    } else {
+      notifications.show({ message: "Failed to verify API", color: "red" });
+    }
     setVerifying(false);
-    if (ok) notifications.show({ message: "API verified", color: "green" });
-    else notifications.show({ message: "Failed to verify API", color: "red" });
   };
 
   const save = () => {
@@ -38,6 +49,7 @@ export default function SettingsModal({
         apiBaseUrl,
         apiKey: apiKey || undefined,
         streamingEnabled,
+        defaultModel,
       },
     }));
     onClose();
@@ -96,6 +108,22 @@ export default function SettingsModal({
           label="Streaming enabled"
           checked={streamingEnabled}
           onChange={(e) => setStreamingEnabled(e.currentTarget.checked)}
+        />
+        <Select
+          label="Default remote model (used for titles & new models)"
+          placeholder={
+            (data.availableModels?.length ?? 0) > 0
+              ? "Select a model"
+              : "Verify API to load models"
+          }
+          searchable
+          disabled={(data.availableModels?.length ?? 0) === 0}
+          data={(data.availableModels ?? []).map((m) => ({
+            value: m.id,
+            label: m.id,
+          }))}
+          value={defaultModel}
+          onChange={(val) => setDefaultModel(val || defaultModel)}
         />
         <div className="modal-actions">
           <div className="modal-actions-group">

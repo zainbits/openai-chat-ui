@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAppState } from "../../state/AppState";
 import { OpenAICompatibleClient } from "../../api/client";
 import GlassSurface from "../GlassSurface";
@@ -17,9 +17,14 @@ export default function Composer() {
   const { data, setData } = useAppState();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const dataRef = useRef(data);
   const streamRef = useRef<ReturnType<
     OpenAICompatibleClient["streamChat"]
   > | null>(null);
+
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const activeThread = data.ui.activeThread
     ? data.chats[data.ui.activeThread]
@@ -86,7 +91,79 @@ export default function Composer() {
             },
           },
         })),
-      onDone: () => setLoading(false),
+      onDone: async () => {
+        setLoading(false);
+        // Autogenerate a title once per thread: if the thread still has the default title
+        // and at least one user message has been sent, create a short title using the
+        // configured default remote model. Do not regenerate on later messages.
+        try {
+          const snapshot = dataRef.current;
+          const current = snapshot.chats[activeThread.id];
+          if (!current) return;
+          const hasDefaultTitle =
+            (current.title || "").trim().toLowerCase() === "new chat";
+          const hasAnyUser = current.messages.some((m) => m.role === "user");
+          if (!hasDefaultTitle || !hasAnyUser) return;
+
+          // Use the selected thread's remote model for title generation
+          const threadModelId =
+            snapshot.models.find((m) => m.id === current.modelId)?.model ||
+            activeModel.model;
+          const titleClient = new OpenAICompatibleClient({
+            apiBaseUrl: snapshot.settings.apiBaseUrl,
+            apiKey: snapshot.settings.apiKey,
+          });
+
+          const firstUser = current.messages.find((m) => m.role === "user");
+          if (!firstUser) return;
+
+          const prompt = `You are a helpful assistant. Create a concise, 3-6 word title for this conversation. No quotes, no punctuation at the end. Respond with title only. Conversation starts with: "${firstUser.content.slice(0, 500)}"`;
+
+          let title = "";
+          await new Promise<void>((resolve, reject) => {
+            const handle = titleClient.streamChat({
+              model: threadModelId,
+              temperature: 0.2,
+              messages: [
+                { role: "system", content: "You create short chat titles." },
+                { role: "user", content: prompt },
+              ],
+              onToken: (t) => {
+                title += t;
+              },
+              onDone: () => resolve(),
+              onError: (e) => reject(e),
+            });
+            // We could cancel if needed via handle.cancel()
+          });
+
+          // Sanitize and shorten: strip quotes/punctuation, collapse spaces, limit to ~6 words
+          title = (title || "")
+            .replace(/[\r\n]+/g, " ")
+            .replace(/^['"“”‘’\s]+|['"“”‘’\s]+$/g, "")
+            .replace(/[.:!?]+$/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+          const words = title.split(" ").filter(Boolean);
+          if (words.length > 6) title = words.slice(0, 6).join(" ");
+          if (title) {
+            setData((d) => ({
+              ...d,
+              chats: {
+                ...d.chats,
+                [activeThread.id]: {
+                  ...d.chats[activeThread.id],
+                  title: title.slice(0, 80),
+                  updatedAt: Date.now(),
+                },
+              },
+            }));
+          }
+        } catch (err) {
+          // Swallow title errors silently
+          console.warn("Title generation failed", err);
+        }
+      },
       onError: () => setLoading(false),
     });
   };
