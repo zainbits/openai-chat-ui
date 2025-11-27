@@ -50,6 +50,7 @@ export interface AppSettings {
   apiKey?: string;
   defaultModel: string;
   streamingEnabled: boolean;
+  glassEffectEnabled: boolean;
 }
 
 export interface StreamHandle {

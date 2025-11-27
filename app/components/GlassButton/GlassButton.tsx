@@ -1,5 +1,6 @@
 import React from "react";
 import GlassSurface from "../GlassSurface";
+import { useAppStore } from "../../state/store";
 import { getButtonClasses, type ColorVariant } from "../../theme/colors";
 import "./GlassButton.css";
 
@@ -27,13 +28,13 @@ export default function GlassButton({
   customColor,
   ...buttonProps
 }: GlassButtonProps) {
+  const glassEffectEnabled = useAppStore(
+    (s) => s.settings.glassEffectEnabled ?? true,
+  );
   const isRound = variant === "round";
 
   // Determine the final color to use - customColor overrides color variant
   const finalColor = customColor || (color ? getButtonClasses(color) : null);
-
-  // Prepare props based on variant
-  const buttonClasses = `glass-button ${className}`;
 
   const glassProps = isRound
     ? {
@@ -48,7 +49,7 @@ export default function GlassButton({
       };
 
   // Make button dimensions exactly match GlassSurface
-  const buttonStyle = {
+  const buttonStyle: React.CSSProperties = {
     width:
       typeof glassProps.width === "number"
         ? `${glassProps.width}px`
@@ -59,6 +60,30 @@ export default function GlassButton({
         : glassProps.height,
     borderRadius: `${glassProps.borderRadius}px`,
   };
+
+  // Simple fallback when glass effect is disabled
+  if (!glassEffectEnabled) {
+    const simpleButtonClasses = `glass-button glass-button--simple ${className}`;
+    const simpleStyle: React.CSSProperties = {
+      ...buttonStyle,
+      ...(finalColor ? { backgroundColor: `${finalColor}1A` } : {}),
+    };
+
+    return (
+      <button
+        className={simpleButtonClasses}
+        style={simpleStyle}
+        {...buttonProps}
+      >
+        <span className={`glass-button-content--simple ${glassClassName}`}>
+          {children}
+        </span>
+      </button>
+    );
+  }
+
+  // Prepare props based on variant
+  const buttonClasses = `glass-button ${className}`;
 
   return (
     <button className={buttonClasses} style={buttonStyle} {...buttonProps}>

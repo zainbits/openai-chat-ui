@@ -85,7 +85,11 @@ const MenuButton = React.memo(function MenuButton({
   return (
     <Menu shadow="md" width={144} position="bottom-end" withArrow>
       <Menu.Target>
-        <button className="thread-menu-button" aria-label="Thread menu">
+        <button
+          className="thread-menu-button"
+          aria-label="Thread menu"
+          onClick={(e) => e.stopPropagation()}
+        >
           •••
         </button>
       </Menu.Target>
@@ -164,10 +168,23 @@ function ThreadListItem({ thread }: ThreadListItemProps) {
     togglePinThread(thread.id);
   }, [togglePinThread, thread.id]);
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activate();
+      }
+    },
+    [activate],
+  );
+
   return (
     <>
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={activate}
+        onKeyDown={handleKeyDown}
         className={`thread-item ${activeThreadId === thread.id ? "active" : ""}`}
         aria-label={`Chat thread: ${thread.title}`}
         aria-pressed={activeThreadId === thread.id}
@@ -196,7 +213,7 @@ function ThreadListItem({ thread }: ThreadListItemProps) {
           </div>
         </div>
         <div className="thread-preview">{thread.preview || ""}</div>
-      </button>
+      </div>
 
       <RenameModal
         opened={renameModalOpen}

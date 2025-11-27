@@ -245,7 +245,7 @@ export default function ChatArea() {
           <EnhancedEmptyState />
         ) : (
           <div className="message-list" role="list">
-            {messages.map((m) => {
+            {messages.map((m, idx) => {
               const isLastMessage = m.ts === messages[messages.length - 1]?.ts;
               const isAssistantMessage = m.role === "assistant";
               const isEmptyAssistant = isAssistantMessage && m.content === "";
@@ -263,7 +263,7 @@ export default function ChatArea() {
 
               return (
                 <article
-                  key={m.ts}
+                  key={`${m.ts}-${idx}`}
                   className={`message-bubble ${isStreamingActive && isLastMessage && isAssistantMessage ? "streaming" : ""} ${isFailedResponse ? "failed" : ""}`}
                   role="listitem"
                   aria-label={`${m.role === "user" ? "Your" : "Assistant"} message`}

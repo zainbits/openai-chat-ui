@@ -63,6 +63,9 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     settings.streamingEnabled,
   );
   const [defaultModel, setDefaultModel] = useState(settings.defaultModel);
+  const [glassEffectEnabled, setGlassEffectEnabled] = useState(
+    settings.glassEffectEnabled ?? true,
+  );
   const [verifying, setVerifying] = useState(false);
   const [nukeModalOpen, setNukeModalOpen] = useState(false);
   const [nukeConfirmText, setNukeConfirmText] = useState("");
@@ -133,6 +136,7 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
       apiKey,
       streamingEnabled,
       defaultModel,
+      glassEffectEnabled,
     });
     onClose();
   }, [
@@ -140,9 +144,21 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     apiKey,
     streamingEnabled,
     defaultModel,
+    glassEffectEnabled,
     updateSettings,
     onClose,
   ]);
+
+  /**
+   * Handles glass effect toggle - saves immediately
+   */
+  const handleGlassEffectChange = useCallback(
+    (enabled: boolean) => {
+      setGlassEffectEnabled(enabled);
+      updateSettings({ glassEffectEnabled: enabled });
+    },
+    [updateSettings],
+  );
 
   /**
    * Exports app data as JSON
@@ -220,6 +236,7 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
         <Tabs defaultValue="models" classNames={{ root: "settings-tabs" }}>
           <Tabs.List className="settings-tabs-list">
             <Tabs.Tab value="models">Models</Tabs.Tab>
+            <Tabs.Tab value="interface">Interface</Tabs.Tab>
             <Tabs.Tab value="data">Data</Tabs.Tab>
           </Tabs.List>
 
@@ -294,6 +311,29 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
                     Save
                   </Button>
                 </div>
+              </div>
+            </div>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="interface" pt="md">
+            <div className="modal-content">
+              <div className="data-section">
+                <Text size="sm" fw={500} mb="xs">
+                  Visual Effects
+                </Text>
+                <Text size="xs" c="dimmed" mb="sm">
+                  Adjust visual effects for better performance on lower-powered
+                  devices.
+                </Text>
+                <Switch
+                  label="Enable glass effects"
+                  description="Disable for better performance on mobile devices"
+                  checked={glassEffectEnabled}
+                  onChange={(e) =>
+                    handleGlassEffectChange(e.currentTarget.checked)
+                  }
+                  aria-describedby="glass-effect-description"
+                />
               </div>
             </div>
           </Tabs.Panel>

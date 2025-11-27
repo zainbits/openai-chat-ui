@@ -128,3 +128,10 @@
   outline: 2px solid var(--color-interactive-focus);
   outline-offset: 2px;
 }
+
+/* Simple mode - no glass effects for performance */
+.glass-surface--simple {
+  background: light-dark(rgba(255, 255, 255, 0.6), rgba(30, 30, 30, 0.8));
+  border: 1px solid light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
