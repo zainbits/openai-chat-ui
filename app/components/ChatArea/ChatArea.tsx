@@ -3,7 +3,6 @@ import { useAppStore, selectActiveThread } from "../../state/store";
 import { useChat } from "../../hooks";
 import { renderMarkdown } from "../../utils/markdown";
 import Composer from "../Composer";
-import GlassButton from "../GlassButton";
 import "./ChatArea.css";
 
 /**
@@ -216,19 +215,22 @@ export default function ChatArea() {
   const messages = useMemo(() => thread?.messages ?? [], [thread]);
   const listRef = useRef<HTMLDivElement | null>(null);
 
+  // Combined streaming state for both regular loading and regeneration
+  const isStreamingActive = isLoading || isRegenerating;
+
   // Check if the last message is an empty assistant message (streaming in progress)
   const isStreaming = useMemo(() => {
-    if (!isLoading || messages.length === 0) return false;
+    if (!isStreamingActive || messages.length === 0) return false;
     const lastMessage = messages[messages.length - 1];
     return lastMessage?.role === "assistant" && lastMessage?.content === "";
-  }, [isLoading, messages]);
+  }, [isStreamingActive, messages]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
-  }, [messages, isStreaming]);
+  }, [messages, isStreaming, isStreamingActive]);
 
   return (
     <main className="chat-main" role="main" aria-label="Chat conversation">
@@ -239,7 +241,7 @@ export default function ChatArea() {
         role="log"
         aria-live="polite"
       >
-        {messages.length === 0 && !isLoading ? (
+        {messages.length === 0 && !isStreamingActive ? (
           <EnhancedEmptyState />
         ) : (
           <div className="message-list" role="list">
@@ -247,57 +249,75 @@ export default function ChatArea() {
               const isLastMessage = m.ts === messages[messages.length - 1]?.ts;
               const isAssistantMessage = m.role === "assistant";
               const isEmptyAssistant = isAssistantMessage && m.content === "";
+              // Show regenerate on last assistant message (even if empty/failed)
               const showRegenerateButton =
-                isLastMessage &&
-                isAssistantMessage &&
-                messages.length > 1 &&
-                !isLoading &&
-                m.content !== "";
+                isLastMessage && isAssistantMessage && !isStreamingActive;
 
-              // Don't render empty assistant messages - show typing indicator instead
-              if (isEmptyAssistant && isLoading) {
+              // Don't render empty assistant messages during streaming - show typing indicator instead
+              if (isEmptyAssistant && isStreamingActive) {
                 return null;
               }
+
+              // Check if this is a failed response (empty content when not streaming)
+              const isFailedResponse = isEmptyAssistant && !isStreamingActive;
 
               return (
                 <article
                   key={m.ts}
-                  className={`message-bubble ${isLoading && isLastMessage && isAssistantMessage ? "streaming" : ""}`}
+                  className={`message-bubble ${isStreamingActive && isLastMessage && isAssistantMessage ? "streaming" : ""} ${isFailedResponse ? "failed" : ""}`}
                   role="listitem"
                   aria-label={`${m.role === "user" ? "Your" : "Assistant"} message`}
                 >
                   <div className="message-role" aria-hidden="true">
                     {m.role === "user" ? "You" : "Assistant"}
                   </div>
-                  <div
-                    className="message-content"
-                    dangerouslySetInnerHTML={{
-                      __html: renderMarkdown(m.content),
-                    }}
-                  />
-                  {isLoading && isLastMessage && isAssistantMessage && (
+                  {isFailedResponse ? (
+                    <div className="message-content message-failed">
+                      <span className="failed-icon">⚠</span>
+                      <span>Response failed. Try regenerating.</span>
+                    </div>
+                  ) : (
+                    <div
+                      className="message-content"
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdown(m.content),
+                      }}
+                    />
+                  )}
+                  {isStreamingActive && isLastMessage && isAssistantMessage && (
                     <span className="streaming-cursor" aria-hidden="true" />
                   )}
                   {showRegenerateButton && (
-                    <div className="regenerate-section">
-                      <GlassButton
-                        variant="default"
-                        color="primary"
+                    <div className="message-actions">
+                      <button
+                        className={`regenerate-btn ${isRegenerating ? "regenerating" : ""}`}
                         disabled={isRegenerating}
                         onClick={regenerateLastMessage}
-                        width="auto"
-                        height={24}
-                        borderRadius={12}
-                        glassClassName="glass-button-text-xs glass-button-px-2"
-                        title="Regenerate last response"
+                        title="Regenerate response"
                         aria-label={
                           isRegenerating
                             ? "Regenerating response"
-                            : "Regenerate last response"
+                            : "Regenerate response"
                         }
                       >
-                        {isRegenerating ? "Regenerating..." : "Regenerate"}
-                      </GlassButton>
+                        <svg
+                          className="regenerate-icon"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85 1.04 6.5 2.75L21 3" />
+                          <path d="M21 3v6h-6" />
+                        </svg>
+                        <span className="regenerate-text">
+                          {isRegenerating ? "Regenerating..." : "Regenerate"}
+                        </span>
+                      </button>
                     </div>
                   )}
                 </article>

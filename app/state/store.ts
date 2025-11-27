@@ -83,6 +83,10 @@ interface AppStoreState {
   availableModels: DiscoveredModel[];
   connectionStatus: ConnectionStatus;
   _hydrated: boolean;
+
+  // Streaming state (shared across components)
+  isLoading: boolean;
+  isRegenerating: boolean;
 }
 
 interface AppStoreActions {
@@ -125,6 +129,10 @@ interface AppStoreActions {
   setConnectionStatus: (status: ConnectionStatus) => void;
   setAvailableModels: (models: DiscoveredModel[]) => void;
   checkConnection: () => Promise<void>;
+
+  // Streaming Actions
+  setIsLoading: (loading: boolean) => void;
+  setIsRegenerating: (regenerating: boolean) => void;
 
   // Persistence
   _hydrate: () => void;
@@ -176,6 +184,8 @@ export const useAppStore = create<AppStore>()(
     availableModels: [],
     connectionStatus: "unknown",
     _hydrated: false,
+    isLoading: false,
+    isRegenerating: false,
 
     // API Client getter (memoized by settings)
     getClient: () => {
@@ -481,6 +491,14 @@ export const useAppStore = create<AppStore>()(
         setConnectionStatus("error");
       }
     },
+
+    // ========================================================================
+    // Streaming Actions
+    // ========================================================================
+
+    setIsLoading: (loading) => set({ isLoading: loading }),
+
+    setIsRegenerating: (regenerating) => set({ isRegenerating: regenerating }),
 
     // ========================================================================
     // Persistence

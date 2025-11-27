@@ -330,7 +330,8 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
                   Danger Zone
                 </Text>
                 <Text size="xs" c="dimmed" mb="sm">
-                  Permanently delete all data including chats, models, and settings.
+                  Permanently delete all data including chats, models, and
+                  settings.
                 </Text>
                 <Button
                   color="red"

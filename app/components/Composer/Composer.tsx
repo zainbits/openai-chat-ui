@@ -22,24 +22,27 @@ export default function Composer() {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { isLoading, sendMessage, cancelStream } = useChat();
+  const { isLoading, isRegenerating, sendMessage, cancelStream } = useChat();
+
+  // Show stop button when either loading or regenerating
+  const isStreaming = isLoading || isRegenerating;
 
   /**
    * Handles sending the message
    */
   const handleSend = useCallback(async () => {
-    if (!input.trim() || !thread || isLoading) return;
+    if (!input.trim() || !thread || isStreaming) return;
     const message = input;
     setInput("");
     await sendMessage(message);
-  }, [input, thread, isLoading, sendMessage]);
+  }, [input, thread, isStreaming, sendMessage]);
 
   /**
-   * Handles keyboard shortcuts (Ctrl+Enter to send)
+   * Handles keyboard shortcuts (Enter to send, Shift+Enter for new line)
    */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
       }
@@ -83,7 +86,7 @@ export default function Composer() {
             <textarea
               ref={textareaRef}
               className="composer-textarea"
-              placeholder="Type your message... (Ctrl+Enter to send)"
+              placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -93,12 +96,12 @@ export default function Composer() {
           <div className="composer-actions">
             <GlassButton
               variant="round"
-              color={isLoading ? "danger" : "primary"}
-              disabled={(!input.trim() && !isLoading) || !thread}
-              onClick={isLoading ? cancelStream : handleSend}
-              aria-label={isLoading ? "Cancel message" : "Send message"}
+              color={isStreaming ? "danger" : "primary"}
+              disabled={(!input.trim() && !isStreaming) || !thread}
+              onClick={isStreaming ? cancelStream : handleSend}
+              aria-label={isStreaming ? "Stop generation" : "Send message"}
             >
-              {isLoading ? (
+              {isStreaming ? (
                 <GrClose className="composer-icon" aria-hidden="true" />
               ) : (
                 <GrSend className="composer-icon" aria-hidden="true" />

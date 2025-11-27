@@ -2,7 +2,7 @@
  * Custom hook for managing chat interactions with the AI
  * Handles sending messages, streaming responses, and title generation
  */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import { notifications } from "@mantine/notifications";
 import {
   useAppStore,
@@ -42,9 +42,13 @@ interface UseChatReturn {
  * Provides methods for sending messages, canceling streams, and regenerating responses
  */
 export function useChat(): UseChatReturn {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
   const streamRef = useRef<StreamHandle | null>(null);
+
+  // Get streaming state from store (shared across components)
+  const isLoading = useAppStore((s) => s.isLoading);
+  const isRegenerating = useAppStore((s) => s.isRegenerating);
+  const setIsLoading = useAppStore((s) => s.setIsLoading);
+  const setIsRegenerating = useAppStore((s) => s.setIsRegenerating);
 
   // Get store actions and state
   const getClient = useAppStore((s) => s.getClient);
@@ -55,7 +59,6 @@ export function useChat(): UseChatReturn {
     (s) => s.removeMessagesAfterIndex,
   );
   const updateThreadTitle = useAppStore((s) => s.updateThreadTitle);
-  const settings = useAppStore((s) => s.settings);
 
   /**
    * Generates a title for a thread based on the first user message
@@ -188,6 +191,7 @@ export function useChat(): UseChatReturn {
       addAssistantMessage,
       appendToLastMessage,
       generateTitle,
+      setIsLoading,
     ],
   );
 
@@ -199,7 +203,7 @@ export function useChat(): UseChatReturn {
     streamRef.current = null;
     setIsLoading(false);
     setIsRegenerating(false);
-  }, []);
+  }, [setIsLoading, setIsRegenerating]);
 
   /**
    * Regenerates the last assistant response
@@ -275,6 +279,7 @@ export function useChat(): UseChatReturn {
     addAssistantMessage,
     appendToLastMessage,
     isRegenerating,
+    setIsRegenerating,
   ]);
 
   return {
