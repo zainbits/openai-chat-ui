@@ -39,10 +39,15 @@ export default function Composer() {
 
   /**
    * Handles keyboard shortcuts (Enter to send, Shift+Enter for new line)
+   * Enter-to-send is disabled on mobile devices (touch-primary)
    */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter" && !e.shiftKey) {
+        // Skip Enter-to-send on mobile/touch devices
+        const isMobile = window.matchMedia("(pointer: coarse)").matches;
+        if (isMobile) return;
+
         e.preventDefault();
         handleSend();
       }
@@ -86,7 +91,7 @@ export default function Composer() {
             <textarea
               ref={textareaRef}
               className="composer-textarea"
-              placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
+              placeholder="Type your message..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
