@@ -1,29 +1,50 @@
-import React, { useState } from "react";
-import { useAppState, createThreadForModel } from "../../state/AppState";
+import React, { useState, useCallback } from "react";
+import { useAppStore } from "../../state/store";
 import ModelEditorModal from "../ModelEditorModal";
 import GlassButton from "../GlassButton";
 import "./ModelChips.css";
 
+/**
+ * Model selection chips displayed at the top of the chat area
+ */
 export default function ModelChips() {
-  const { data, setData } = useAppState();
+  const models = useAppStore((s) => s.models);
+  const createThread = useAppStore((s) => s.createThread);
+
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingModelId, setEditingModelId] = useState<string | undefined>(
     undefined,
   );
 
-  const selectModel = (modelId: string) => {
-    // Create a new thread for selected model
-    const thread = createThreadForModel(modelId);
-    setData((d) => ({
-      ...d,
-      chats: { ...d.chats, [thread.id]: thread },
-      ui: { ...d.ui, activeThread: thread.id, sidebarOpen: true },
-    }));
-  };
+  /**
+   * Creates a new chat thread for the selected model
+   */
+  const selectModel = useCallback(
+    (modelId: string) => {
+      createThread(modelId);
+    },
+    [createThread],
+  );
+
+  /**
+   * Opens the model editor for creating a new model
+   */
+  const openNewModelEditor = useCallback(() => {
+    setEditingModelId(undefined);
+    setEditorOpen(true);
+  }, []);
+
+  /**
+   * Opens the model editor for editing an existing model
+   */
+  const openEditModelEditor = useCallback((modelId: string) => {
+    setEditingModelId(modelId);
+    setEditorOpen(true);
+  }, []);
 
   return (
     <div className="model-chips" role="toolbar" aria-label="Model selection">
-      {data.models.map((m) => (
+      {models.map((m) => (
         <div key={m.id} className="model-chip-container">
           <GlassButton
             onClick={() => selectModel(m.id)}
@@ -33,14 +54,16 @@ export default function ModelChips() {
             title={`${m.name} (${m.model})`}
             customColor={m.color}
             onContextMenu={(e) => {
-              // Prevent context menu on long press for mobile
               e.preventDefault();
-              setEditingModelId(m.id);
-              setEditorOpen(true);
+              openEditModelEditor(m.id);
             }}
             aria-label={`Start new chat with ${m.name} model. Right-click to edit.`}
           >
-            <span className="model-indicator" style={{ background: m.color }} aria-hidden="true" />
+            <span
+              className="model-indicator"
+              style={{ background: m.color }}
+              aria-hidden="true"
+            />
             {m.name}
           </GlassButton>
         </div>
@@ -50,10 +73,7 @@ export default function ModelChips() {
         <GlassButton
           variant="round"
           width={32}
-          onClick={() => {
-            setEditingModelId(undefined);
-            setEditorOpen(true);
-          }}
+          onClick={openNewModelEditor}
           aria-label="Add new model"
         >
           <span aria-hidden="true">+</span>

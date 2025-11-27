@@ -96,18 +96,21 @@ app/
 ### Key Features
 
 #### Glass Morphism Effect
+
 The `GlassSurface` component uses SVG filters with displacement maps to create a realistic glass refraction effect, with proper fallbacks for browsers that don't support advanced backdrop filters.
 
 #### Streaming Chat
+
 The API client handles Server-Sent Events (SSE) for real-time token streaming with proper abort handling for cancellation.
 
 #### Theming System
+
 All colors are managed centrally in `theme/colors.ts` and automatically generate CSS custom properties for consistent styling.
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
+| Shortcut                   | Action       |
+| -------------------------- | ------------ |
 | `Ctrl+Enter` / `Cmd+Enter` | Send message |
 
 ## Deployment
@@ -126,6 +129,7 @@ yarn deploy
 ```
 
 Options:
+
 - `BASE_PATH=/custom/ yarn deploy` - Set a custom subpath
 - `SKIP_INSTALL=1 yarn deploy` - Skip yarn install (faster)
 - `DRY_RUN=1 yarn deploy` - Dry-run without pushing

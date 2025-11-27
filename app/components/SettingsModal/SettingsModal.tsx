@@ -1,63 +1,106 @@
-import React, { useState } from "react";
-import { Modal, Button, TextInput, Switch, Select, Text, Group } from "@mantine/core";
+import React, { useState, useCallback } from "react";
+import {
+  Modal,
+  Button,
+  TextInput,
+  Switch,
+  Select,
+  Text,
+  Group,
+} from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { useAppState } from "../../state/AppState";
-import { OpenAICompatibleClient } from "../../api/client";
+import { useAppStore } from "../../state/store";
 import { exportJson, importJson, wipeAll } from "../../utils/storage";
 import "./SettingsModal.css";
 
-export default function SettingsModal({
-  opened,
-  onClose,
-}: {
+interface SettingsModalProps {
   opened: boolean;
   onClose: () => void;
-}) {
-  const { data, setData } = useAppState();
-  const [apiBaseUrl, setApiBaseUrl] = useState(data.settings.apiBaseUrl);
-  const [apiKey, setApiKey] = useState(data.settings.apiKey ?? "");
+}
+
+/**
+ * Modal for managing application settings
+ */
+export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
+  const settings = useAppStore((s) => s.settings);
+  const availableModels = useAppStore((s) => s.availableModels);
+  const updateSettings = useAppStore((s) => s.updateSettings);
+  const setAvailableModels = useAppStore((s) => s.setAvailableModels);
+  const getClient = useAppStore((s) => s.getClient);
+
+  // Get full state for export
+  const getFullState = () => {
+    const state = useAppStore.getState();
+    return {
+      models: state.models,
+      chats: state.chats,
+      ui: state.ui,
+      settings: state.settings,
+      availableModels: state.availableModels,
+    };
+  };
+
+  const [apiBaseUrl, setApiBaseUrl] = useState(settings.apiBaseUrl);
+  const [apiKey, setApiKey] = useState(settings.apiKey ?? "");
   const [streamingEnabled, setStreamingEnabled] = useState(
-    data.settings.streamingEnabled,
+    settings.streamingEnabled,
   );
-  const [defaultModel, setDefaultModel] = useState(data.settings.defaultModel);
+  const [defaultModel, setDefaultModel] = useState(settings.defaultModel);
   const [verifying, setVerifying] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
 
-  const verify = async () => {
+  /**
+   * Verifies the API connection
+   */
+  const verify = useCallback(async () => {
     setVerifying(true);
-    const client = new OpenAICompatibleClient({ apiBaseUrl, apiKey });
-    const ok = await client.verify();
-    if (ok) {
-      try {
-        // Also load models so the default model selector has options immediately
+
+    // Temporarily update settings to test the connection
+    updateSettings({ apiBaseUrl, apiKey: apiKey || undefined });
+
+    try {
+      const client = getClient();
+      const ok = await client.verify();
+
+      if (ok) {
         const models = await client.listModels();
-        setData((d) => ({ ...d, availableModels: models }));
-      } catch {
-        // ignore, AppState will try periodically as well
+        setAvailableModels(models);
+        notifications.show({ message: "API verified", color: "green" });
+      } else {
+        notifications.show({ message: "Failed to verify API", color: "red" });
       }
-      notifications.show({ message: "API verified", color: "green" });
-    } else {
+    } catch {
       notifications.show({ message: "Failed to verify API", color: "red" });
     }
+
     setVerifying(false);
-  };
+  }, [apiBaseUrl, apiKey, updateSettings, getClient, setAvailableModels]);
 
-  const save = () => {
-    setData((d) => ({
-      ...d,
-      settings: {
-        ...d.settings,
-        apiBaseUrl,
-        apiKey: apiKey || undefined,
-        streamingEnabled,
-        defaultModel,
-      },
-    }));
+  /**
+   * Saves the settings
+   */
+  const save = useCallback(() => {
+    updateSettings({
+      apiBaseUrl,
+      apiKey: apiKey || undefined,
+      streamingEnabled,
+      defaultModel,
+    });
     onClose();
-  };
+  }, [
+    apiBaseUrl,
+    apiKey,
+    streamingEnabled,
+    defaultModel,
+    updateSettings,
+    onClose,
+  ]);
 
-  const exportData = () => {
-    const json = exportJson(data);
+  /**
+   * Exports app data as JSON
+   */
+  const exportData = useCallback(() => {
+    const json = exportJson(getFullState() as any);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -65,9 +108,12 @@ export default function SettingsModal({
     a.download = "custommodels-chat.json";
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, []);
 
-  const importData = async () => {
+  /**
+   * Imports app data from JSON
+   */
+  const importData = useCallback(async () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = ".json,application/json";
@@ -76,20 +122,30 @@ export default function SettingsModal({
       if (!file) return;
       const text = await file.text();
       try {
-        const next = importJson(text);
-        setData(next);
+        const data = importJson(text);
+        // Update the store with imported data
+        useAppStore.setState({
+          models: data.models,
+          chats: data.chats,
+          ui: data.ui,
+          settings: data.settings,
+          availableModels: data.availableModels,
+        });
         notifications.show({ message: "Data imported", color: "green" });
-      } catch (e) {
+      } catch {
         notifications.show({ message: "Invalid JSON", color: "red" });
       }
     };
     input.click();
-  };
+  }, []);
 
-  const handleReset = () => {
+  /**
+   * Resets all app data
+   */
+  const handleReset = useCallback(() => {
     wipeAll();
     window.location.reload();
-  };
+  }, []);
 
   return (
     <>
@@ -123,13 +179,13 @@ export default function SettingsModal({
           <Select
             label="Default remote model (used for titles & new models)"
             placeholder={
-              (data.availableModels?.length ?? 0) > 0
+              (availableModels?.length ?? 0) > 0
                 ? "Select a model"
                 : "Verify API to load models"
             }
             searchable
-            disabled={(data.availableModels?.length ?? 0) === 0}
-            data={(data.availableModels ?? []).map((m) => ({
+            disabled={(availableModels?.length ?? 0) === 0}
+            data={(availableModels ?? []).map((m) => ({
               value: m.id,
               label: m.id,
             }))}
@@ -139,10 +195,18 @@ export default function SettingsModal({
           />
           <div className="modal-actions">
             <div className="modal-actions-group">
-              <Button variant="light" onClick={exportData} aria-label="Export settings as JSON file">
+              <Button
+                variant="light"
+                onClick={exportData}
+                aria-label="Export settings as JSON file"
+              >
                 Export JSON
               </Button>
-              <Button variant="light" onClick={importData} aria-label="Import settings from JSON file">
+              <Button
+                variant="light"
+                onClick={importData}
+                aria-label="Import settings from JSON file"
+              >
                 Import JSON
               </Button>
               <Button
@@ -155,10 +219,17 @@ export default function SettingsModal({
               </Button>
             </div>
             <div className="modal-actions-group">
-              <Button variant="default" onClick={verify} loading={verifying} aria-label="Verify API connection">
+              <Button
+                variant="default"
+                onClick={verify}
+                loading={verifying}
+                aria-label="Verify API connection"
+              >
                 Verify API
               </Button>
-              <Button onClick={save} aria-label="Save settings">Save</Button>
+              <Button onClick={save} aria-label="Save settings">
+                Save
+              </Button>
             </div>
           </div>
         </div>
@@ -173,7 +244,8 @@ export default function SettingsModal({
         centered
       >
         <Text size="sm" mb="lg">
-          Are you sure you want to erase all data? This will delete all your chats, models, and settings. This action cannot be undone.
+          Are you sure you want to erase all data? This will delete all your
+          chats, models, and settings. This action cannot be undone.
         </Text>
         <Group justify="flex-end" gap="sm">
           <Button variant="default" onClick={() => setResetModalOpen(false)}>

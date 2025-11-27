@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Modal,
   Button,
@@ -10,77 +10,90 @@ import {
   Text,
   Group,
 } from "@mantine/core";
-import { useAppState } from "../../state/AppState";
+import { useAppStore } from "../../state/store";
 import { getModelColor } from "../../theme/colors";
 import "./ModelEditorModal.css";
 
+interface ModelEditorModalProps {
+  opened: boolean;
+  onClose: () => void;
+  modelId?: string;
+}
+
+/**
+ * Modal for creating and editing custom model configurations
+ */
 export default function ModelEditorModal({
   opened,
   onClose,
   modelId,
-}: {
-  opened: boolean;
-  onClose: () => void;
-  modelId?: string;
-}) {
-  const { data, setData } = useAppState();
+}: ModelEditorModalProps) {
+  const models = useAppStore((s) => s.models);
+  const availableModels = useAppStore((s) => s.availableModels);
+  const defaultModel = useAppStore((s) => s.settings.defaultModel);
+  const addModel = useAppStore((s) => s.addModel);
+  const updateModel = useAppStore((s) => s.updateModel);
+  const deleteModel = useAppStore((s) => s.deleteModel);
+
   const existing = useMemo(
-    () => data.models.find((m) => m.id === modelId),
-    [data.models, modelId],
+    () => models.find((m) => m.id === modelId),
+    [models, modelId],
   );
+
   const [name, setName] = useState(existing?.name ?? "");
   const [color, setColor] = useState(existing?.color ?? getModelColor());
   const [system, setSystem] = useState(existing?.system ?? "");
-  const [model, setModel] = useState(
-    existing?.model ?? data.settings.defaultModel,
-  );
+  const [model, setModel] = useState(existing?.model ?? defaultModel);
   const [temp, setTemp] = useState(existing?.temp ?? 0.7);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
+  // Reset form when modal opens or model changes
   useEffect(() => {
     setName(existing?.name ?? "");
     setColor(existing?.color ?? getModelColor());
     setSystem(existing?.system ?? "");
-    setModel(existing?.model ?? data.settings.defaultModel);
+    setModel(existing?.model ?? defaultModel);
     setTemp(existing?.temp ?? 0.7);
-  }, [existing, data.settings.defaultModel]);
+  }, [existing, defaultModel]);
 
-  const available = data.availableModels ?? [];
-  const options = available.map((m) => ({ value: m.id, label: m.id }));
+  const options = (availableModels ?? []).map((m) => ({
+    value: m.id,
+    label: m.id,
+  }));
 
-  const save = () => {
+  /**
+   * Saves the model (creates new or updates existing)
+   */
+  const handleSave = useCallback(() => {
     if (!name.trim()) return;
+
     if (existing) {
-      setData((d) => ({
-        ...d,
-        models: d.models.map((mm) =>
-          mm.id === existing.id
-            ? { ...mm, name, color, system, model, temp }
-            : mm,
-        ),
-      }));
+      updateModel(existing.id, { name, color, system, model, temp });
     } else {
-      const id =
-        name.toLowerCase().replace(/\s+/g, "-") +
-        "-" +
-        Math.random().toString(36).slice(2, 5);
-      setData((d) => ({
-        ...d,
-        models: [...d.models, { id, name, color, system, model, temp }],
-      }));
+      addModel({ name, color, system, model, temp });
     }
     onClose();
-  };
+  }, [
+    name,
+    color,
+    system,
+    model,
+    temp,
+    existing,
+    addModel,
+    updateModel,
+    onClose,
+  ]);
 
-  const handleDelete = () => {
+  /**
+   * Deletes the model
+   */
+  const handleDelete = useCallback(() => {
     if (!existing) return;
-    setData((d) => ({
-      ...d,
-      models: d.models.filter((m) => m.id !== existing.id),
-    }));
+    deleteModel(existing.id);
     setDeleteModalOpen(false);
     onClose();
-  };
+  }, [existing, deleteModel, onClose]);
 
   return (
     <>
@@ -118,7 +131,7 @@ export default function ModelEditorModal({
             searchable
             data={options}
             value={model}
-            onChange={(val) => setModel(val || data.settings.defaultModel)}
+            onChange={(val) => setModel(val || defaultModel)}
             aria-label="Select the remote AI model to use"
           />
           <NumberInput
@@ -148,7 +161,7 @@ export default function ModelEditorModal({
               <Button variant="default" onClick={onClose}>
                 Cancel
               </Button>
-              <Button onClick={save} disabled={!name.trim()}>
+              <Button onClick={handleSave} disabled={!name.trim()}>
                 Save
               </Button>
             </div>
@@ -165,7 +178,8 @@ export default function ModelEditorModal({
         centered
       >
         <Text size="sm" mb="lg">
-          Are you sure you want to delete the model "{existing?.name}"? This action cannot be undone.
+          Are you sure you want to delete the model "{existing?.name}"? This
+          action cannot be undone.
         </Text>
         <Group justify="flex-end" gap="sm">
           <Button variant="default" onClick={() => setDeleteModalOpen(false)}>
