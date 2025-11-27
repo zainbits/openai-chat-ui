@@ -1,6 +1,5 @@
 import React from "react";
 import { useAppStore } from "../../state/store";
-import { GrClose } from "react-icons/gr";
 import type { SortOption } from "../../types";
 
 interface ThreadFiltersProps {
@@ -19,18 +18,10 @@ export default function ThreadFilters({
   const models = useAppStore((s) => s.models);
   const setSearchQuery = useAppStore((s) => s.setSearchQuery);
   const setSelectedModel = useAppStore((s) => s.setSelectedModel);
-  const closeSidebar = useAppStore((s) => s.closeSidebar);
 
   return (
     <>
       <div className="search-section">
-        <button
-          className="mobile-close"
-          onClick={closeSidebar}
-          aria-label="Close sidebar"
-        >
-          <GrClose aria-hidden="true" />
-        </button>
         <input
           className="search-input"
           placeholder="Search threads..."

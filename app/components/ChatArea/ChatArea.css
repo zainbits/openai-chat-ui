@@ -47,12 +47,141 @@
   padding: 4rem 0;
 }
 
+/* ============================================================================
+   Enhanced Empty State
+   ============================================================================ */
+.empty-state-enhanced {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  min-height: 60vh;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.empty-state-illustration {
+  filter: drop-shadow(0 4px 24px rgba(59, 130, 246, 0.2));
+}
+
+.empty-state-hint {
+  margin-top: 1.5rem;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.01em;
+}
+
+/* ============================================================================
+   Typing Indicator
+   ============================================================================ */
+.typing-indicator {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-text-muted);
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   Streaming Message Styles
+   ============================================================================ */
+.message-bubble.streaming {
+  border-color: var(--color-primary-500);
+  box-shadow:
+    0 0 0 1px var(--color-primary-500) inset,
+    0 4px 20px rgba(59, 130, 246, 0.1);
+}
+
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: var(--color-primary-400);
+  margin-left: 2px;
+  animation: cursorBlink 1s ease-in-out infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes cursorBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   Message Bubble Styles
+   ============================================================================ */
 .message-bubble {
   background: var(--color-background-surface);
   backdrop-filter: blur(12px);
   border-radius: 12px;
   border: 1px solid var(--color-border-primary);
   padding: 1rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .message-role {

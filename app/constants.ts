@@ -38,3 +38,46 @@ export const TITLE_GENERATION_TEMPERATURE = 0.2;
 
 /** Default temperature for chat completions */
 export const DEFAULT_CHAT_TEMPERATURE = 0.7;
+
+// ============================================================================
+// API Provider Configuration
+// ============================================================================
+
+/** Provider preset configuration */
+export interface ApiProviderPreset {
+  id: string;
+  label: string;
+  baseUrl: string;
+}
+
+/** Custom provider ID constant */
+export const CUSTOM_PROVIDER_ID = "custom";
+
+/** Available API provider presets (configurable) */
+export const API_PROVIDER_PRESETS: ApiProviderPreset[] = [
+  {
+    id: "openai",
+    label: "OpenAI",
+    baseUrl: "https://api.openai.com/v1",
+  },
+  {
+    id: "groq",
+    label: "Groq",
+    baseUrl: "https://api.groq.com/openai/v1",
+  },
+  {
+    id: "cerebras",
+    label: "Cerebras",
+    baseUrl: "https://api.cerebras.ai/v1",
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    baseUrl: "https://openrouter.ai/api/v1",
+  },
+  {
+    id: CUSTOM_PROVIDER_ID,
+    label: "Custom",
+    baseUrl: "",
+  },
+];

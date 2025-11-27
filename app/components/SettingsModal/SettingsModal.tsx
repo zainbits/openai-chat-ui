@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   Modal,
   Button,
@@ -11,6 +11,7 @@ import {
 import { notifications } from "@mantine/notifications";
 import { useAppStore } from "../../state/store";
 import { exportJson, importJson, wipeAll } from "../../utils/storage";
+import { API_PROVIDER_PRESETS, CUSTOM_PROVIDER_ID } from "../../constants";
 import "./SettingsModal.css";
 
 interface SettingsModalProps {
@@ -40,7 +41,22 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     };
   };
 
-  const [apiBaseUrl, setApiBaseUrl] = useState(settings.apiBaseUrl);
+  // Determine the initial provider from the current base URL
+  const getProviderFromUrl = (url: string): string => {
+    const preset = API_PROVIDER_PRESETS.find(
+      (p) => p.id !== CUSTOM_PROVIDER_ID && p.baseUrl === url,
+    );
+    return preset ? preset.id : CUSTOM_PROVIDER_ID;
+  };
+
+  const [selectedProvider, setSelectedProvider] = useState(() =>
+    getProviderFromUrl(settings.apiBaseUrl),
+  );
+  const [customBaseUrl, setCustomBaseUrl] = useState(() =>
+    getProviderFromUrl(settings.apiBaseUrl) === CUSTOM_PROVIDER_ID
+      ? settings.apiBaseUrl
+      : "",
+  );
   const [apiKey, setApiKey] = useState(settings.apiKey ?? "");
   const [streamingEnabled, setStreamingEnabled] = useState(
     settings.streamingEnabled,
@@ -49,14 +65,41 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   const [verifying, setVerifying] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
 
+  // Compute the actual API base URL based on provider selection
+  const apiBaseUrl = useMemo(() => {
+    if (selectedProvider === CUSTOM_PROVIDER_ID) {
+      return customBaseUrl;
+    }
+    const preset = API_PROVIDER_PRESETS.find((p) => p.id === selectedProvider);
+    return preset?.baseUrl ?? "";
+  }, [selectedProvider, customBaseUrl]);
+
+  // Provider dropdown options
+  const providerOptions = useMemo(
+    () =>
+      API_PROVIDER_PRESETS.map((p) => ({
+        value: p.id,
+        label: p.label,
+      })),
+    [],
+  );
+
+  // Handle provider change
+  const handleProviderChange = useCallback((value: string | null) => {
+    if (value) {
+      setSelectedProvider(value);
+    }
+  }, []);
+
   /**
    * Verifies the API connection
    */
   const verify = useCallback(async () => {
+    if (apiKey.length === 0) return;
     setVerifying(true);
 
     // Temporarily update settings to test the connection
-    updateSettings({ apiBaseUrl, apiKey: apiKey || undefined });
+    updateSettings({ apiBaseUrl, apiKey });
 
     try {
       const client = getClient();
@@ -80,9 +123,10 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
    * Saves the settings
    */
   const save = useCallback(() => {
+    if (apiKey.length === 0) return;
     updateSettings({
       apiBaseUrl,
-      apiKey: apiKey || undefined,
+      apiKey,
       streamingEnabled,
       defaultModel,
     });
@@ -157,17 +201,30 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
         aria-labelledby="settings-modal-title"
       >
         <div className="modal-content">
-          <TextInput
-            label="API Base URL"
-            value={apiBaseUrl}
-            onChange={(e) => setApiBaseUrl(e.currentTarget.value)}
-            aria-describedby="api-url-description"
+          <Select
+            label="API Provider"
+            data={providerOptions}
+            value={selectedProvider}
+            onChange={handleProviderChange}
+            aria-label="Select API provider"
           />
+          {selectedProvider === CUSTOM_PROVIDER_ID && (
+            <TextInput
+              label="Custom API Base URL"
+              value={customBaseUrl}
+              onChange={(e) => setCustomBaseUrl(e.currentTarget.value)}
+              placeholder="https://api.example.com/v1"
+              aria-describedby="custom-api-url-description"
+            />
+          )}
           <TextInput
-            label="API Key (optional)"
+            label="API Key"
             value={apiKey}
             onChange={(e) => setApiKey(e.currentTarget.value)}
             type="password"
+            required
+            withAsterisk
+            error={apiKey.length === 0 ? "API key is required" : undefined}
             aria-describedby="api-key-description"
           />
           <Switch
@@ -223,11 +280,16 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
                 variant="default"
                 onClick={verify}
                 loading={verifying}
+                disabled={apiKey.length === 0}
                 aria-label="Verify API connection"
               >
                 Verify API
               </Button>
-              <Button onClick={save} aria-label="Save settings">
+              <Button
+                onClick={save}
+                disabled={apiKey.length === 0}
+                aria-label="Save settings"
+              >
                 Save
               </Button>
             </div>

@@ -14,6 +14,7 @@ import type { ChatThread, SortOption } from "../../types";
  */
 export default function Sidebar() {
   const sidebarOpen = useAppStore((s) => s.ui.sidebarOpen);
+  const closeSidebar = useAppStore((s) => s.closeSidebar);
   const searchQuery = useAppStore((s) => s.ui.searchQuery);
   const selectedModel = useAppStore((s) => s.ui.selectedModel);
   const threads = useThreads();
@@ -57,12 +58,19 @@ export default function Sidebar() {
   }, [filtered]);
 
   return (
-    <aside
-      className={`sidebar ${sidebarOpen ? "open" : ""}`}
-      aria-label="Chat sidebar"
-      role="complementary"
-    >
-      <nav className="sidebar-nav" aria-label="Chat navigation">
+    <>
+      {/* Mobile overlay - closes sidebar when clicking outside */}
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? "visible" : ""}`}
+        onClick={closeSidebar}
+        aria-hidden="true"
+      />
+      <aside
+        className={`sidebar ${sidebarOpen ? "open" : ""}`}
+        aria-label="Chat sidebar"
+        role="complementary"
+      >
+        <nav className="sidebar-nav" aria-label="Chat navigation">
         <SidebarHeader onSettingsClick={() => setSettingsOpen(true)} />
 
         <ThreadFilters
@@ -94,10 +102,11 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      <SettingsModal
-        opened={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-      />
-    </aside>
+        <SettingsModal
+          opened={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+        />
+      </aside>
+    </>
   );
 }

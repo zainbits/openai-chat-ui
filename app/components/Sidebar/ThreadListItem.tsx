@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { Menu, Button, Modal, TextInput, Group } from "@mantine/core";
+import { TbPin, TbPinnedOff, TbPencil, TbTrash } from "react-icons/tb";
 import { useAppStore } from "../../state/store";
 import { toRelativeTime } from "../../utils/time";
-import ConfirmModal from "../ConfirmModal";
 import type { ChatThread } from "../../types";
 
 // ============================================================================
@@ -93,6 +93,7 @@ const MenuButton = React.memo(function MenuButton({
       <Menu.Dropdown className="thread-menu-dropdown">
         <Menu.Item
           className="thread-menu-item"
+          leftSection={pinned ? <TbPinnedOff size={16} /> : <TbPin size={16} />}
           onClick={(e) => {
             e.stopPropagation();
             onPin();
@@ -102,6 +103,7 @@ const MenuButton = React.memo(function MenuButton({
         </Menu.Item>
         <Menu.Item
           className="thread-menu-item"
+          leftSection={<TbPencil size={16} />}
           onClick={(e) => {
             e.stopPropagation();
             onRename();
@@ -111,6 +113,7 @@ const MenuButton = React.memo(function MenuButton({
         </Menu.Item>
         <Menu.Item
           className="thread-menu-item thread-menu-item-danger"
+          leftSection={<TbTrash size={16} />}
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
@@ -141,7 +144,6 @@ function ThreadListItem({ thread }: ThreadListItemProps) {
 
   const model = models.find((m) => m.id === thread.modelId);
   const [renameModalOpen, setRenameModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const activate = useCallback(() => {
     setActiveThread(thread.id);
@@ -188,7 +190,7 @@ function ThreadListItem({ thread }: ThreadListItemProps) {
             <MenuButton
               onPin={handleTogglePin}
               onRename={() => setRenameModalOpen(true)}
-              onDelete={() => setDeleteModalOpen(true)}
+              onDelete={handleDelete}
               pinned={thread.isPinned}
             />
           </div>
@@ -201,15 +203,6 @@ function ThreadListItem({ thread }: ThreadListItemProps) {
         onClose={() => setRenameModalOpen(false)}
         onSave={handleRename}
         initialValue={thread.title}
-      />
-
-      <ConfirmModal
-        opened={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        onConfirm={handleDelete}
-        title="Delete Thread"
-        message="Are you sure you want to delete this thread? This action cannot be undone."
-        confirmLabel="Delete"
       />
     </>
   );
