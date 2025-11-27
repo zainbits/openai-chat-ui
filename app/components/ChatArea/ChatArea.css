@@ -73,7 +73,7 @@
 }
 
 .empty-state-illustration {
-  filter: drop-shadow(0 4px 24px rgba(59, 130, 246, 0.2));
+  filter: drop-shadow(0 4px 24px var(--shadow-primary-glow));
 }
 
 .empty-state-hint {
@@ -143,10 +143,10 @@
    Streaming Message Styles
    ============================================================================ */
 .message-bubble.streaming {
-  border-color: var(--color-primary-500);
+  border-color: var(--accent-primary);
   box-shadow:
-    0 0 0 1px var(--color-primary-500) inset,
-    0 4px 20px rgba(59, 130, 246, 0.1);
+    0 0 0 1px var(--accent-primary) inset,
+    0 4px 20px var(--shadow-primary-subtle);
 }
 
 .streaming-cursor {

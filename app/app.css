@@ -17,8 +17,8 @@
 
 html,
 body {
-  background: var(--color-background-body, #0f172a);
-  color: var(--color-text-primary, rgb(255, 255, 255));
+  background: var(--bg-body);
+  color: var(--text-primary);
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);

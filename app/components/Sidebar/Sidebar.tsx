@@ -71,36 +71,40 @@ export default function Sidebar() {
         role="complementary"
       >
         <nav className="sidebar-nav" aria-label="Chat navigation">
-        <SidebarHeader onSettingsClick={() => setSettingsOpen(true)} />
+          <SidebarHeader onSettingsClick={() => setSettingsOpen(true)} />
 
-        <ThreadFilters
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          filteredCount={filtered.length}
-        />
+          <ThreadFilters
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            filteredCount={filtered.length}
+          />
 
-        <div className="thread-list" role="list" aria-label="Chat threads">
-          {grouped.map(([bucket, items]) => (
-            <div
-              key={bucket}
-              className="thread-group"
-              role="group"
-              aria-label={`${bucket} threads`}
-            >
-              <div className="thread-group-title" role="heading" aria-level={2}>
-                {bucket}
+          <div className="thread-list" role="list" aria-label="Chat threads">
+            {grouped.map(([bucket, items]) => (
+              <div
+                key={bucket}
+                className="thread-group"
+                role="group"
+                aria-label={`${bucket} threads`}
+              >
+                <div
+                  className="thread-group-title"
+                  role="heading"
+                  aria-level={2}
+                >
+                  {bucket}
+                </div>
+                <div className="thread-items" role="list">
+                  {items.map((t) => (
+                    <div key={t.id} role="listitem">
+                      <ThreadListItem thread={t} />
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="thread-items" role="list">
-                {items.map((t) => (
-                  <div key={t.id} role="listitem">
-                    <ThreadListItem thread={t} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </nav>
+            ))}
+          </div>
+        </nav>
 
         <SettingsModal
           opened={settingsOpen}
