@@ -14,6 +14,16 @@ export default function ChatArea() {
   const messages = useMemo(() => active?.messages ?? [], [active]);
   const listRef = useRef<HTMLDivElement | null>(null);
 
+  // Memoize the API client to avoid re-instantiation on every render
+  const client = useMemo(
+    () =>
+      new OpenAICompatibleClient({
+        apiBaseUrl: data.settings.apiBaseUrl,
+        apiKey: data.settings.apiKey,
+      }),
+    [data.settings.apiBaseUrl, data.settings.apiKey]
+  );
+
   useEffect(() => {
     // Auto-scroll to the bottom when messages change
     const el = listRef.current;
@@ -45,11 +55,6 @@ export default function ChatArea() {
     }));
 
     setRegenerating(true);
-
-    const client = new OpenAICompatibleClient({
-      apiBaseUrl: data.settings.apiBaseUrl,
-      apiKey: data.settings.apiKey,
-    });
 
     const now = Date.now();
     const assistantMsg = { role: "assistant" as const, content: "", ts: now };
@@ -95,14 +100,20 @@ export default function ChatArea() {
   };
 
   return (
-    <main className="chat-main">
-      <section ref={listRef} className="messages-container">
+    <main className="chat-main" role="main" aria-label="Chat conversation">
+      <section
+        ref={listRef}
+        className="messages-container"
+        aria-label="Message history"
+        role="log"
+        aria-live="polite"
+      >
         {messages.length === 0 && (
-          <div className="empty-state">
+          <div className="empty-state" role="status">
             Start chatting by selecting a model and typing below.
           </div>
         )}
-        <div className="message-list">
+        <div className="message-list" role="list">
           {messages.map((m, idx) => {
             const isLastMessage = idx === messages.length - 1;
             const isAssistantMessage = m.role === "assistant";
@@ -110,8 +121,13 @@ export default function ChatArea() {
               isLastMessage && isAssistantMessage && messages.length > 1;
 
             return (
-              <article key={idx} className="message-bubble">
-                <div className="message-role">
+              <article
+                key={idx}
+                className="message-bubble"
+                role="listitem"
+                aria-label={`${m.role === "user" ? "Your" : "Assistant"} message`}
+              >
+                <div className="message-role" aria-hidden="true">
                   {m.role === "user" ? "You" : "Assistant"}
                 </div>
                 <div
@@ -132,6 +148,7 @@ export default function ChatArea() {
                       borderRadius={12}
                       glassClassName="text-xs px-2 py-1 text-[10px] md:text-[11px]"
                       title="Regenerate last response"
+                      aria-label={regenerating ? "Regenerating response" : "Regenerate last response"}
                     >
                       {regenerating ? "Regenerating..." : "Regenerate"}
                     </GlassButton>

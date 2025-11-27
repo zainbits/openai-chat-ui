@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { marked } from "marked";
 
 marked.use({
@@ -6,6 +7,16 @@ marked.use({
 });
 
 export function renderMarkdown(md: string): string {
-  // NOTE: marked does not sanitize HTML by default. Avoid rendering untrusted HTML.
-  return marked.parse(md) as string;
+  // Parse markdown and sanitize to prevent XSS attacks
+  const rawHtml = marked.parse(md) as string;
+  return DOMPurify.sanitize(rawHtml, {
+    ALLOWED_TAGS: [
+      "p", "br", "strong", "em", "u", "s", "code", "pre",
+      "h1", "h2", "h3", "h4", "h5", "h6",
+      "ul", "ol", "li", "blockquote", "a", "img",
+      "table", "thead", "tbody", "tr", "th", "td",
+      "hr", "div", "span",
+    ],
+    ALLOWED_ATTR: ["href", "src", "alt", "title", "class", "target", "rel"],
+  });
 }

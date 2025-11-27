@@ -21,17 +21,21 @@ function HomeContent() {
 
   return (
     <div className="app-container">
+      <a href="#main-content" className="sr-only focus:not-sr-only">
+        Skip to main content
+      </a>
       <Sidebar />
-      <div className="main-content">
+      <div className="main-content" id="main-content">
         <GlassButton
           className={`mobile-toggle ${!data.ui.sidebarOpen ? "visible" : ""}`}
           onClick={toggleSidebar}
-          aria-label="Open sidebar"
+          aria-label={data.ui.sidebarOpen ? "Close sidebar" : "Open sidebar"}
+          aria-expanded={data.ui.sidebarOpen}
           width={40}
           height={40}
           borderRadius={8}
         >
-          <GrMenu className="w-6 h-6" />
+          <GrMenu className="w-6 h-6" aria-hidden="true" />
         </GlassButton>
 
         <div className="flex-1 relative min-h-0">

@@ -1,5 +1,40 @@
 /* Fresh CSS implementation for chat app - App level styles only */
 
+/* Skip link for accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only.focus\:not-sr-only:focus {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1.5rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background: var(--color-background-surface);
+  color: var(--color-text-primary);
+  border: 2px solid var(--color-interactive-focus);
+  border-radius: 8px;
+  z-index: 9999;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
 /* Layout */
 .app-container {
   height: 100dvh; /* Use dynamic viewport height for mobile compatibility */

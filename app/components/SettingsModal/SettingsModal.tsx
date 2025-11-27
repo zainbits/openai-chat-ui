@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Button, TextInput, Switch, Select } from "@mantine/core";
+import { Modal, Button, TextInput, Switch, Select, Text, Group } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useAppState } from "../../state/AppState";
 import { OpenAICompatibleClient } from "../../api/client";
@@ -21,6 +21,7 @@ export default function SettingsModal({
   );
   const [defaultModel, setDefaultModel] = useState(data.settings.defaultModel);
   const [verifying, setVerifying] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
 
   const verify = async () => {
     setVerifying(true);
@@ -85,66 +86,104 @@ export default function SettingsModal({
     input.click();
   };
 
-  const resetAll = () => {
-    if (!confirm("Erase all data?")) return;
+  const handleReset = () => {
     wipeAll();
     window.location.reload();
   };
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Settings" size="lg">
-      <div className="modal-content">
-        <TextInput
-          label="API Base URL"
-          value={apiBaseUrl}
-          onChange={(e) => setApiBaseUrl(e.currentTarget.value)}
-        />
-        <TextInput
-          label="API Key (optional)"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.currentTarget.value)}
-        />
-        <Switch
-          label="Streaming enabled"
-          checked={streamingEnabled}
-          onChange={(e) => setStreamingEnabled(e.currentTarget.checked)}
-        />
-        <Select
-          label="Default remote model (used for titles & new models)"
-          placeholder={
-            (data.availableModels?.length ?? 0) > 0
-              ? "Select a model"
-              : "Verify API to load models"
-          }
-          searchable
-          disabled={(data.availableModels?.length ?? 0) === 0}
-          data={(data.availableModels ?? []).map((m) => ({
-            value: m.id,
-            label: m.id,
-          }))}
-          value={defaultModel}
-          onChange={(val) => setDefaultModel(val || defaultModel)}
-        />
-        <div className="modal-actions">
-          <div className="modal-actions-group">
-            <Button variant="light" onClick={exportData}>
-              Export JSON
-            </Button>
-            <Button variant="light" onClick={importData}>
-              Import JSON
-            </Button>
-            <Button color="red" variant="light" onClick={resetAll}>
-              Reset
-            </Button>
-          </div>
-          <div className="modal-actions-group">
-            <Button variant="default" onClick={verify} loading={verifying}>
-              Verify API
-            </Button>
-            <Button onClick={save}>Save</Button>
+    <>
+      <Modal
+        opened={opened}
+        onClose={onClose}
+        title="Settings"
+        size="lg"
+        aria-labelledby="settings-modal-title"
+      >
+        <div className="modal-content">
+          <TextInput
+            label="API Base URL"
+            value={apiBaseUrl}
+            onChange={(e) => setApiBaseUrl(e.currentTarget.value)}
+            aria-describedby="api-url-description"
+          />
+          <TextInput
+            label="API Key (optional)"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.currentTarget.value)}
+            type="password"
+            aria-describedby="api-key-description"
+          />
+          <Switch
+            label="Streaming enabled"
+            checked={streamingEnabled}
+            onChange={(e) => setStreamingEnabled(e.currentTarget.checked)}
+            aria-describedby="streaming-description"
+          />
+          <Select
+            label="Default remote model (used for titles & new models)"
+            placeholder={
+              (data.availableModels?.length ?? 0) > 0
+                ? "Select a model"
+                : "Verify API to load models"
+            }
+            searchable
+            disabled={(data.availableModels?.length ?? 0) === 0}
+            data={(data.availableModels ?? []).map((m) => ({
+              value: m.id,
+              label: m.id,
+            }))}
+            value={defaultModel}
+            onChange={(val) => setDefaultModel(val || defaultModel)}
+            aria-label="Select default AI model"
+          />
+          <div className="modal-actions">
+            <div className="modal-actions-group">
+              <Button variant="light" onClick={exportData} aria-label="Export settings as JSON file">
+                Export JSON
+              </Button>
+              <Button variant="light" onClick={importData} aria-label="Import settings from JSON file">
+                Import JSON
+              </Button>
+              <Button
+                color="red"
+                variant="light"
+                onClick={() => setResetModalOpen(true)}
+                aria-label="Reset all data"
+              >
+                Reset
+              </Button>
+            </div>
+            <div className="modal-actions-group">
+              <Button variant="default" onClick={verify} loading={verifying} aria-label="Verify API connection">
+                Verify API
+              </Button>
+              <Button onClick={save} aria-label="Save settings">Save</Button>
+            </div>
           </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+
+      {/* Reset Confirmation Modal */}
+      <Modal
+        opened={resetModalOpen}
+        onClose={() => setResetModalOpen(false)}
+        title="Reset All Data"
+        size="sm"
+        centered
+      >
+        <Text size="sm" mb="lg">
+          Are you sure you want to erase all data? This will delete all your chats, models, and settings. This action cannot be undone.
+        </Text>
+        <Group justify="flex-end" gap="sm">
+          <Button variant="default" onClick={() => setResetModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button color="red" onClick={handleReset}>
+            Reset Everything
+          </Button>
+        </Group>
+      </Modal>
+    </>
   );
 }

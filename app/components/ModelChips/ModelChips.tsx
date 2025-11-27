@@ -22,7 +22,7 @@ export default function ModelChips() {
   };
 
   return (
-    <div className="model-chips">
+    <div className="model-chips" role="toolbar" aria-label="Model selection">
       {data.models.map((m) => (
         <div key={m.id} className="model-chip-container">
           <GlassButton
@@ -38,13 +38,14 @@ export default function ModelChips() {
               setEditingModelId(m.id);
               setEditorOpen(true);
             }}
+            aria-label={`Start new chat with ${m.name} model. Right-click to edit.`}
           >
-            <span className="model-indicator" style={{ background: m.color }} />
+            <span className="model-indicator" style={{ background: m.color }} aria-hidden="true" />
             {m.name}
           </GlassButton>
         </div>
       ))}
-      <div style={{ flexGrow: 1 }} />
+      <div style={{ flexGrow: 1 }} aria-hidden="true" />
       <div className="add-model-button">
         <GlassButton
           variant="round"
@@ -53,8 +54,9 @@ export default function ModelChips() {
             setEditingModelId(undefined);
             setEditorOpen(true);
           }}
+          aria-label="Add new model"
         >
-          +
+          <span aria-hidden="true">+</span>
         </GlassButton>
       </div>
       <ModelEditorModal

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "../../state/AppState";
 import { OpenAICompatibleClient } from "../../api/client";
 import GlassSurface from "../GlassSurface";
@@ -21,6 +21,7 @@ export default function Composer() {
   const streamRef = useRef<ReturnType<
     OpenAICompatibleClient["streamChat"]
   > | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     dataRef.current = data;
@@ -33,10 +34,15 @@ export default function Composer() {
     ? data.models.find((m) => m.id === activeThread.modelId)
     : null;
 
-  const client = new OpenAICompatibleClient({
-    apiBaseUrl: data.settings.apiBaseUrl,
-    apiKey: data.settings.apiKey,
-  });
+  // Memoize the API client to avoid re-instantiation on every render
+  const client = useMemo(
+    () =>
+      new OpenAICompatibleClient({
+        apiBaseUrl: data.settings.apiBaseUrl,
+        apiKey: data.settings.apiKey,
+      }),
+    [data.settings.apiBaseUrl, data.settings.apiKey]
+  );
 
   const send = async (text: string) => {
     if (!activeThread || !activeModel) return;
@@ -168,15 +174,29 @@ export default function Composer() {
     });
   };
 
-  const cancel = () => {
+  const cancel = useCallback(() => {
     streamRef.current?.cancel();
     setLoading(false);
-  };
+  }, []);
+
+  // Handle keyboard shortcuts
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Ctrl+Enter or Cmd+Enter to send
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (input.trim() && activeThread && !loading) {
+          send(input);
+        }
+      }
+    },
+    [input, activeThread, loading]
+  );
 
   return (
-    <footer className="composer">
+    <footer className="composer" role="region" aria-label="Message composer">
       <div className="composer-content">
-        <div className="quick-actions">
+        <div className="quick-actions" role="toolbar" aria-label="Quick action shortcuts">
           {QUICK_ACTIONS.map((q) => (
             <GlassButton
               key={q}
@@ -187,6 +207,7 @@ export default function Composer() {
               color="danger"
               glassClassName="text-xs px-3"
               onClick={() => setInput((v) => (v ? v + "\n\n" + q : q))}
+              aria-label={`Add quick action: ${q}`}
             >
               {q}
             </GlassButton>
@@ -195,10 +216,13 @@ export default function Composer() {
         <div className="composer-input-area">
           <GlassSurface width={"100%"} height={100}>
             <textarea
+              ref={textareaRef}
               className="composer-textarea"
-              placeholder="Type your message..."
+              placeholder="Type your message... (Ctrl+Enter to send)"
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              aria-label="Message input"
             />
           </GlassSurface>
           <div className="composer-actions">
@@ -207,11 +231,12 @@ export default function Composer() {
               color={loading ? "danger" : "primary"}
               disabled={(!input.trim() && !loading) || !activeThread}
               onClick={loading ? cancel : () => send(input)}
+              aria-label={loading ? "Cancel message" : "Send message"}
             >
               {loading ? (
-                <GrClose className="w-5 h-5 text-white" />
+                <GrClose className="w-5 h-5 text-white" aria-hidden="true" />
               ) : (
-                <GrSend className="w-5 h-5 text-white" />
+                <GrSend className="w-5 h-5 text-white" aria-hidden="true" />
               )}
             </GlassButton>
           </div>

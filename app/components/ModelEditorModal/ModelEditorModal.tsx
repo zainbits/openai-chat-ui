@@ -7,6 +7,8 @@ import {
   Select,
   NumberInput,
   ColorInput,
+  Text,
+  Group,
 } from "@mantine/core";
 import { useAppState } from "../../state/AppState";
 import { getModelColor } from "../../theme/colors";
@@ -33,6 +35,7 @@ export default function ModelEditorModal({
     existing?.model ?? data.settings.defaultModel,
   );
   const [temp, setTemp] = useState(existing?.temp ?? 0.7);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     setName(existing?.name ?? "");
@@ -69,75 +72,110 @@ export default function ModelEditorModal({
     onClose();
   };
 
-  const remove = () => {
+  const handleDelete = () => {
     if (!existing) return;
-    if (!confirm("Delete this model?")) return;
     setData((d) => ({
       ...d,
       models: d.models.filter((m) => m.id !== existing.id),
     }));
+    setDeleteModalOpen(false);
     onClose();
   };
 
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={existing ? "Edit Model" : "New Model"}
-      size="lg"
-    >
-      <div className="modal-content">
-        <TextInput
-          label="Name"
-          value={name}
-          onChange={(e) => setName(e.currentTarget.value)}
-          required
-        />
-        <ColorInput
-          label="Color"
-          value={color}
-          onChange={setColor}
-          format="hex"
-          disallowInput
-        />
-        <Textarea
-          label="System Prompt"
-          minRows={3}
-          value={system}
-          onChange={(e) => setSystem(e.currentTarget.value)}
-        />
-        <Select
-          label="Remote Model"
-          searchable
-          data={options}
-          value={model}
-          onChange={(val) => setModel(val || data.settings.defaultModel)}
-        />
-        <NumberInput
-          label="Temperature"
-          value={temp}
-          onChange={(v) => setTemp(Number(v) || 0)}
-          min={0}
-          max={2}
-          step={0.1}
-          decimalScale={2}
-        />
-        <div className="modal-actions">
-          {existing ? (
-            <Button color="red" variant="light" onClick={remove}>
-              Delete
-            </Button>
-          ) : (
-            <span />
-          )}
-          <div className="modal-actions-group">
-            <Button variant="default" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button onClick={save}>Save</Button>
+    <>
+      <Modal
+        opened={opened}
+        onClose={onClose}
+        title={existing ? "Edit Model" : "New Model"}
+        size="lg"
+        aria-labelledby="model-editor-title"
+      >
+        <div className="modal-content">
+          <TextInput
+            label="Name"
+            value={name}
+            onChange={(e) => setName(e.currentTarget.value)}
+            required
+            aria-required="true"
+          />
+          <ColorInput
+            label="Color"
+            value={color}
+            onChange={setColor}
+            format="hex"
+            disallowInput
+          />
+          <Textarea
+            label="System Prompt"
+            minRows={3}
+            value={system}
+            onChange={(e) => setSystem(e.currentTarget.value)}
+            aria-describedby="system-prompt-description"
+          />
+          <Select
+            label="Remote Model"
+            searchable
+            data={options}
+            value={model}
+            onChange={(val) => setModel(val || data.settings.defaultModel)}
+            aria-label="Select the remote AI model to use"
+          />
+          <NumberInput
+            label="Temperature"
+            value={temp}
+            onChange={(v) => setTemp(Number(v) || 0)}
+            min={0}
+            max={2}
+            step={0.1}
+            decimalScale={2}
+            aria-describedby="temperature-description"
+          />
+          <div className="modal-actions">
+            {existing ? (
+              <Button
+                color="red"
+                variant="light"
+                onClick={() => setDeleteModalOpen(true)}
+                aria-label="Delete this model"
+              >
+                Delete
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="modal-actions-group">
+              <Button variant="default" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button onClick={save} disabled={!name.trim()}>
+                Save
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        opened={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        title="Delete Model"
+        size="sm"
+        centered
+      >
+        <Text size="sm" mb="lg">
+          Are you sure you want to delete the model "{existing?.name}"? This action cannot be undone.
+        </Text>
+        <Group justify="flex-end" gap="sm">
+          <Button variant="default" onClick={() => setDeleteModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button color="red" onClick={handleDelete}>
+            Delete
+          </Button>
+        </Group>
+      </Modal>
+    </>
   );
 }

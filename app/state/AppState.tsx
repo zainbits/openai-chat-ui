@@ -18,9 +18,20 @@ import { OpenAICompatibleClient } from "../api/client";
 import { loadAppData, saveAppData } from "../utils/storage";
 import { getModelColor } from "../theme/colors";
 
+// Use environment variables with fallbacks for default settings
+const DEFAULT_API_BASE_URL =
+  typeof import.meta !== "undefined" && import.meta.env?.VITE_DEFAULT_API_BASE_URL
+    ? import.meta.env.VITE_DEFAULT_API_BASE_URL
+    : "http://localhost:3017/v1";
+
+const DEFAULT_MODEL =
+  typeof import.meta !== "undefined" && import.meta.env?.VITE_DEFAULT_MODEL
+    ? import.meta.env.VITE_DEFAULT_MODEL
+    : "qwen3-coder-plus";
+
 const DEFAULT_SETTINGS: AppSettings = {
-  apiBaseUrl: "http://localhost:3017/v1",
-  defaultModel: "qwen3-coder-plus",
+  apiBaseUrl: DEFAULT_API_BASE_URL,
+  defaultModel: DEFAULT_MODEL,
   streamingEnabled: true,
 };
 
@@ -92,44 +103,26 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   // Check connection on initial load and when settings change
   useEffect(() => {
-    console.log("[Effect] useEffect running with deps:", {
-      apiBaseUrl: data.settings.apiBaseUrl,
-      apiKey: data.settings.apiKey ? "[REDACTED]" : undefined,
-    });
     const checkConnection = async (apiBaseUrl: string, apiKey?: string) => {
       // Prevent duplicate calls
       if (isCheckingRef.current) {
-        console.log(
-          "[API Call] checkConnection already in progress, skipping...",
-        );
         return;
       }
 
-      console.log("[API Call] checkConnection called with:", {
-        apiBaseUrl,
-        apiKey: apiKey ? "[REDACTED]" : undefined,
-      });
       isCheckingRef.current = true;
       setData((d) => ({ ...d, connectionStatus: "connecting" }));
 
       try {
         const client = new OpenAICompatibleClient({ apiBaseUrl, apiKey });
         // Use listModels() instead of verify() - it hits the same endpoint but gives us the models too
-        console.log("[API Call] About to call listModels...");
         const models = await client.listModels();
-        console.log(
-          "[API Call] listModels success, got",
-          models.length,
-          "models",
-        );
         // If listModels succeeds, we know the connection is working
         setData((d) => ({
           ...d,
           connectionStatus: "connected",
           availableModels: models,
         }));
-      } catch (error) {
-        console.log("[API Call] listModels failed:", error);
+      } catch {
         // If listModels fails, the connection is not working
         setData((d) => ({ ...d, connectionStatus: "error" }));
       } finally {

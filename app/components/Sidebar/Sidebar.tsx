@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Menu, Button } from "@mantine/core";
+import React, { useMemo, useState, useCallback } from "react";
+import { Menu, Button, Modal, TextInput, Text, Group } from "@mantine/core";
 import { useAppState } from "../../state/AppState";
 import { toRelativeTime, groupByDateBucket } from "../../utils/time";
 import SettingsModal from "../SettingsModal";
@@ -8,6 +8,87 @@ import { GrClose } from "react-icons/gr";
 import "./Sidebar.css";
 
 import type { ChatThread, SortOption, ConnectionStatus } from "../../types";
+
+// Confirmation Modal Component
+function ConfirmModal({
+  opened,
+  onClose,
+  onConfirm,
+  title,
+  message,
+}: {
+  opened: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+}) {
+  return (
+    <Modal opened={opened} onClose={onClose} title={title} size="sm" centered>
+      <Text size="sm" mb="lg">
+        {message}
+      </Text>
+      <Group justify="flex-end" gap="sm">
+        <Button variant="default" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button color="red" onClick={() => { onConfirm(); onClose(); }}>
+          Delete
+        </Button>
+      </Group>
+    </Modal>
+  );
+}
+
+// Rename Modal Component
+function RenameModal({
+  opened,
+  onClose,
+  onSave,
+  initialValue,
+}: {
+  opened: boolean;
+  onClose: () => void;
+  onSave: (newName: string) => void;
+  initialValue: string;
+}) {
+  const [value, setValue] = useState(initialValue);
+
+  // Reset value when modal opens with new initial value
+  React.useEffect(() => {
+    if (opened) {
+      setValue(initialValue);
+    }
+  }, [opened, initialValue]);
+
+  const handleSave = () => {
+    if (value.trim()) {
+      onSave(value.trim());
+      onClose();
+    }
+  };
+
+  return (
+    <Modal opened={opened} onClose={onClose} title="Rename Thread" size="sm" centered>
+      <TextInput
+        label="Thread name"
+        value={value}
+        onChange={(e) => setValue(e.currentTarget.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleSave()}
+        autoFocus
+        mb="lg"
+      />
+      <Group justify="flex-end" gap="sm">
+        <Button variant="default" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave} disabled={!value.trim()}>
+          Save
+        </Button>
+      </Group>
+    </Modal>
+  );
+}
 
 function getConnectionDisplay(status?: ConnectionStatus) {
   switch (status) {
@@ -84,12 +165,18 @@ export default function Sidebar() {
   // Sidebar is collapsible only; no resizing
 
   return (
-    <aside className={`sidebar ${data.ui.sidebarOpen ? "open" : ""}`}>
-      <nav className="sidebar-nav">
+    <aside
+      className={`sidebar ${data.ui.sidebarOpen ? "open" : ""}`}
+      aria-label="Chat sidebar"
+      role="complementary"
+    >
+      <nav className="sidebar-nav" aria-label="Chat navigation">
         <div className="sidebar-header">
           <div className="app-title">
             <h1>CustomModels Chat</h1>
-            <div className="url">{data.settings.apiBaseUrl}</div>
+            <div className="url" aria-label={`Connected to ${data.settings.apiBaseUrl}`}>
+              {data.settings.apiBaseUrl}
+            </div>
           </div>
           <div className="sidebar-controls">
             <Button
@@ -97,11 +184,11 @@ export default function Sidebar() {
               size="xs"
               onClick={() => setSettingsOpen(true)}
               className="settings-button"
-              aria-label="Settings"
+              aria-label="Open settings"
             >
               ⚙️
             </Button>
-            <div className="connection-status">
+            <div className="connection-status" role="status" aria-live="polite">
               {(() => {
                 const { color, text, title } = getConnectionDisplay(
                   data.connectionStatus,
@@ -118,8 +205,11 @@ export default function Sidebar() {
                     <span
                       className={`status-dot ${statusClass}`}
                       title={title}
+                      aria-hidden="true"
                     />
-                    <span className="status-text">{text}</span>
+                    <span className="status-text" aria-label={`Connection status: ${text}`}>
+                      {text}
+                    </span>
                   </>
                 );
               })()}
@@ -133,11 +223,11 @@ export default function Sidebar() {
             onClick={closeSidebar}
             aria-label="Close sidebar"
           >
-            <GrClose />
+            <GrClose aria-hidden="true" />
           </button>
           <input
             className="search-input"
-            placeholder="Search..."
+            placeholder="Search threads..."
             value={data.ui.searchQuery}
             onChange={(e) =>
               setData((d) => ({
@@ -145,15 +235,19 @@ export default function Sidebar() {
                 ui: { ...d.ui, searchQuery: e.target.value },
               }))
             }
+            aria-label="Search chat threads"
+            type="search"
           />
         </div>
-        <div className="filter-controls">
+        <div className="filter-controls" role="group" aria-label="Thread filters">
           <div className="filter-group">
-            <label>Sort:</label>
+            <label htmlFor="sort-select">Sort:</label>
             <select
+              id="sort-select"
               className="filter-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
+              aria-label="Sort threads by"
             >
               <option value="date">Date</option>
               <option value="name">Name</option>
@@ -161,8 +255,9 @@ export default function Sidebar() {
             </select>
           </div>
           <div className="filter-group">
-            <label>Model:</label>
+            <label htmlFor="model-filter">Model:</label>
             <select
+              id="model-filter"
               className="filter-select model-select"
               value={data.ui.selectedModel}
               onChange={(e) =>
@@ -171,6 +266,7 @@ export default function Sidebar() {
                   ui: { ...d.ui, selectedModel: e.target.value },
                 }))
               }
+              aria-label="Filter by model"
             >
               <option value="all">All</option>
               {data.models.map((m) => (
@@ -180,17 +276,24 @@ export default function Sidebar() {
               ))}
             </select>
           </div>
-          <div className="thread-count" title={`${filtered.length} threads`}>
-            {filtered.length} threads
+          <div
+            className="thread-count"
+            title={`${filtered.length} threads`}
+            role="status"
+            aria-live="polite"
+          >
+            {filtered.length} thread{filtered.length !== 1 ? "s" : ""}
           </div>
         </div>
-        <div className="thread-list">
+        <div className="thread-list" role="list" aria-label="Chat threads">
           {grouped.map(([bucket, items]) => (
-            <div key={bucket} className="thread-group">
-              <div className="thread-group-title">{bucket}</div>
-              <div className="thread-items">
+            <div key={bucket} className="thread-group" role="group" aria-label={`${bucket} threads`}>
+              <div className="thread-group-title" role="heading" aria-level={2}>
+                {bucket}
+              </div>
+              <div className="thread-items" role="list">
                 {items.map((t) => (
-                  <div key={t.id}>
+                  <div key={t.id} role="listitem">
                     <ThreadListItem thread={t} />
                   </div>
                 ))}
@@ -210,26 +313,29 @@ export default function Sidebar() {
 function ThreadListItem({ thread }: { thread: ChatThread }) {
   const { data, setData } = useAppState();
   const model = data.models.find((m) => m.id === thread.modelId);
+  const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-  const activate = () =>
-    setData((d) => ({ ...d, ui: { ...d.ui, activeThread: thread.id } }));
-  const rename = () => {
-    const name = prompt("Rename thread", thread.title);
-    if (!name) return;
+  const activate = useCallback(() =>
+    setData((d) => ({ ...d, ui: { ...d.ui, activeThread: thread.id } })),
+    [setData, thread.id]
+  );
+
+  const handleRename = useCallback((newName: string) => {
     setData((d) => ({
       ...d,
       chats: {
         ...d.chats,
         [thread.id]: {
           ...d.chats[thread.id],
-          title: name,
+          title: newName,
           updatedAt: Date.now(),
         },
       },
     }));
-  };
-  const remove = () => {
-    if (!confirm("Delete this thread?")) return;
+  }, [setData, thread.id]);
+
+  const handleDelete = useCallback(() => {
     setData((d) => {
       const next = { ...d.chats };
       delete next[thread.id];
@@ -240,8 +346,9 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
         ui: { ...d.ui, activeThread: isActive ? null : d.ui.activeThread },
       };
     });
-  };
-  const togglePin = () =>
+  }, [setData, thread.id]);
+
+  const togglePin = useCallback(() =>
     setData((d) => ({
       ...d,
       chats: {
@@ -252,33 +359,57 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
           updatedAt: Date.now(),
         },
       },
-    }));
+    })),
+    [setData, thread.id]
+  );
 
   return (
-    <button
-      onClick={activate}
-      className={`thread-item ${data.ui.activeThread === thread.id ? "active" : ""}`}
-    >
-      <div className="thread-header">
-        <div className="thread-info">
-          <span
-            className="model-indicator"
-            style={{ background: model?.color }}
-          />
-          <span className="thread-title">{thread.title}</span>
+    <>
+      <button
+        onClick={activate}
+        className={`thread-item ${data.ui.activeThread === thread.id ? "active" : ""}`}
+        aria-label={`Chat thread: ${thread.title}`}
+        aria-pressed={data.ui.activeThread === thread.id}
+      >
+        <div className="thread-header">
+          <div className="thread-info">
+            <span
+              className="model-indicator"
+              style={{ background: model?.color }}
+              aria-hidden="true"
+            />
+            <span className="thread-title">{thread.title}</span>
+          </div>
+          <div className="thread-meta">
+            <span aria-label={`Last updated ${toRelativeTime(thread.updatedAt)}`}>
+              {toRelativeTime(thread.updatedAt)}
+            </span>
+            <MenuButton
+              onPin={togglePin}
+              onRename={() => setRenameModalOpen(true)}
+              onDelete={() => setDeleteModalOpen(true)}
+              pinned={thread.isPinned}
+            />
+          </div>
         </div>
-        <div className="thread-meta">
-          <span>{toRelativeTime(thread.updatedAt)}</span>
-          <MenuButton
-            onPin={togglePin}
-            onRename={rename}
-            onDelete={remove}
-            pinned={thread.isPinned}
-          />
-        </div>
-      </div>
-      <div className="thread-preview">{thread.preview || ""}</div>
-    </button>
+        <div className="thread-preview">{thread.preview || ""}</div>
+      </button>
+
+      <RenameModal
+        opened={renameModalOpen}
+        onClose={() => setRenameModalOpen(false)}
+        onSave={handleRename}
+        initialValue={thread.title}
+      />
+
+      <ConfirmModal
+        opened={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Thread"
+        message="Are you sure you want to delete this thread? This action cannot be undone."
+      />
+    </>
   );
 }
 
