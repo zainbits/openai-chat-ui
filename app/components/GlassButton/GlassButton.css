@@ -17,6 +17,35 @@
   touch-action: manipulation;
 }
 
+/* Glass button content wrapper */
+.glass-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Glass button with padding variants */
+.glass-button-content.glass-button-px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.glass-button-content.glass-button-px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.glass-button-content.glass-button-px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Text size variants */
+.glass-button-content.glass-button-text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
 .glass-button:focus-visible {
   outline: 2px solid var(--color-interactive-focus);
   outline-offset: 2px;

@@ -90,9 +90,9 @@ const MenuButton = React.memo(function MenuButton({
         </button>
       </Menu.Target>
 
-      <Menu.Dropdown className="bg-slate-900/90 backdrop-blur-sm border border-white/10">
+      <Menu.Dropdown className="thread-menu-dropdown">
         <Menu.Item
-          className="text-white hover:bg-white/10 text-sm"
+          className="thread-menu-item"
           onClick={(e) => {
             e.stopPropagation();
             onPin();
@@ -101,7 +101,7 @@ const MenuButton = React.memo(function MenuButton({
           {pinned ? "Unpin" : "Pin"}
         </Menu.Item>
         <Menu.Item
-          className="text-white hover:bg-white/10 text-sm"
+          className="thread-menu-item"
           onClick={(e) => {
             e.stopPropagation();
             onRename();
@@ -110,7 +110,7 @@ const MenuButton = React.memo(function MenuButton({
           Rename
         </Menu.Item>
         <Menu.Item
-          className="text-red-300 hover:bg-white/10 text-sm"
+          className="thread-menu-item thread-menu-item-danger"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();

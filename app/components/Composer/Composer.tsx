@@ -70,7 +70,7 @@ export default function Composer() {
               height={32}
               borderRadius={16}
               color="danger"
-              glassClassName="text-xs px-3"
+              glassClassName="glass-button-text-xs glass-button-px-3"
               onClick={() => addQuickAction(q)}
               aria-label={`Add quick action: ${q}`}
             >
@@ -99,9 +99,9 @@ export default function Composer() {
               aria-label={isLoading ? "Cancel message" : "Send message"}
             >
               {isLoading ? (
-                <GrClose className="w-5 h-5 text-white" aria-hidden="true" />
+                <GrClose className="composer-icon" aria-hidden="true" />
               ) : (
-                <GrSend className="w-5 h-5 text-white" aria-hidden="true" />
+                <GrSend className="composer-icon" aria-hidden="true" />
               )}
             </GlassButton>
           </div>

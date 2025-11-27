@@ -65,7 +65,7 @@ export default function GlassButton({
       <GlassSurface
         {...glassProps}
         backgroundOpacity={finalColor ? 0.1 : 0}
-        className={`flex items-center justify-center ${glassClassName}`}
+        className={`glass-button-content ${glassClassName}`}
         style={
           finalColor
             ? ({

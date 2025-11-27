@@ -18,6 +18,41 @@ export function meta({}: Route.MetaArgs) {
 }
 
 /**
+ * Inline fallback component for sidebar errors
+ */
+function SidebarFallback() {
+  return (
+    <aside className="sidebar-fallback" role="alert">
+      <p>Sidebar failed to load</p>
+      <button onClick={() => window.location.reload()}>Reload</button>
+    </aside>
+  );
+}
+
+/**
+ * Inline fallback component for chat area errors
+ */
+function ChatAreaFallback() {
+  return (
+    <div className="chat-fallback" role="alert">
+      <p>Chat failed to load</p>
+      <button onClick={() => window.location.reload()}>Reload</button>
+    </div>
+  );
+}
+
+/**
+ * Inline fallback component for model chips errors
+ */
+function ModelChipsFallback() {
+  return (
+    <div className="model-chips-fallback" role="alert">
+      <p>Models unavailable</p>
+    </div>
+  );
+}
+
+/**
  * Main home content component
  */
 function HomeContent() {
@@ -54,10 +89,12 @@ function HomeContent() {
 
   return (
     <div className="app-container">
-      <a href="#main-content" className="sr-only focus:not-sr-only">
+      <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
-      <Sidebar />
+      <ErrorBoundary fallback={<SidebarFallback />}>
+        <Sidebar />
+      </ErrorBoundary>
       <div className="main-content" id="main-content">
         <GlassButton
           className={`mobile-toggle ${!sidebarOpen ? "visible" : ""}`}
@@ -68,17 +105,21 @@ function HomeContent() {
           height={40}
           borderRadius={8}
         >
-          <GrMenu className="w-6 h-6" aria-hidden="true" />
+          <GrMenu className="menu-icon" aria-hidden="true" />
         </GlassButton>
 
-        <div className="flex-1 relative min-h-0">
-          <ChatArea />
+        <div className="chat-wrapper">
+          <ErrorBoundary fallback={<ChatAreaFallback />}>
+            <ChatArea />
+          </ErrorBoundary>
           <div
-            className={`absolute top-0 left-0 right-0 z-10 ${
+            className={`model-chips-container ${
               !sidebarOpen ? "model-chips-offset" : ""
             }`}
           >
-            <ModelChips />
+            <ErrorBoundary fallback={<ModelChipsFallback />}>
+              <ModelChips />
+            </ErrorBoundary>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 /* Fresh CSS implementation for chat app - App level styles only */
 
 /* Skip link for accessibility */
-.sr-only {
+.skip-link {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -13,7 +13,7 @@
   border: 0;
 }
 
-.sr-only.focus\:not-sr-only:focus {
+.skip-link:focus {
   position: fixed;
   top: 1rem;
   left: 50%;
@@ -49,6 +49,29 @@
   position: relative;
 }
 
+/* Chat wrapper */
+.chat-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+/* Model chips container */
+.model-chips-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+/* Menu icon styling */
+.menu-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-text-primary);
+}
+
 /* Mobile Toggle Button */
 .mobile-toggle {
   position: absolute !important;
@@ -77,4 +100,61 @@
   .model-chips-offset {
     padding-left: 0;
   }
+}
+
+/* ============================================================================
+   Component Error Fallbacks
+   ============================================================================ */
+
+.sidebar-fallback {
+  width: 320px;
+  background: var(--color-background-surface);
+  border-right: 1px solid var(--color-border-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.sidebar-fallback button,
+.chat-fallback button {
+  padding: 0.5rem 1rem;
+  background: var(--color-background-surface-hover);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+}
+
+.sidebar-fallback button:hover,
+.chat-fallback button:hover {
+  background: var(--color-background-surface-active);
+}
+
+.chat-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.model-chips-fallback {
+  padding: 0.5rem 1rem;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-align: center;
 }

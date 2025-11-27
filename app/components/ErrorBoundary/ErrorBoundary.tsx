@@ -96,7 +96,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                   width="auto"
                   height={40}
                   borderRadius={8}
-                  glassClassName="px-4"
+                  glassClassName="glass-button-px-4"
                   aria-label="Try again"
                 >
                   Try Again
@@ -107,7 +107,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                   width="auto"
                   height={40}
                   borderRadius={8}
-                  glassClassName="px-4"
+                  glassClassName="glass-button-px-4"
                   aria-label="Reload page"
                 >
                   Reload Page

@@ -38,15 +38,15 @@ export default function ChatArea() {
           </div>
         )}
         <div className="message-list" role="list">
-          {messages.map((m, idx) => {
-            const isLastMessage = idx === messages.length - 1;
+          {messages.map((m) => {
+            const isLastMessage = m.ts === messages[messages.length - 1]?.ts;
             const isAssistantMessage = m.role === "assistant";
             const showRegenerateButton =
               isLastMessage && isAssistantMessage && messages.length > 1;
 
             return (
               <article
-                key={idx}
+                key={m.ts}
                 className="message-bubble"
                 role="listitem"
                 aria-label={`${m.role === "user" ? "Your" : "Assistant"} message`}
@@ -70,7 +70,7 @@ export default function ChatArea() {
                       width="auto"
                       height={24}
                       borderRadius={12}
-                      glassClassName="text-xs px-2 py-1 text-[10px] md:text-[11px]"
+                      glassClassName="glass-button-text-xs glass-button-px-2"
                       title="Regenerate last response"
                       aria-label={
                         isRegenerating

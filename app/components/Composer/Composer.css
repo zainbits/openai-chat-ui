@@ -54,3 +54,10 @@
   gap: 0.5rem;
   align-items: center;
 }
+
+/* Composer icon styling */
+.composer-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-text-primary);
+}
