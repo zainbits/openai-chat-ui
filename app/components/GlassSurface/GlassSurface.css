@@ -76,8 +76,8 @@
   -webkit-backdrop-filter: blur(12px) saturate(1.8) brightness(1.1);
   border: 1px solid var(--glass-border-light);
   box-shadow:
-    0 8px 32px 0 var(--shadow-heavy),
-    0 2px 16px 0 var(--shadow-medium),
+    0 8px 32px 0 var(--shadow-color-heavy),
+    0 2px 16px 0 var(--shadow-color-medium),
     inset 0 1px 0 0 var(--color-white-alpha-40),
     inset 0 -1px 0 0 var(--color-white-alpha-20);
 }
@@ -131,7 +131,14 @@
 
 /* Simple mode - no glass effects for performance */
 .glass-surface--simple {
-  background: light-dark(rgba(255, 255, 255, 0.6), rgba(30, 30, 30, 0.8));
-  border: 1px solid light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: light-dark(
+    var(--simple-glass-bg-light),
+    var(--simple-glass-bg-dark)
+  );
+  border: 1px solid
+    light-dark(
+      var(--simple-glass-border-light),
+      var(--simple-glass-border-dark)
+    );
+  box-shadow: 0 2px 8px var(--shadow-soft);
 }

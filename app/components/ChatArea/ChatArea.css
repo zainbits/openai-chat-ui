@@ -317,7 +317,7 @@
    ============================================================================ */
 .message-bubble.failed {
   border-color: var(--color-danger-500);
-  background: rgba(239, 68, 68, 0.05);
+  background: var(--color-danger-alpha-5);
 }
 
 .message-failed {
@@ -345,7 +345,7 @@
 }
 
 .message-bubble.failed .regenerate-btn:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--color-danger-alpha-10);
   color: var(--color-danger-300);
 }
 

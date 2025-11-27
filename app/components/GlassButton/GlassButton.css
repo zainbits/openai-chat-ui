@@ -59,9 +59,16 @@
 
 /* Simple mode - no glass effects for performance */
 .glass-button--simple {
-  background: light-dark(rgba(255, 255, 255, 0.7), rgba(40, 40, 40, 0.9));
-  border: 1px solid light-dark(rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.12));
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: light-dark(
+    var(--simple-button-bg-light),
+    var(--simple-button-bg-dark)
+  );
+  border: 1px solid
+    light-dark(
+      var(--simple-button-border-light),
+      var(--simple-button-border-dark)
+    );
+  box-shadow: 0 1px 3px var(--shadow-soft);
   transition:
     background 0.15s ease,
     transform 0.1s ease,
@@ -69,12 +76,18 @@
 }
 
 .glass-button--simple:hover {
-  background: light-dark(rgba(255, 255, 255, 0.9), rgba(50, 50, 50, 0.95));
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: light-dark(
+    var(--simple-button-bg-hover-light),
+    var(--simple-button-bg-hover-dark)
+  );
+  box-shadow: 0 2px 6px var(--shadow-medium);
 }
 
 .glass-button--simple:active {
-  background: light-dark(rgba(240, 240, 240, 0.9), rgba(35, 35, 35, 0.95));
+  background: light-dark(
+    var(--simple-button-bg-active-light),
+    var(--simple-button-bg-active-dark)
+  );
 }
 
 /* Simple button content wrapper */
