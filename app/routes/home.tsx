@@ -6,7 +6,9 @@ import ModelChips from "../components/ModelChips";
 import ChatArea from "../components/ChatArea";
 import GlassButton from "../components/GlassButton";
 import ErrorBoundary from "../components/ErrorBoundary";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 import { GrMenu } from "react-icons/gr";
+import { CONNECTION_CHECK_INTERVAL_MS } from "../constants";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -39,15 +41,15 @@ function HomeContent() {
     // Initial check
     checkConnection();
 
-    // Periodic check every 2 minutes
-    const interval = setInterval(checkConnection, 120000);
+    // Periodic check
+    const interval = setInterval(checkConnection, CONNECTION_CHECK_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [hydrated, checkConnection]);
 
-  // Don't render until hydrated to prevent flash
+  // Show loading skeleton until hydrated
   if (!hydrated) {
-    return null;
+    return <LoadingSkeleton />;
   }
 
   return (

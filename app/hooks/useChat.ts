@@ -3,13 +3,26 @@
  * Handles sending messages, streaming responses, and title generation
  */
 import { useCallback, useRef, useState } from "react";
+import { notifications } from "@mantine/notifications";
 import {
   useAppStore,
   selectActiveThread,
   selectActiveModel,
 } from "../state/store";
-import { OpenAICompatibleClient } from "../api/client";
 import type { StreamHandle } from "../types";
+
+/**
+ * Extracts a user-friendly error message from various error types
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  return "An unexpected error occurred";
+}
 
 interface UseChatReturn {
   /** Whether a message is currently being sent/streamed */
@@ -158,9 +171,14 @@ export function useChat(): UseChatReturn {
             }
           }
         },
-        onError: () => {
+        onError: (error) => {
           setIsLoading(false);
           streamRef.current = null;
+          notifications.show({
+            title: "Message failed",
+            message: getErrorMessage(error),
+            color: "red",
+          });
         },
       });
     },
@@ -241,9 +259,14 @@ export function useChat(): UseChatReturn {
         setIsRegenerating(false);
         streamRef.current = null;
       },
-      onError: () => {
+      onError: (error) => {
         setIsRegenerating(false);
         streamRef.current = null;
+        notifications.show({
+          title: "Regeneration failed",
+          message: getErrorMessage(error),
+          color: "red",
+        });
       },
     });
   }, [

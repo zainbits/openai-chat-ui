@@ -7,11 +7,11 @@ import {
   Select,
   NumberInput,
   ColorInput,
-  Text,
-  Group,
 } from "@mantine/core";
 import { useAppStore } from "../../state/store";
 import { getModelColor } from "../../theme/colors";
+import { DEFAULT_CHAT_TEMPERATURE } from "../../constants";
+import ConfirmModal from "../ConfirmModal";
 import "./ModelEditorModal.css";
 
 interface ModelEditorModalProps {
@@ -44,7 +44,7 @@ export default function ModelEditorModal({
   const [color, setColor] = useState(existing?.color ?? getModelColor());
   const [system, setSystem] = useState(existing?.system ?? "");
   const [model, setModel] = useState(existing?.model ?? defaultModel);
-  const [temp, setTemp] = useState(existing?.temp ?? 0.7);
+  const [temp, setTemp] = useState(existing?.temp ?? DEFAULT_CHAT_TEMPERATURE);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   // Reset form when modal opens or model changes
@@ -53,7 +53,7 @@ export default function ModelEditorModal({
     setColor(existing?.color ?? getModelColor());
     setSystem(existing?.system ?? "");
     setModel(existing?.model ?? defaultModel);
-    setTemp(existing?.temp ?? 0.7);
+    setTemp(existing?.temp ?? DEFAULT_CHAT_TEMPERATURE);
   }, [existing, defaultModel]);
 
   const options = (availableModels ?? []).map((m) => ({
@@ -91,7 +91,6 @@ export default function ModelEditorModal({
   const handleDelete = useCallback(() => {
     if (!existing) return;
     deleteModel(existing.id);
-    setDeleteModalOpen(false);
     onClose();
   }, [existing, deleteModel, onClose]);
 
@@ -169,27 +168,14 @@ export default function ModelEditorModal({
         </div>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
+      <ConfirmModal
         opened={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDelete}
         title="Delete Model"
-        size="sm"
-        centered
-      >
-        <Text size="sm" mb="lg">
-          Are you sure you want to delete the model "{existing?.name}"? This
-          action cannot be undone.
-        </Text>
-        <Group justify="flex-end" gap="sm">
-          <Button variant="default" onClick={() => setDeleteModalOpen(false)}>
-            Cancel
-          </Button>
-          <Button color="red" onClick={handleDelete}>
-            Delete
-          </Button>
-        </Group>
-      </Modal>
+        message={`Are you sure you want to delete the model "${existing?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+      />
     </>
   );
 }

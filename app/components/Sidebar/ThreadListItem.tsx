@@ -1,50 +1,9 @@
-import React, { useState, useCallback } from "react";
-import { Menu, Button, Modal, TextInput, Text, Group } from "@mantine/core";
+import React, { useState, useCallback, useEffect } from "react";
+import { Menu, Button, Modal, TextInput, Group } from "@mantine/core";
 import { useAppStore } from "../../state/store";
 import { toRelativeTime } from "../../utils/time";
+import ConfirmModal from "../ConfirmModal";
 import type { ChatThread } from "../../types";
-
-// ============================================================================
-// Confirmation Modal
-// ============================================================================
-
-interface ConfirmModalProps {
-  opened: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  message: string;
-}
-
-function ConfirmModal({
-  opened,
-  onClose,
-  onConfirm,
-  title,
-  message,
-}: ConfirmModalProps) {
-  return (
-    <Modal opened={opened} onClose={onClose} title={title} size="sm" centered>
-      <Text size="sm" mb="lg">
-        {message}
-      </Text>
-      <Group justify="flex-end" gap="sm">
-        <Button variant="default" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          color="red"
-          onClick={() => {
-            onConfirm();
-            onClose();
-          }}
-        >
-          Delete
-        </Button>
-      </Group>
-    </Modal>
-  );
-}
 
 // ============================================================================
 // Rename Modal
@@ -57,7 +16,7 @@ interface RenameModalProps {
   initialValue: string;
 }
 
-function RenameModal({
+const RenameModal = React.memo(function RenameModal({
   opened,
   onClose,
   onSave,
@@ -65,7 +24,7 @@ function RenameModal({
 }: RenameModalProps) {
   const [value, setValue] = useState(initialValue);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (opened) {
       setValue(initialValue);
     }
@@ -104,7 +63,7 @@ function RenameModal({
       </Group>
     </Modal>
   );
-}
+});
 
 // ============================================================================
 // Menu Button
@@ -117,7 +76,12 @@ interface MenuButtonProps {
   pinned: boolean;
 }
 
-function MenuButton({ onPin, onRename, onDelete, pinned }: MenuButtonProps) {
+const MenuButton = React.memo(function MenuButton({
+  onPin,
+  onRename,
+  onDelete,
+  pinned,
+}: MenuButtonProps) {
   return (
     <Menu shadow="md" width={144} position="bottom-end" withArrow>
       <Menu.Target>
@@ -157,7 +121,7 @@ function MenuButton({ onPin, onRename, onDelete, pinned }: MenuButtonProps) {
       </Menu.Dropdown>
     </Menu>
   );
-}
+});
 
 // ============================================================================
 // Thread List Item
@@ -167,7 +131,7 @@ interface ThreadListItemProps {
   thread: ChatThread;
 }
 
-export default function ThreadListItem({ thread }: ThreadListItemProps) {
+function ThreadListItem({ thread }: ThreadListItemProps) {
   const models = useAppStore((s) => s.models);
   const activeThreadId = useAppStore((s) => s.ui.activeThread);
   const setActiveThread = useAppStore((s) => s.setActiveThread);
@@ -245,7 +209,10 @@ export default function ThreadListItem({ thread }: ThreadListItemProps) {
         onConfirm={handleDelete}
         title="Delete Thread"
         message="Are you sure you want to delete this thread? This action cannot be undone."
+        confirmLabel="Delete"
       />
     </>
   );
 }
+
+export default React.memo(ThreadListItem);
