@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { useAppStore } from "../../state/store";
+import { useAppStore, selectActiveThread } from "../../state/store";
 import ModelEditorModal from "../ModelEditorModal";
 import GlassButton from "../GlassButton";
 import "./ModelChips.css";
@@ -10,6 +10,8 @@ import "./ModelChips.css";
 export default function ModelChips() {
   const models = useAppStore((s) => s.models);
   const createThread = useAppStore((s) => s.createThread);
+  const updateThreadModel = useAppStore((s) => s.updateThreadModel);
+  const activeThread = useAppStore(selectActiveThread);
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingModelId, setEditingModelId] = useState<string | undefined>(
@@ -17,13 +19,18 @@ export default function ModelChips() {
   );
 
   /**
-   * Creates a new chat thread for the selected model
+   * Selects a model - reuses empty active thread or creates a new one
    */
   const selectModel = useCallback(
     (modelId: string) => {
-      createThread(modelId);
+      // If there's an active thread with no messages, just switch its model
+      if (activeThread && activeThread.messages.length === 0) {
+        updateThreadModel(activeThread.id, modelId);
+      } else {
+        createThread(modelId);
+      }
     },
-    [createThread],
+    [activeThread, createThread, updateThreadModel],
   );
 
   /**

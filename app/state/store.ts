@@ -18,7 +18,7 @@ import type {
   ChatsById,
 } from "../types";
 import { OpenAICompatibleClient } from "../api/client";
-import { loadAppData, saveAppData } from "../utils/storage";
+import { loadAppData, saveAppData, wipeAll } from "../utils/storage";
 import { getModelColor } from "../theme/colors";
 
 // ============================================================================
@@ -103,6 +103,8 @@ interface AppStoreActions {
   renameThread: (threadId: string, newTitle: string) => void;
   togglePinThread: (threadId: string) => void;
   updateThreadTitle: (threadId: string, title: string) => void;
+  updateThreadModel: (threadId: string, modelId: string) => void;
+  nukeAll: () => void;
 
   // Message Actions
   addUserMessage: (threadId: string, content: string) => void;
@@ -284,6 +286,37 @@ export const useAppStore = create<AppStore>()(
           },
         },
       })),
+
+    updateThreadModel: (threadId, modelId) =>
+      set((state) => {
+        const thread = state.chats[threadId];
+        if (!thread) return state;
+
+        return {
+          chats: {
+            ...state.chats,
+            [threadId]: {
+              ...thread,
+              modelId,
+              updatedAt: Date.now(),
+            },
+          },
+        };
+      }),
+
+    nukeAll: () => {
+      // Clear localStorage completely
+      wipeAll();
+      // Reset state to defaults
+      set({
+        models: STARTER_MODELS,
+        chats: {},
+        ui: { ...DEFAULT_UI, sidebarOpen: false },
+        settings: DEFAULT_SETTINGS,
+        availableModels: [],
+        connectionStatus: "unknown",
+      });
+    },
 
     // ========================================================================
     // Message Actions

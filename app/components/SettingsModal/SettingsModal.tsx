@@ -7,10 +7,11 @@ import {
   Select,
   Text,
   Group,
+  Tabs,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useAppStore } from "../../state/store";
-import { exportJson, importJson, wipeAll } from "../../utils/storage";
+import { exportJson, importJson } from "../../utils/storage";
 import { API_PROVIDER_PRESETS, CUSTOM_PROVIDER_ID } from "../../constants";
 import "./SettingsModal.css";
 
@@ -63,7 +64,10 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   );
   const [defaultModel, setDefaultModel] = useState(settings.defaultModel);
   const [verifying, setVerifying] = useState(false);
-  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [nukeModalOpen, setNukeModalOpen] = useState(false);
+  const [nukeConfirmText, setNukeConfirmText] = useState("");
+
+  const nukeAll = useAppStore((s) => s.nukeAll);
 
   // Compute the actual API base URL based on provider selection
   const apiBaseUrl = useMemo(() => {
@@ -184,11 +188,24 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   }, []);
 
   /**
-   * Resets all app data
+   * Nukes all data (resets everything in state)
    */
-  const handleReset = useCallback(() => {
-    wipeAll();
-    window.location.reload();
+  const handleNuke = useCallback(() => {
+    nukeAll();
+    setNukeModalOpen(false);
+    setNukeConfirmText("");
+    notifications.show({
+      message: "All data has been wiped",
+      color: "red",
+    });
+  }, [nukeAll]);
+
+  /**
+   * Closes the nuke modal and resets confirmation text
+   */
+  const closeNukeModal = useCallback(() => {
+    setNukeModalOpen(false);
+    setNukeConfirmText("");
   }, []);
 
   return (
@@ -200,121 +217,164 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
         size="lg"
         aria-labelledby="settings-modal-title"
       >
-        <div className="modal-content">
-          <Select
-            label="API Provider"
-            data={providerOptions}
-            value={selectedProvider}
-            onChange={handleProviderChange}
-            aria-label="Select API provider"
-          />
-          {selectedProvider === CUSTOM_PROVIDER_ID && (
-            <TextInput
-              label="Custom API Base URL"
-              value={customBaseUrl}
-              onChange={(e) => setCustomBaseUrl(e.currentTarget.value)}
-              placeholder="https://api.example.com/v1"
-              aria-describedby="custom-api-url-description"
-            />
-          )}
-          <TextInput
-            label="API Key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.currentTarget.value)}
-            type="password"
-            required
-            withAsterisk
-            error={apiKey.length === 0 ? "API key is required" : undefined}
-            aria-describedby="api-key-description"
-          />
-          <Switch
-            label="Streaming enabled"
-            checked={streamingEnabled}
-            onChange={(e) => setStreamingEnabled(e.currentTarget.checked)}
-            aria-describedby="streaming-description"
-          />
-          <Select
-            label="Default remote model (used for titles & new models)"
-            placeholder={
-              (availableModels?.length ?? 0) > 0
-                ? "Select a model"
-                : "Verify API to load models"
-            }
-            searchable
-            disabled={(availableModels?.length ?? 0) === 0}
-            data={(availableModels ?? []).map((m) => ({
-              value: m.id,
-              label: m.id,
-            }))}
-            value={defaultModel}
-            onChange={(val) => setDefaultModel(val || defaultModel)}
-            aria-label="Select default AI model"
-          />
-          <div className="modal-actions">
-            <div className="modal-actions-group">
-              <Button
-                variant="light"
-                onClick={exportData}
-                aria-label="Export settings as JSON file"
-              >
-                Export JSON
-              </Button>
-              <Button
-                variant="light"
-                onClick={importData}
-                aria-label="Import settings from JSON file"
-              >
-                Import JSON
-              </Button>
-              <Button
-                color="red"
-                variant="light"
-                onClick={() => setResetModalOpen(true)}
-                aria-label="Reset all data"
-              >
-                Reset
-              </Button>
+        <Tabs defaultValue="models" classNames={{ root: "settings-tabs" }}>
+          <Tabs.List className="settings-tabs-list">
+            <Tabs.Tab value="models">Models</Tabs.Tab>
+            <Tabs.Tab value="data">Data</Tabs.Tab>
+          </Tabs.List>
+
+          <Tabs.Panel value="models" pt="md">
+            <div className="modal-content">
+              <Select
+                label="API Provider"
+                data={providerOptions}
+                value={selectedProvider}
+                onChange={handleProviderChange}
+                aria-label="Select API provider"
+              />
+              {selectedProvider === CUSTOM_PROVIDER_ID && (
+                <TextInput
+                  label="Custom API Base URL"
+                  value={customBaseUrl}
+                  onChange={(e) => setCustomBaseUrl(e.currentTarget.value)}
+                  placeholder="https://api.example.com/v1"
+                  aria-describedby="custom-api-url-description"
+                />
+              )}
+              <TextInput
+                label="API Key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.currentTarget.value)}
+                type="password"
+                required
+                withAsterisk
+                error={apiKey.length === 0 ? "API key is required" : undefined}
+                aria-describedby="api-key-description"
+              />
+              <Switch
+                label="Streaming enabled"
+                checked={streamingEnabled}
+                onChange={(e) => setStreamingEnabled(e.currentTarget.checked)}
+                aria-describedby="streaming-description"
+              />
+              <Select
+                label="Default remote model (used for titles & new models)"
+                placeholder={
+                  (availableModels?.length ?? 0) > 0
+                    ? "Select a model"
+                    : "Verify API to load models"
+                }
+                searchable
+                disabled={(availableModels?.length ?? 0) === 0}
+                data={(availableModels ?? []).map((m) => ({
+                  value: m.id,
+                  label: m.id,
+                }))}
+                value={defaultModel}
+                onChange={(val) => setDefaultModel(val || defaultModel)}
+                aria-label="Select default AI model"
+              />
+              <div className="modal-actions">
+                <div className="modal-actions-group" />
+                <div className="modal-actions-group">
+                  <Button
+                    variant="default"
+                    onClick={verify}
+                    loading={verifying}
+                    disabled={apiKey.length === 0}
+                    aria-label="Verify API connection"
+                  >
+                    Verify API
+                  </Button>
+                  <Button
+                    onClick={save}
+                    disabled={apiKey.length === 0}
+                    aria-label="Save settings"
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div className="modal-actions-group">
-              <Button
-                variant="default"
-                onClick={verify}
-                loading={verifying}
-                disabled={apiKey.length === 0}
-                aria-label="Verify API connection"
-              >
-                Verify API
-              </Button>
-              <Button
-                onClick={save}
-                disabled={apiKey.length === 0}
-                aria-label="Save settings"
-              >
-                Save
-              </Button>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="data" pt="md">
+            <div className="modal-content">
+              <div className="data-section">
+                <Text size="sm" fw={500} mb="xs">
+                  Export & Import
+                </Text>
+                <Text size="xs" c="dimmed" mb="sm">
+                  Backup your data or restore from a previous export.
+                </Text>
+                <div className="modal-actions-group">
+                  <Button
+                    variant="light"
+                    onClick={exportData}
+                    aria-label="Export settings as JSON file"
+                  >
+                    Export JSON
+                  </Button>
+                  <Button
+                    variant="light"
+                    onClick={importData}
+                    aria-label="Import settings from JSON file"
+                  >
+                    Import JSON
+                  </Button>
+                </div>
+              </div>
+
+              <div className="data-section data-section-danger">
+                <Text size="sm" fw={500} c="red" mb="xs">
+                  Danger Zone
+                </Text>
+                <Text size="xs" c="dimmed" mb="sm">
+                  Permanently delete all data including chats, models, and settings.
+                </Text>
+                <Button
+                  color="red"
+                  variant="light"
+                  onClick={() => setNukeModalOpen(true)}
+                  aria-label="Nuke all data"
+                >
+                  Nuke All Data
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
+          </Tabs.Panel>
+        </Tabs>
       </Modal>
 
-      {/* Reset Confirmation Modal */}
+      {/* Nuke Confirmation Modal */}
       <Modal
-        opened={resetModalOpen}
-        onClose={() => setResetModalOpen(false)}
-        title="Reset All Data"
+        opened={nukeModalOpen}
+        onClose={closeNukeModal}
+        title="☢️ Nuke All Data"
         size="sm"
         centered
       >
-        <Text size="sm" mb="lg">
-          Are you sure you want to erase all data? This will delete all your
-          chats, models, and settings. This action cannot be undone.
+        <Text size="sm" mb="md">
+          This will permanently delete ALL your data including chats, messages,
+          custom models, and settings. This cannot be undone!
         </Text>
+        <TextInput
+          label="Type CONFIRM to proceed"
+          placeholder="CONFIRM"
+          value={nukeConfirmText}
+          onChange={(e) => setNukeConfirmText(e.currentTarget.value)}
+          mb="lg"
+        />
         <Group justify="flex-end" gap="sm">
-          <Button variant="default" onClick={() => setResetModalOpen(false)}>
+          <Button variant="default" onClick={closeNukeModal}>
             Cancel
           </Button>
-          <Button color="red" onClick={handleReset}>
-            Reset Everything
+          <Button
+            color="red"
+            onClick={handleNuke}
+            disabled={nukeConfirmText !== "CONFIRM"}
+          >
+            Nuke Everything
           </Button>
         </Group>
       </Modal>
