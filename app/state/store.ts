@@ -191,18 +191,20 @@ export const useAppStore = create<AppStore>()(
 
     // API Client getter (memoized by settings)
     getClient: () => {
-      const { apiBaseUrl, apiKey, apiProvider } = get().settings;
-      const key = `${apiProvider ?? ""}:${apiBaseUrl}:${apiKey ?? ""}`;
+      const { apiBaseUrl, apiKey, apiProvider, streamingEnabled } = get().settings;
+      const key = `${apiProvider ?? ""}:${apiBaseUrl}:${apiKey ?? ""}:${streamingEnabled}`;
 
       if (cachedClient && cachedClientKey === key) {
         return cachedClient;
       }
 
+      const clientOptions = { apiBaseUrl, apiKey, apiProvider, streamingEnabled };
+
       // Use AnthropicClient for Anthropic provider, OpenAI-compatible for everything else
       if (apiProvider === ANTHROPIC_PROVIDER_ID) {
-        cachedClient = new AnthropicClient({ apiBaseUrl, apiKey, apiProvider });
+        cachedClient = new AnthropicClient(clientOptions);
       } else {
-        cachedClient = new OpenAICompatibleClient({ apiBaseUrl, apiKey, apiProvider });
+        cachedClient = new OpenAICompatibleClient(clientOptions);
       }
       cachedClientKey = key;
       return cachedClient;

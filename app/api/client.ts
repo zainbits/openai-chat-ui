@@ -8,26 +8,34 @@ import type {
   OpenAIChatMessage,
   StreamHandle,
 } from "../types";
+import {
+  DEFAULT_CHAT_TEMPERATURE,
+  ANTHROPIC_DEFAULT_MAX_TOKENS,
+  ANTHROPIC_API_VERSION,
+  MAX_RETRY_ATTEMPTS,
+  RETRY_BASE_DELAY_MS,
+  RETRY_MAX_DELAY_MS,
+  RETRYABLE_STATUS_CODES,
+} from "../constants";
+
+// ============================================================================
+// Types & Interfaces
+// ============================================================================
 
 /** Configuration options for API clients */
-interface ClientOptions {
+export interface ClientOptions {
   /** Base URL of the API (e.g., "http://localhost:3017/v1") */
   apiBaseUrl: string;
   /** Optional API key for authentication */
   apiKey?: string;
   /** API provider ID (for proxy routing) */
   apiProvider?: string;
+  /** Whether streaming is enabled (default: true) */
+  streamingEnabled?: boolean;
 }
 
-/** Common interface for API clients */
-export interface ApiClient {
-  verify(): Promise<boolean>;
-  listModels(): Promise<DiscoveredModel[]>;
-  streamChat(opts: StreamChatOptions): StreamHandle;
-}
-
-/** Options for streaming chat completions */
-interface StreamChatOptions {
+/** Options for chat completions (streaming or non-streaming) */
+export interface ChatOptions {
   /** The model ID to use for completion */
   model: string;
   /** Array of messages in the conversation */
@@ -36,13 +44,217 @@ interface StreamChatOptions {
   temperature?: number;
   /** Optional abort signal for cancellation */
   signal?: AbortSignal;
-  /** Callback invoked for each token received */
+  /** Callback invoked for each token received (streaming only) */
   onToken?: (token: string) => void;
   /** Callback invoked when streaming completes */
   onDone?: () => void;
   /** Callback invoked on error */
   onError?: (err: unknown) => void;
 }
+
+/** Common interface for API clients */
+export interface ApiClient {
+  verify(): Promise<boolean>;
+  listModels(): Promise<DiscoveredModel[]>;
+  chat(opts: ChatOptions): StreamHandle;
+  /** @deprecated Use chat() instead */
+  streamChat(opts: ChatOptions): StreamHandle;
+}
+
+/** Response from non-streaming chat completion */
+interface ChatCompletionResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+}
+
+/** Anthropic non-streaming response */
+interface AnthropicResponse {
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+}
+
+// ============================================================================
+// Retry Utility
+// ============================================================================
+
+/**
+ * Calculates the delay for exponential backoff with jitter
+ * @param attempt - Current attempt number (0-indexed)
+ * @returns Delay in milliseconds
+ */
+function calculateBackoffDelay(attempt: number): number {
+  const exponentialDelay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+  const cappedDelay = Math.min(exponentialDelay, RETRY_MAX_DELAY_MS);
+  // Add jitter (±25%)
+  const jitter = cappedDelay * 0.25 * (Math.random() * 2 - 1);
+  return Math.round(cappedDelay + jitter);
+}
+
+/**
+ * Delays execution for specified milliseconds
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Wraps a fetch call with retry logic for transient failures
+ * @param fetchFn - Function that returns a fetch promise
+ * @param signal - Optional abort signal
+ * @returns The successful response
+ * @throws Error if all retries fail
+ */
+async function fetchWithRetry(
+  fetchFn: () => Promise<Response>,
+  signal?: AbortSignal
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < MAX_RETRY_ATTEMPTS; attempt++) {
+    try {
+      const response = await fetchFn();
+
+      // Check if response status is retryable
+      if (RETRYABLE_STATUS_CODES.includes(response.status)) {
+        // Extract retry-after header if present
+        const retryAfter = response.headers.get("retry-after");
+        const retryDelay = retryAfter
+          ? parseInt(retryAfter, 10) * 1000
+          : calculateBackoffDelay(attempt);
+
+        if (attempt < MAX_RETRY_ATTEMPTS - 1) {
+          console.warn(
+            `Request failed with status ${response.status}, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})`
+          );
+          
+          // Check if aborted before waiting
+          if (signal?.aborted) {
+            throw new DOMException("Aborted", "AbortError");
+          }
+          
+          await delay(retryDelay);
+          continue;
+        }
+      }
+
+      return response;
+    } catch (err) {
+      // Don't retry abort errors
+      if (err instanceof Error && err.name === "AbortError") {
+        throw err;
+      }
+
+      lastError = err instanceof Error ? err : new Error(String(err));
+
+      // Only retry on network errors, not on other errors
+      if (attempt < MAX_RETRY_ATTEMPTS - 1) {
+        const retryDelay = calculateBackoffDelay(attempt);
+        console.warn(
+          `Request failed with error: ${lastError.message}, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})`
+        );
+        
+        if (signal?.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+        
+        await delay(retryDelay);
+      }
+    }
+  }
+
+  throw lastError ?? new Error("Request failed after all retries");
+}
+
+// ============================================================================
+// Base Client
+// ============================================================================
+
+/**
+ * Abstract base class for API clients with shared functionality
+ */
+abstract class BaseApiClient implements ApiClient {
+  protected baseUrl: string;
+  protected apiKey?: string;
+  protected apiProvider?: string;
+  protected streamingEnabled: boolean;
+
+  constructor(options: ClientOptions) {
+    this.baseUrl = options.apiBaseUrl.replace(/\/$/, "");
+    this.apiKey = options.apiKey;
+    this.apiProvider = options.apiProvider;
+    this.streamingEnabled = options.streamingEnabled ?? true;
+  }
+
+  abstract verify(): Promise<boolean>;
+  abstract listModels(): Promise<DiscoveredModel[]>;
+  protected abstract postStreamingChat(
+    opts: ChatOptions,
+    signal: AbortSignal
+  ): Promise<void>;
+  protected abstract postNonStreamingChat(
+    opts: ChatOptions,
+    signal: AbortSignal
+  ): Promise<string>;
+
+  /**
+   * Chat completion with support for both streaming and non-streaming modes
+   */
+  chat(opts: ChatOptions): StreamHandle {
+    const abortController = new AbortController();
+    const signal = opts.signal ?? abortController.signal;
+
+    const execute = async () => {
+      if (this.streamingEnabled) {
+        await this.postStreamingChat(opts, signal);
+      } else {
+        const content = await this.postNonStreamingChat(opts, signal);
+        // Emit all content at once for non-streaming
+        opts.onToken?.(content);
+      }
+    };
+
+    void execute()
+      .then(() => opts.onDone?.())
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          console.error("Chat error:", err);
+          opts.onError?.(err);
+        }
+      });
+
+    return {
+      abortController,
+      cancel: () => abortController.abort(),
+    };
+  }
+
+  /**
+   * @deprecated Use chat() instead
+   */
+  streamChat(opts: ChatOptions): StreamHandle {
+    return this.chat(opts);
+  }
+
+  /**
+   * Checks if we're running in development mode
+   */
+  protected isDev(): boolean {
+    return (
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1")
+    );
+  }
+}
+
+// ============================================================================
+// OpenAI-Compatible Client
+// ============================================================================
 
 /**
  * Client for interacting with OpenAI-compatible chat APIs
@@ -52,13 +264,14 @@ interface StreamChatOptions {
  * const client = new OpenAICompatibleClient({
  *   apiBaseUrl: 'http://localhost:3017/v1',
  *   apiKey: 'sk-...',
+ *   streamingEnabled: true,
  * });
  *
  * // Verify connection
  * const isConnected = await client.verify();
  *
- * // Stream a chat response
- * client.streamChat({
+ * // Chat with streaming
+ * client.chat({
  *   model: 'gpt-4',
  *   messages: [{ role: 'user', content: 'Hello!' }],
  *   onToken: (token) => console.log(token),
@@ -66,21 +279,7 @@ interface StreamChatOptions {
  * });
  * ```
  */
-export class OpenAICompatibleClient {
-  private baseUrl: string;
-  private apiKey?: string;
-  private apiProvider?: string;
-
-  /**
-   * Creates a new API client instance
-   * @param options - Client configuration options
-   */
-  constructor(options: ClientOptions) {
-    this.baseUrl = options.apiBaseUrl.replace(/\/$/, "");
-    this.apiKey = options.apiKey;
-    this.apiProvider = options.apiProvider;
-  }
-
+export class OpenAICompatibleClient extends BaseApiClient {
   /**
    * Verifies the API connection by checking the models endpoint
    * @returns True if the connection is successful, false otherwise
@@ -88,9 +287,9 @@ export class OpenAICompatibleClient {
   async verify(): Promise<boolean> {
     try {
       const url = `${this.baseUrl}/models`;
-      const res = await fetch(url, {
-        headers: this.headers(),
-      });
+      const res = await fetchWithRetry(() =>
+        fetch(url, { headers: this.headers() })
+      );
       return res.ok;
     } catch {
       return false;
@@ -103,9 +302,9 @@ export class OpenAICompatibleClient {
    * @throws Error if the request fails
    */
   async listModels(): Promise<DiscoveredModel[]> {
-    const res = await fetch(`${this.baseUrl}/models`, {
-      headers: this.headers(),
-    });
+    const res = await fetchWithRetry(() =>
+      fetch(`${this.baseUrl}/models`, { headers: this.headers() })
+    );
 
     if (!res.ok) {
       throw new Error(`Failed to list models: ${res.status}`);
@@ -117,119 +316,130 @@ export class OpenAICompatibleClient {
   }
 
   /**
-   * Streams a chat completion response
-   * @param opts - Streaming options including model, messages, and callbacks
-   * @returns Handle for canceling the stream
+   * Posts a streaming chat completion request
    */
-  streamChat(opts: StreamChatOptions): StreamHandle {
-    const abortController = new AbortController();
-    const signal = opts.signal ?? abortController.signal;
-
-    void this.postChat(opts, signal)
-      .then(() => opts.onDone?.())
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          console.error("streamChat error:", err);
-          opts.onError?.(err);
-        }
-      });
-
-    return {
-      abortController,
-      cancel: () => abortController.abort(),
-    };
-  }
-
-  /**
-   * Internal method for posting chat completion request
-   * Uses Vite dev proxy to avoid CORS issues in development
-   */
-  private async postChat(
-    opts: Pick<
-      StreamChatOptions,
-      "model" | "messages" | "temperature" | "onToken"
-    >,
-    signal: AbortSignal,
+  protected async postStreamingChat(
+    opts: ChatOptions,
+    signal: AbortSignal
   ): Promise<void> {
-    const targetUrl = `${this.baseUrl}/chat/completions`;
-    
-    // Use Vite proxy in development to avoid CORS
-    const isDev = typeof window !== "undefined" && 
-      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-    
-    let fetchUrl: string;
-    if (isDev) {
-      // Replace the host with the proxy path for OpenAI-compatible APIs
-      try {
-        const url = new URL(targetUrl);
-        // Check if it's OpenAI or another provider
-        if (url.host.includes("openai.com")) {
-          fetchUrl = `/openai-proxy${url.pathname}`;
-        } else {
-          // For other providers (Groq, Cerebras, etc.), make direct request
-          // They typically have CORS enabled, or use the full URL
-          fetchUrl = targetUrl;
-        }
-      } catch {
-        fetchUrl = targetUrl;
-      }
-    } else {
-      fetchUrl = targetUrl;
-    }
-    
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-    };
-    
-    if (this.apiKey) {
-      headers["Authorization"] = `Bearer ${this.apiKey}`;
-    }
+    const fetchUrl = this.buildFetchUrl();
 
-    const res = await fetch(fetchUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: opts.model,
-        messages: opts.messages,
-        temperature: opts.temperature ?? 0.7,
-        stream: true,
-      }),
-      signal,
-    });
+    const res = await fetchWithRetry(
+      () =>
+        fetch(fetchUrl, {
+          method: "POST",
+          headers: this.headers(),
+          body: JSON.stringify({
+            model: opts.model,
+            messages: opts.messages,
+            temperature: opts.temperature ?? DEFAULT_CHAT_TEMPERATURE,
+            stream: true,
+          }),
+          signal,
+        }),
+      signal
+    );
 
     if (!res.ok || !res.body) {
       const errorText = await res.text().catch(() => "Unknown error");
       throw new Error(`Chat request failed: ${res.status} - ${errorText}`);
     }
 
-    const reader = res.body.getReader();
+    await this.parseSSEStream(res.body, opts.onToken);
+  }
+
+  /**
+   * Posts a non-streaming chat completion request
+   */
+  protected async postNonStreamingChat(
+    opts: ChatOptions,
+    signal: AbortSignal
+  ): Promise<string> {
+    const fetchUrl = this.buildFetchUrl();
+
+    const res = await fetchWithRetry(
+      () =>
+        fetch(fetchUrl, {
+          method: "POST",
+          headers: this.headers(),
+          body: JSON.stringify({
+            model: opts.model,
+            messages: opts.messages,
+            temperature: opts.temperature ?? DEFAULT_CHAT_TEMPERATURE,
+            stream: false,
+          }),
+          signal,
+        }),
+      signal
+    );
+
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "Unknown error");
+      throw new Error(`Chat request failed: ${res.status} - ${errorText}`);
+    }
+
+    const data = (await res.json()) as ChatCompletionResponse;
+    return data.choices?.[0]?.message?.content ?? "";
+  }
+
+  /**
+   * Builds the fetch URL, handling dev proxy if needed
+   */
+  private buildFetchUrl(): string {
+    const targetUrl = `${this.baseUrl}/chat/completions`;
+
+    if (this.isDev()) {
+      try {
+        const url = new URL(targetUrl);
+        if (url.host.includes("openai.com")) {
+          return `/openai-proxy${url.pathname}`;
+        }
+      } catch {
+        // Fall through to return targetUrl
+      }
+    }
+
+    return targetUrl;
+  }
+
+  /**
+   * Parses Server-Sent Events stream for OpenAI format
+   */
+  private async parseSSEStream(
+    body: ReadableStream<Uint8Array>,
+    onToken?: (token: string) => void
+  ): Promise<void> {
+    const reader = body.getReader();
     const decoder = new TextDecoder();
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-      const chunk = decoder.decode(value, { stream: true });
-      // Parse SSE lines (format: "data: {...}")
-      const lines = chunk.split(/\n/).filter(Boolean);
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split(/\n/).filter(Boolean);
 
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith("data:")) continue;
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue;
 
-        const payload = trimmed.slice(5).trim();
-        if (payload === "[DONE]") return;
+          const payload = trimmed.slice(5).trim();
+          if (payload === "[DONE]") return;
 
-        try {
-          const data = JSON.parse(payload);
-          const delta = data?.choices?.[0]?.delta?.content ?? "";
-          if (delta && opts.onToken) {
-            opts.onToken(delta);
+          try {
+            const data = JSON.parse(payload);
+            const delta = data?.choices?.[0]?.delta?.content ?? "";
+            if (delta && onToken) {
+              onToken(delta);
+            }
+          } catch {
+            // Non-JSON lines in some implementations; ignore
           }
-        } catch {
-          // Non-JSON lines in some implementations; ignore
         }
       }
+    } finally {
+      reader.releaseLock();
     }
   }
 
@@ -237,7 +447,9 @@ export class OpenAICompatibleClient {
    * Builds request headers including authorization if API key is set
    */
   private headers(): HeadersInit {
-    const headers: HeadersInit = {};
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
     if (this.apiKey) {
       headers["Authorization"] = `Bearer ${this.apiKey}`;
     }
@@ -255,9 +467,6 @@ interface AnthropicMessage {
   content: string;
 }
 
-/** Anthropic API version */
-const ANTHROPIC_VERSION = "2023-06-01";
-
 /**
  * Client for interacting with Anthropic's Messages API
  *
@@ -266,9 +475,10 @@ const ANTHROPIC_VERSION = "2023-06-01";
  * const client = new AnthropicClient({
  *   apiBaseUrl: 'https://api.anthropic.com/v1',
  *   apiKey: 'sk-ant-...',
+ *   streamingEnabled: true,
  * });
  *
- * client.streamChat({
+ * client.chat({
  *   model: 'claude-3-5-sonnet-20241022',
  *   messages: [{ role: 'user', content: 'Hello!' }],
  *   onToken: (token) => console.log(token),
@@ -276,24 +486,13 @@ const ANTHROPIC_VERSION = "2023-06-01";
  * });
  * ```
  */
-export class AnthropicClient implements ApiClient {
-  private baseUrl: string;
-  private apiKey?: string;
-  private apiProvider: string;
-
-  constructor(options: ClientOptions) {
-    this.baseUrl = options.apiBaseUrl.replace(/\/$/, "");
-    this.apiKey = options.apiKey;
-    this.apiProvider = options.apiProvider ?? "anthropic";
-  }
-
+export class AnthropicClient extends BaseApiClient {
   /**
    * Verifies the API connection by attempting a minimal request
    * Note: Anthropic doesn't have a /models endpoint, so we verify by checking auth
    */
   async verify(): Promise<boolean> {
     try {
-      // Try to list models (will fail gracefully if not available)
       const models = await this.listModels();
       return models.length > 0;
     } catch {
@@ -306,83 +505,29 @@ export class AnthropicClient implements ApiClient {
    * Note: Anthropic doesn't have a models endpoint, so we return known models
    */
   async listModels(): Promise<DiscoveredModel[]> {
-    // Anthropic doesn't have a public models endpoint
-    // Return known Claude models
     return [
-      { id: "claude-sonnet-4-5-20250929", object: "model", owned_by: "anthropic" },
+      {
+        id: "claude-sonnet-4-5-20250929",
+        object: "model",
+        owned_by: "anthropic",
+      },
     ];
   }
 
   /**
-   * Streams a chat completion response using Anthropic's Messages API
+   * Posts a streaming chat completion request to Anthropic
    */
-  streamChat(opts: StreamChatOptions): StreamHandle {
-    const abortController = new AbortController();
-    const signal = opts.signal ?? abortController.signal;
-
-    void this.postChat(opts, signal)
-      .then(() => opts.onDone?.())
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          console.error("Anthropic streamChat error:", err);
-          opts.onError?.(err);
-        }
-      });
-
-    return {
-      abortController,
-      cancel: () => abortController.abort(),
-    };
-  }
-
-  /**
-   * Internal method for posting chat completion request to Anthropic
-   * Uses Vite dev proxy to avoid CORS issues in development
-   */
-  private async postChat(
-    opts: Pick<
-      StreamChatOptions,
-      "model" | "messages" | "temperature" | "onToken"
-    >,
-    signal: AbortSignal,
+  protected async postStreamingChat(
+    opts: ChatOptions,
+    signal: AbortSignal
   ): Promise<void> {
-    // Convert OpenAI message format to Anthropic format
     const { systemPrompt, messages } = this.convertMessages(opts.messages);
-    
-    // Build the request URL
-    // In dev mode, use proxy to avoid CORS
-    const isDev = typeof window !== "undefined" && 
-      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-    
-    let fetchUrl: string;
-    if (isDev) {
-      // Replace the host with the proxy path
-      // e.g., https://anthropic.prod.ai-gateway.quantumblack.com/xxx/v1/messages
-      // becomes /anthropic-proxy/xxx/v1/messages
-      try {
-        const url = new URL(`${this.baseUrl}/messages`);
-        fetchUrl = `/anthropic-proxy${url.pathname}`;
-      } catch {
-        fetchUrl = `${this.baseUrl}/messages`;
-      }
-    } else {
-      fetchUrl = `${this.baseUrl}/messages`;
-    }
-    
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      "anthropic-version": ANTHROPIC_VERSION,
-      "anthropic-dangerous-direct-browser-access": "true",
-    };
-    
-    if (this.apiKey) {
-      headers["x-api-key"] = this.apiKey;
-    }
+    const fetchUrl = this.buildFetchUrl();
 
     const body: Record<string, unknown> = {
       model: opts.model,
       messages,
-      max_tokens: 8192,
+      max_tokens: ANTHROPIC_DEFAULT_MAX_TOKENS,
       stream: true,
     };
 
@@ -394,52 +539,130 @@ export class AnthropicClient implements ApiClient {
       body.temperature = opts.temperature;
     }
 
-    const res = await fetch(fetchUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      signal,
-    });
+    const res = await fetchWithRetry(
+      () =>
+        fetch(fetchUrl, {
+          method: "POST",
+          headers: this.headers(),
+          body: JSON.stringify(body),
+          signal,
+        }),
+      signal
+    );
 
     if (!res.ok || !res.body) {
       const errorText = await res.text().catch(() => "Unknown error");
       throw new Error(`Anthropic request failed: ${res.status} - ${errorText}`);
     }
 
-    const reader = res.body.getReader();
+    await this.parseAnthropicStream(res.body, opts.onToken);
+  }
+
+  /**
+   * Posts a non-streaming chat completion request to Anthropic
+   */
+  protected async postNonStreamingChat(
+    opts: ChatOptions,
+    signal: AbortSignal
+  ): Promise<string> {
+    const { systemPrompt, messages } = this.convertMessages(opts.messages);
+    const fetchUrl = this.buildFetchUrl();
+
+    const body: Record<string, unknown> = {
+      model: opts.model,
+      messages,
+      max_tokens: ANTHROPIC_DEFAULT_MAX_TOKENS,
+      stream: false,
+    };
+
+    if (systemPrompt) {
+      body.system = systemPrompt;
+    }
+
+    if (opts.temperature !== undefined) {
+      body.temperature = opts.temperature;
+    }
+
+    const res = await fetchWithRetry(
+      () =>
+        fetch(fetchUrl, {
+          method: "POST",
+          headers: this.headers(),
+          body: JSON.stringify(body),
+          signal,
+        }),
+      signal
+    );
+
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "Unknown error");
+      throw new Error(`Anthropic request failed: ${res.status} - ${errorText}`);
+    }
+
+    const data = (await res.json()) as AnthropicResponse;
+    return (
+      data.content?.find((block) => block.type === "text")?.text ?? ""
+    );
+  }
+
+  /**
+   * Builds the fetch URL, handling dev proxy if needed
+   */
+  private buildFetchUrl(): string {
+    if (this.isDev()) {
+      try {
+        const url = new URL(`${this.baseUrl}/messages`);
+        return `/anthropic-proxy${url.pathname}`;
+      } catch {
+        // Fall through
+      }
+    }
+    return `${this.baseUrl}/messages`;
+  }
+
+  /**
+   * Parses Server-Sent Events stream for Anthropic format
+   */
+  private async parseAnthropicStream(
+    body: ReadableStream<Uint8Array>,
+    onToken?: (token: string) => void
+  ): Promise<void> {
+    const reader = body.getReader();
     const decoder = new TextDecoder();
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-      const chunk = decoder.decode(value, { stream: true });
-      // Parse SSE lines (format: "event: ...\ndata: {...}")
-      const lines = chunk.split(/\n/).filter(Boolean);
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split(/\n/).filter(Boolean);
 
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith("data:")) continue;
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue;
 
-        const payload = trimmed.slice(5).trim();
-        if (payload === "[DONE]") return;
+          const payload = trimmed.slice(5).trim();
+          if (payload === "[DONE]") return;
 
-        try {
-          const data = JSON.parse(payload);
+          try {
+            const data = JSON.parse(payload);
 
-          // Handle different Anthropic event types
-          if (data.type === "content_block_delta") {
-            const delta = data.delta?.text ?? "";
-            if (delta && opts.onToken) {
-              opts.onToken(delta);
+            if (data.type === "content_block_delta") {
+              const delta = data.delta?.text ?? "";
+              if (delta && onToken) {
+                onToken(delta);
+              }
+            } else if (data.type === "message_stop") {
+              return;
             }
-          } else if (data.type === "message_stop") {
-            return;
+          } catch {
+            // Non-JSON lines; ignore
           }
-        } catch {
-          // Non-JSON lines; ignore
         }
       }
+    } finally {
+      reader.releaseLock();
     }
   }
 
@@ -456,15 +679,15 @@ export class AnthropicClient implements ApiClient {
 
     for (const msg of messages) {
       if (msg.role === "system") {
-        // Combine multiple system messages
-        systemPrompt = systemPrompt ? `${systemPrompt}\n\n${msg.content}` : msg.content;
+        systemPrompt = systemPrompt
+          ? `${systemPrompt}\n\n${msg.content}`
+          : msg.content;
       } else if (msg.role === "user" || msg.role === "assistant") {
         anthropicMessages.push({
           role: msg.role,
           content: msg.content,
         });
       }
-      // Skip "tool" role as we don't support tools yet
     }
 
     return { systemPrompt, messages: anthropicMessages };
@@ -476,7 +699,8 @@ export class AnthropicClient implements ApiClient {
   private headers(): HeadersInit {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      "anthropic-version": ANTHROPIC_VERSION,
+      "anthropic-version": ANTHROPIC_API_VERSION,
+      "anthropic-dangerous-direct-browser-access": "true",
     };
     if (this.apiKey) {
       headers["x-api-key"] = this.apiKey;

@@ -10,6 +10,11 @@ import {
   selectActiveModel,
 } from "../state/store";
 import type { StreamHandle } from "../types";
+import {
+  TITLE_GENERATION_TEMPERATURE,
+  TITLE_PROMPT_MAX_CHARS,
+  MAX_TITLE_WORDS,
+} from "../constants";
 
 /**
  * Extracts a user-friendly error message from various error types
@@ -67,13 +72,14 @@ export function useChat(): UseChatReturn {
     async (threadId: string, firstUserContent: string, modelId: string) => {
       try {
         const client = getClient();
-        const prompt = `You are a helpful assistant. Create a concise, 3-6 word title for this conversation. No quotes, no punctuation at the end. Respond with title only. Conversation starts with: "${firstUserContent.slice(0, 500)}"`;
+        const truncatedContent = firstUserContent.slice(0, TITLE_PROMPT_MAX_CHARS);
+        const prompt = `You are a helpful assistant. Create a concise, 3-${MAX_TITLE_WORDS} word title for this conversation. No quotes, no punctuation at the end. Respond with title only. Conversation starts with: "${truncatedContent}"`;
 
         let title = "";
         await new Promise<void>((resolve, reject) => {
-          client.streamChat({
+          client.chat({
             model: modelId,
-            temperature: 0.2,
+            temperature: TITLE_GENERATION_TEMPERATURE,
             messages: [
               { role: "system", content: "You create short chat titles." },
               { role: "user", content: prompt },
@@ -95,7 +101,9 @@ export function useChat(): UseChatReturn {
           .trim();
 
         const words = title.split(" ").filter(Boolean);
-        if (words.length > 6) title = words.slice(0, 6).join(" ");
+        if (words.length > MAX_TITLE_WORDS) {
+          title = words.slice(0, MAX_TITLE_WORDS).join(" ");
+        }
 
         if (title) {
           updateThreadTitle(threadId, title);
@@ -142,8 +150,8 @@ export function useChat(): UseChatReturn {
       const messages = [...system, ...history];
       const client = getClient();
 
-      // Stream the response
-      streamRef.current = client.streamChat({
+      // Send the message (streaming or non-streaming based on settings)
+      streamRef.current = client.chat({
         model: model.model,
         messages,
         temperature: model.temp,
@@ -251,8 +259,8 @@ export function useChat(): UseChatReturn {
     const messages = [...system, ...history];
     const client = getClient();
 
-    // Stream the response
-    streamRef.current = client.streamChat({
+    // Send the message (streaming or non-streaming based on settings)
+    streamRef.current = client.chat({
       model: model.model,
       messages,
       temperature: model.temp,

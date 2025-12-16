@@ -39,6 +39,28 @@ export const TITLE_GENERATION_TEMPERATURE = 0.2;
 /** Default temperature for chat completions */
 export const DEFAULT_CHAT_TEMPERATURE = 0.7;
 
+/** Default max tokens for Anthropic API */
+export const ANTHROPIC_DEFAULT_MAX_TOKENS = 8192;
+
+/** Anthropic API version */
+export const ANTHROPIC_API_VERSION = "2023-06-01";
+
+// ============================================================================
+// Retry Configuration
+// ============================================================================
+
+/** Maximum number of retry attempts for API calls */
+export const MAX_RETRY_ATTEMPTS = 3;
+
+/** Base delay for exponential backoff in milliseconds */
+export const RETRY_BASE_DELAY_MS = 1000;
+
+/** Maximum delay for exponential backoff in milliseconds */
+export const RETRY_MAX_DELAY_MS = 10000;
+
+/** HTTP status codes that should trigger a retry */
+export const RETRYABLE_STATUS_CODES = [429, 500, 502, 503, 504];
+
 // ============================================================================
 // API Provider Configuration
 // ============================================================================

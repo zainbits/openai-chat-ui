@@ -13,6 +13,7 @@ import { notifications } from "@mantine/notifications";
 import { useAppStore } from "../../state/store";
 import { exportJson, importJson } from "../../utils/storage";
 import { API_PROVIDER_PRESETS, CUSTOM_PROVIDER_ID } from "../../constants";
+import type { AppData } from "../../types";
 import "./SettingsModal.css";
 
 interface SettingsModalProps {
@@ -31,7 +32,7 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   const getClient = useAppStore((s) => s.getClient);
 
   // Get full state for export
-  const getFullState = () => {
+  const getFullState = (): AppData => {
     const state = useAppStore.getState();
     return {
       models: state.models,
@@ -205,7 +206,7 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
    * Exports app data as JSON
    */
   const exportData = useCallback(() => {
-    const json = exportJson(getFullState() as any);
+    const json = exportJson(getFullState());
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
