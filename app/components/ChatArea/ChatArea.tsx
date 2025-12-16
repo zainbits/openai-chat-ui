@@ -8,6 +8,7 @@ import React, {
 import { useAppStore, selectActiveThread } from "../../state/store";
 import { useChat } from "../../hooks";
 import { renderMarkdown } from "../../utils/markdown";
+import { sanitizeText } from "../../utils/textSanitizer";
 import { notifications } from "@mantine/notifications";
 import Composer from "../Composer";
 import "./ChatArea.css";
@@ -305,6 +306,72 @@ export default function ChatArea() {
     el.scrollTop = el.scrollHeight;
   }, [messages, isStreaming, isStreamingActive]);
 
+  // Handle copy code button clicks (both standard and sanitized)
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+
+    const handleCopyClick = async (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const copyBtn = target.closest(".copy-code-btn");
+      const sanitizeBtn = target.closest(".sanitize-copy-btn");
+
+      if (!copyBtn && !sanitizeBtn) return;
+
+      const btn = (copyBtn || sanitizeBtn) as HTMLElement;
+      const isSanitize = !!sanitizeBtn;
+
+      const wrapper = btn.closest(".code-block-wrapper");
+      const code = wrapper?.querySelector("code");
+      if (!code) return;
+
+      let text = code.textContent || "";
+      
+      if (isSanitize) {
+        text = sanitizeText(text);
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+
+        // Visual feedback
+        btn.classList.add("copied");
+        const originalHtml = btn.innerHTML;
+
+        // Checkmark icon
+        btn.innerHTML =
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<polyline points="20 6 9 17 4 12"></polyline>' +
+          '</svg>';
+        
+        // Restore label if it existed (for sanitize button)
+        if (isSanitize) {
+           btn.innerHTML += '<span class="btn-label">Copied</span>';
+        }
+
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.innerHTML = originalHtml;
+        }, 2000);
+
+        notifications.show({
+          message: isSanitize ? "Sanitized & copied to clipboard" : "Code copied to clipboard",
+          color: "green",
+          autoClose: 2000,
+        });
+      } catch (err) {
+        console.error("Failed to copy code:", err);
+        notifications.show({
+          message: "Failed to copy code",
+          color: "red",
+        });
+      }
+    };
+
+    container.addEventListener("click", handleCopyClick);
+    return () => container.removeEventListener("click", handleCopyClick);
+  }, []);
+
   return (
     <main className="chat-main" role="main" aria-label="Chat conversation">
       <section
@@ -360,11 +427,11 @@ export default function ChatArea() {
                   {isStreamingActive && isLastMessage && isAssistantMessage && (
                     <span className="streaming-cursor" aria-hidden="true" />
                   )}
-                  {isAssistantMessage && !isEmptyAssistant && (
+                  {isAssistantMessage && (!isEmptyAssistant || isFailedResponse) && (
                     <div
                       className={`message-actions ${isLastMessage ? "always-visible" : ""}`}
                     >
-                      <CopyButton content={m.content} />
+                      {!isFailedResponse && <CopyButton content={m.content} />}
                       {showRegenerateButton && (
                         <button
                           className={`regenerate-btn ${isRegenerating ? "regenerating" : ""}`}

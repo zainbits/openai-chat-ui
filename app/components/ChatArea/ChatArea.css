@@ -232,6 +232,84 @@
 }
 
 /* ============================================================================
+   Code Blocks with Copy Button
+   ============================================================================ */
+.code-block-wrapper {
+  margin: 1.25em 0;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-primary);
+  background-color: var(--color-interactive-disabled);
+  overflow: hidden;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-background-surface-hover);
+  border-bottom: 1px solid var(--color-border-primary);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+.code-lang {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+}
+
+.code-block-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copy-code-btn,
+.sanitize-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  gap: 0.25rem;
+}
+
+.copy-code-btn:hover,
+.sanitize-copy-btn:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-background-surface-active);
+}
+
+.copy-code-btn.copied,
+.sanitize-copy-btn.copied {
+  color: var(--color-success-400);
+}
+
+.btn-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* Override existing pre styles when inside wrapper */
+.message-content .code-block-wrapper pre {
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  background-color: transparent;
+  padding: 1rem;
+}
+
+
+/* ============================================================================
    Message Actions & Regenerate Button
    ============================================================================ */
 .message-actions {

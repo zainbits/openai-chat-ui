@@ -83,12 +83,14 @@ export const API_PROVIDER_PRESETS: ApiProviderPreset[] = [
   {
     id: "openai",
     label: "OpenAI",
-    baseUrl: "https://api.openai.com/v1",
+    baseUrl: import.meta.env.DEV ? "/openai-proxy/v1" : "https://api.openai.com/v1",
   },
   {
     id: ANTHROPIC_PROVIDER_ID,
     label: "Anthropic",
-    baseUrl: "https://api.anthropic.com/v1",
+    baseUrl: import.meta.env.DEV
+      ? "/anthropic-proxy/v1"
+      : "https://api.anthropic.com/v1",
   },
   {
     id: "groq",
