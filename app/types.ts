@@ -48,6 +48,7 @@ export interface AppData {
 export interface AppSettings {
   apiBaseUrl: string;
   apiKey?: string;
+  apiProvider?: string; // Provider ID (e.g., "openai", "anthropic", "custom")
   defaultModel: string;
   streamingEnabled: boolean;
   glassEffectEnabled: boolean;

@@ -42,22 +42,43 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     };
   };
 
-  // Determine the initial provider from the current base URL
-  const getProviderFromUrl = (url: string): string => {
+  // Determine the initial provider from settings or URL
+  const getProviderFromSettings = (): string => {
+    // If provider is stored in settings, use it
+    if (settings.apiProvider) {
+      return settings.apiProvider;
+    }
+    // Fall back to detecting from URL for backwards compatibility
     const preset = API_PROVIDER_PRESETS.find(
-      (p) => p.id !== CUSTOM_PROVIDER_ID && p.baseUrl === url,
+      (p) => p.id !== CUSTOM_PROVIDER_ID && p.baseUrl === settings.apiBaseUrl,
     );
     return preset ? preset.id : CUSTOM_PROVIDER_ID;
   };
 
   const [selectedProvider, setSelectedProvider] = useState(() =>
-    getProviderFromUrl(settings.apiBaseUrl),
+    getProviderFromSettings(),
   );
-  const [customBaseUrl, setCustomBaseUrl] = useState(() =>
-    getProviderFromUrl(settings.apiBaseUrl) === CUSTOM_PROVIDER_ID
-      ? settings.apiBaseUrl
-      : "",
-  );
+  // Initialize custom base URL from settings if it differs from the preset
+  const [customBaseUrl, setCustomBaseUrl] = useState(() => {
+    const provider = getProviderFromSettings();
+    const preset = API_PROVIDER_PRESETS.find((p) => p.id === provider);
+    // If the saved URL differs from the preset, it's a custom override
+    if (preset && settings.apiBaseUrl && settings.apiBaseUrl !== preset.baseUrl) {
+      return settings.apiBaseUrl;
+    }
+    // For custom provider, use the saved URL
+    if (provider === CUSTOM_PROVIDER_ID) {
+      return settings.apiBaseUrl;
+    }
+    return "";
+  });
+  // Track whether user wants to override the base URL
+  const [useCustomUrl, setUseCustomUrl] = useState(() => {
+    const provider = getProviderFromSettings();
+    if (provider === CUSTOM_PROVIDER_ID) return true;
+    const preset = API_PROVIDER_PRESETS.find((p) => p.id === provider);
+    return !!(preset && settings.apiBaseUrl && settings.apiBaseUrl !== preset.baseUrl);
+  });
   const [apiKey, setApiKey] = useState(settings.apiKey ?? "");
   const [streamingEnabled, setStreamingEnabled] = useState(
     settings.streamingEnabled,
@@ -74,12 +95,19 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
 
   // Compute the actual API base URL based on provider selection
   const apiBaseUrl = useMemo(() => {
-    if (selectedProvider === CUSTOM_PROVIDER_ID) {
+    // If custom URL is enabled or provider is "Custom", use customBaseUrl
+    if (selectedProvider === CUSTOM_PROVIDER_ID || useCustomUrl) {
       return customBaseUrl;
     }
     const preset = API_PROVIDER_PRESETS.find((p) => p.id === selectedProvider);
     return preset?.baseUrl ?? "";
-  }, [selectedProvider, customBaseUrl]);
+  }, [selectedProvider, customBaseUrl, useCustomUrl]);
+
+  // Get the default URL for the selected provider (for placeholder)
+  const defaultProviderUrl = useMemo(() => {
+    const preset = API_PROVIDER_PRESETS.find((p) => p.id === selectedProvider);
+    return preset?.baseUrl ?? "";
+  }, [selectedProvider]);
 
   // Provider dropdown options
   const providerOptions = useMemo(
@@ -95,6 +123,17 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   const handleProviderChange = useCallback((value: string | null) => {
     if (value) {
       setSelectedProvider(value);
+      // Reset custom URL when switching to Custom provider
+      if (value === CUSTOM_PROVIDER_ID) {
+        setUseCustomUrl(true);
+      } else {
+        // For other providers, prefill the custom URL with their default
+        const preset = API_PROVIDER_PRESETS.find((p) => p.id === value);
+        if (preset) {
+          setCustomBaseUrl(preset.baseUrl);
+        }
+        setUseCustomUrl(false);
+      }
     }
   }, []);
 
@@ -105,8 +144,8 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     if (apiKey.length === 0) return;
     setVerifying(true);
 
-    // Temporarily update settings to test the connection
-    updateSettings({ apiBaseUrl, apiKey });
+    // Temporarily update settings to test the connection (include provider)
+    updateSettings({ apiBaseUrl, apiKey, apiProvider: selectedProvider });
 
     try {
       const client = getClient();
@@ -124,7 +163,7 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     }
 
     setVerifying(false);
-  }, [apiBaseUrl, apiKey, updateSettings, getClient, setAvailableModels]);
+  }, [apiBaseUrl, apiKey, selectedProvider, updateSettings, getClient, setAvailableModels]);
 
   /**
    * Saves the settings
@@ -134,6 +173,7 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     updateSettings({
       apiBaseUrl,
       apiKey,
+      apiProvider: selectedProvider,
       streamingEnabled,
       defaultModel,
       glassEffectEnabled,
@@ -142,6 +182,7 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   }, [
     apiBaseUrl,
     apiKey,
+    selectedProvider,
     streamingEnabled,
     defaultModel,
     glassEffectEnabled,
@@ -249,12 +290,20 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
                 onChange={handleProviderChange}
                 aria-label="Select API provider"
               />
-              {selectedProvider === CUSTOM_PROVIDER_ID && (
+              {selectedProvider !== CUSTOM_PROVIDER_ID && (
+                <Switch
+                  label="Use custom base URL (for proxy)"
+                  description={`Default: ${defaultProviderUrl}`}
+                  checked={useCustomUrl}
+                  onChange={(e) => setUseCustomUrl(e.currentTarget.checked)}
+                />
+              )}
+              {(selectedProvider === CUSTOM_PROVIDER_ID || useCustomUrl) && (
                 <TextInput
-                  label="Custom API Base URL"
+                  label="API Base URL"
                   value={customBaseUrl}
                   onChange={(e) => setCustomBaseUrl(e.currentTarget.value)}
-                  placeholder="https://api.example.com/v1"
+                  placeholder={defaultProviderUrl || "https://api.example.com/v1"}
                   aria-describedby="custom-api-url-description"
                 />
               )}

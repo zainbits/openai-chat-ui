@@ -53,12 +53,20 @@ export interface ApiProviderPreset {
 /** Custom provider ID constant */
 export const CUSTOM_PROVIDER_ID = "custom";
 
+/** Anthropic provider ID constant */
+export const ANTHROPIC_PROVIDER_ID = "anthropic";
+
 /** Available API provider presets (configurable) */
 export const API_PROVIDER_PRESETS: ApiProviderPreset[] = [
   {
     id: "openai",
     label: "OpenAI",
     baseUrl: "https://api.openai.com/v1",
+  },
+  {
+    id: ANTHROPIC_PROVIDER_ID,
+    label: "Anthropic",
+    baseUrl: "https://api.anthropic.com/v1",
   },
   {
     id: "groq",

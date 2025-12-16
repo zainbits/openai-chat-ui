@@ -17,9 +17,10 @@ import type {
   DiscoveredModel,
   ChatsById,
 } from "../types";
-import { OpenAICompatibleClient } from "../api/client";
+import { OpenAICompatibleClient, AnthropicClient, type ApiClient } from "../api/client";
 import { loadAppData, saveAppData, wipeAll } from "../utils/storage";
 import { getModelColor } from "../theme/colors";
+import { ANTHROPIC_PROVIDER_ID } from "../constants";
 
 // ============================================================================
 // Default Values
@@ -92,7 +93,7 @@ interface AppStoreState {
 
 interface AppStoreActions {
   // API Client (memoized)
-  getClient: () => OpenAICompatibleClient;
+  getClient: () => ApiClient;
 
   // UI Actions
   toggleSidebar: () => void;
@@ -172,7 +173,7 @@ const createThreadForModel = (modelId: string): ChatThread => {
 // ============================================================================
 
 /** Cached API client instance */
-let cachedClient: OpenAICompatibleClient | null = null;
+let cachedClient: ApiClient | null = null;
 let cachedClientKey: string = "";
 
 export const useAppStore = create<AppStore>()(
@@ -190,14 +191,19 @@ export const useAppStore = create<AppStore>()(
 
     // API Client getter (memoized by settings)
     getClient: () => {
-      const { apiBaseUrl, apiKey } = get().settings;
-      const key = `${apiBaseUrl}:${apiKey ?? ""}`;
+      const { apiBaseUrl, apiKey, apiProvider } = get().settings;
+      const key = `${apiProvider ?? ""}:${apiBaseUrl}:${apiKey ?? ""}`;
 
       if (cachedClient && cachedClientKey === key) {
         return cachedClient;
       }
 
-      cachedClient = new OpenAICompatibleClient({ apiBaseUrl, apiKey });
+      // Use AnthropicClient for Anthropic provider, OpenAI-compatible for everything else
+      if (apiProvider === ANTHROPIC_PROVIDER_ID) {
+        cachedClient = new AnthropicClient({ apiBaseUrl, apiKey, apiProvider });
+      } else {
+        cachedClient = new OpenAICompatibleClient({ apiBaseUrl, apiKey, apiProvider });
+      }
       cachedClientKey = key;
       return cachedClient;
     },
