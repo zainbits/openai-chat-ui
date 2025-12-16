@@ -1,15 +1,13 @@
 /* Composer Styles */
 .composer {
-  position: absolute;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  bottom: 12px;
-  left: 0;
-  right: 0;
-  padding: 0 1rem 0 1rem;
+  width: 100%;
+  padding: 0 1rem 12px 1rem;
   padding-right: 2rem;
   z-index: 10;
+  flex-shrink: 0;
 }
 
 .composer-content {

@@ -36,8 +36,8 @@ export default function Composer() {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // Reset height to min to get accurate scrollHeight
-    textarea.style.height = `${TEXTAREA_MIN_HEIGHT}px`;
+    // Reset height to auto to get accurate scrollHeight for shrinking content
+    textarea.style.height = "auto";
 
     // Calculate new height
     const newHeight = Math.min(
