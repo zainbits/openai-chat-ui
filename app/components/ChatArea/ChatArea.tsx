@@ -326,7 +326,7 @@ export default function ChatArea() {
       if (!code) return;
 
       let text = code.textContent || "";
-      
+
       if (isSanitize) {
         text = sanitizeText(text);
       }
@@ -342,11 +342,11 @@ export default function ChatArea() {
         btn.innerHTML =
           '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
           '<polyline points="20 6 9 17 4 12"></polyline>' +
-          '</svg>';
-        
+          "</svg>";
+
         // Restore label if it existed (for sanitize button)
         if (isSanitize) {
-           btn.innerHTML += '<span class="btn-label">Copied</span>';
+          btn.innerHTML += '<span class="btn-label">Copied</span>';
         }
 
         setTimeout(() => {
@@ -355,7 +355,9 @@ export default function ChatArea() {
         }, 2000);
 
         notifications.show({
-          message: isSanitize ? "Sanitized & copied to clipboard" : "Code copied to clipboard",
+          message: isSanitize
+            ? "Sanitized & copied to clipboard"
+            : "Code copied to clipboard",
           color: "green",
           autoClose: 2000,
         });
@@ -427,44 +429,49 @@ export default function ChatArea() {
                   {isStreamingActive && isLastMessage && isAssistantMessage && (
                     <span className="streaming-cursor" aria-hidden="true" />
                   )}
-                  {isAssistantMessage && (!isEmptyAssistant || isFailedResponse) && (
-                    <div
-                      className={`message-actions ${isLastMessage ? "always-visible" : ""}`}
-                    >
-                      {!isFailedResponse && <CopyButton content={m.content} />}
-                      {showRegenerateButton && (
-                        <button
-                          className={`regenerate-btn ${isRegenerating ? "regenerating" : ""}`}
-                          disabled={isRegenerating}
-                          onClick={regenerateLastMessage}
-                          title="Regenerate response"
-                          aria-label={
-                            isRegenerating
-                              ? "Regenerating response"
-                              : "Regenerate response"
-                          }
-                        >
-                          <svg
-                            className="regenerate-icon"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                  {isAssistantMessage &&
+                    (!isEmptyAssistant || isFailedResponse) && (
+                      <div
+                        className={`message-actions ${isLastMessage ? "always-visible" : ""}`}
+                      >
+                        {!isFailedResponse && (
+                          <CopyButton content={m.content} />
+                        )}
+                        {showRegenerateButton && (
+                          <button
+                            className={`regenerate-btn ${isRegenerating ? "regenerating" : ""}`}
+                            disabled={isRegenerating}
+                            onClick={regenerateLastMessage}
+                            title="Regenerate response"
+                            aria-label={
+                              isRegenerating
+                                ? "Regenerating response"
+                                : "Regenerate response"
+                            }
                           >
-                            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85 1.04 6.5 2.75L21 3" />
-                            <path d="M21 3v6h-6" />
-                          </svg>
-                          <span className="regenerate-text">
-                            {isRegenerating ? "Regenerating..." : "Regenerate"}
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  )}
+                            <svg
+                              className="regenerate-icon"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85 1.04 6.5 2.75L21 3" />
+                              <path d="M21 3v6h-6" />
+                            </svg>
+                            <span className="regenerate-text">
+                              {isRegenerating
+                                ? "Regenerating..."
+                                : "Regenerate"}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    )}
                 </article>
               );
             })}

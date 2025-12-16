@@ -226,7 +226,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--color-text-primary);
-  
+
   /* Flex layout for content + actions */
   display: flex;
   align-items: stretch;

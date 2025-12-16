@@ -98,9 +98,7 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   const [glassEffectEnabled, setGlassEffectEnabled] = useState(
     settings.glassEffectEnabled ?? true,
   );
-  const [lowSpecBlur, setLowSpecBlur] = useState(
-    settings.lowSpecBlur ?? 5,
-  );
+  const [lowSpecBlur, setLowSpecBlur] = useState(settings.lowSpecBlur ?? 5);
   const [showActiveModelIndicator, setShowActiveModelIndicator] = useState(
     settings.showActiveModelIndicator ?? true,
   );
@@ -453,7 +451,8 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
                       Background Blur Strength ({lowSpecBlur}px)
                     </Text>
                     <Text size="xs" c="dimmed" mb="xs">
-                      Adjust the blur amount for non-glass elements to improve readability.
+                      Adjust the blur amount for non-glass elements to improve
+                      readability.
                     </Text>
                     <Slider
                       value={lowSpecBlur}

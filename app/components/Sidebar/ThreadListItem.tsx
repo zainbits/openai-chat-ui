@@ -99,7 +99,7 @@ const ThreadActions = React.memo(function ThreadActions({
       >
         <TbPencil size={14} />
       </button>
-      
+
       <button
         className="thread-action-btn thread-action-btn-danger"
         onClick={(e) => {
@@ -126,7 +126,9 @@ const ThreadActions = React.memo(function ThreadActions({
         <Menu.Dropdown className="thread-menu-dropdown">
           <Menu.Item
             className="thread-menu-item"
-            leftSection={pinned ? <TbPinnedOff size={16} /> : <TbPin size={16} />}
+            leftSection={
+              pinned ? <TbPinnedOff size={16} /> : <TbPin size={16} />
+            }
             onClick={(e) => {
               e.stopPropagation();
               onPin();
@@ -340,7 +342,7 @@ function ThreadListItem({ thread }: ThreadListItemProps) {
           </div>
           <div className="thread-preview">{thread.preview || ""}</div>
         </div>
-        
+
         <ThreadActions
           onPin={handleTogglePin}
           onRename={() => setRenameModalOpen(true)}
