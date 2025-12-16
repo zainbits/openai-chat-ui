@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Menu, Button, Modal, TextInput, Group } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { TbPin, TbPinnedOff, TbPencil, TbTrash, TbX } from "react-icons/tb";
+import { TbPin, TbPinnedOff, TbPencil, TbTrash, TbDots } from "react-icons/tb";
 import { useAppStore } from "../../state/store";
 import { toRelativeTime } from "../../utils/time";
 import type { ChatThread } from "../../types";
@@ -70,67 +70,73 @@ const RenameModal = React.memo(function RenameModal({
 });
 
 // ============================================================================
-// Menu Button
+// Thread Actions
 // ============================================================================
 
-interface MenuButtonProps {
+interface ThreadActionsProps {
   onPin: () => void;
   onRename: () => void;
   onDelete: () => void;
   pinned: boolean;
 }
 
-const MenuButton = React.memo(function MenuButton({
+const ThreadActions = React.memo(function ThreadActions({
   onPin,
   onRename,
   onDelete,
   pinned,
-}: MenuButtonProps) {
+}: ThreadActionsProps) {
   return (
-    <Menu shadow="md" width={144} position="bottom-end" withArrow>
-      <Menu.Target>
-        <button
-          className="thread-menu-button"
-          aria-label="Thread menu"
-          onClick={(e) => e.stopPropagation()}
-        >
-          •••
-        </button>
-      </Menu.Target>
+    <div className="thread-actions" onClick={(e) => e.stopPropagation()}>
+      <button
+        className="thread-action-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRename();
+        }}
+        aria-label="Rename thread"
+        title="Rename"
+      >
+        <TbPencil size={14} />
+      </button>
+      
+      <button
+        className="thread-action-btn thread-action-btn-danger"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        aria-label="Delete thread"
+        title="Delete"
+      >
+        <TbTrash size={14} />
+      </button>
 
-      <Menu.Dropdown className="thread-menu-dropdown">
-        <Menu.Item
-          className="thread-menu-item"
-          leftSection={pinned ? <TbPinnedOff size={16} /> : <TbPin size={16} />}
-          onClick={(e) => {
-            e.stopPropagation();
-            onPin();
-          }}
-        >
-          {pinned ? "Unpin" : "Pin"}
-        </Menu.Item>
-        <Menu.Item
-          className="thread-menu-item"
-          leftSection={<TbPencil size={16} />}
-          onClick={(e) => {
-            e.stopPropagation();
-            onRename();
-          }}
-        >
-          Rename
-        </Menu.Item>
-        <Menu.Item
-          className="thread-menu-item thread-menu-item-danger"
-          leftSection={<TbTrash size={16} />}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-        >
-          Delete
-        </Menu.Item>
-      </Menu.Dropdown>
-    </Menu>
+      <Menu shadow="md" width={144} position="bottom-end" withArrow>
+        <Menu.Target>
+          <button
+            className="thread-action-btn"
+            aria-label="More options"
+            title="More"
+          >
+            <TbDots size={14} />
+          </button>
+        </Menu.Target>
+
+        <Menu.Dropdown className="thread-menu-dropdown">
+          <Menu.Item
+            className="thread-menu-item"
+            leftSection={pinned ? <TbPinnedOff size={16} /> : <TbPin size={16} />}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPin();
+            }}
+          >
+            {pinned ? "Unpin" : "Pin"}
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    </div>
   );
 });
 
@@ -314,30 +320,33 @@ function ThreadListItem({ thread }: ThreadListItemProps) {
         aria-label={`Chat thread: ${thread.title}`}
         aria-pressed={activeThreadId === thread.id}
       >
-        <div className="thread-header">
-          <div className="thread-info">
-            <span
-              className="model-indicator"
-              style={{ background: model?.color }}
-              aria-hidden="true"
-            />
-            <span className="thread-title">{thread.title}</span>
+        <div className="thread-content-wrapper">
+          <div className="thread-header">
+            <div className="thread-info">
+              <span
+                className="model-indicator"
+                style={{ background: model?.color }}
+                aria-hidden="true"
+              />
+              <span className="thread-title">{thread.title}</span>
+            </div>
+            <div className="thread-meta">
+              <span
+                aria-label={`Last updated ${toRelativeTime(thread.updatedAt)}`}
+              >
+                {toRelativeTime(thread.updatedAt)}
+              </span>
+            </div>
           </div>
-          <div className="thread-meta">
-            <span
-              aria-label={`Last updated ${toRelativeTime(thread.updatedAt)}`}
-            >
-              {toRelativeTime(thread.updatedAt)}
-            </span>
-            <MenuButton
-              onPin={handleTogglePin}
-              onRename={() => setRenameModalOpen(true)}
-              onDelete={handleDelete}
-              pinned={thread.isPinned}
-            />
-          </div>
+          <div className="thread-preview">{thread.preview || ""}</div>
         </div>
-        <div className="thread-preview">{thread.preview || ""}</div>
+        
+        <ThreadActions
+          onPin={handleTogglePin}
+          onRename={() => setRenameModalOpen(true)}
+          onDelete={handleDelete}
+          pinned={thread.isPinned}
+        />
       </div>
 
       <RenameModal

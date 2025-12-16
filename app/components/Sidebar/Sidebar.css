@@ -226,11 +226,23 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--color-text-primary);
+  
+  /* Flex layout for content + actions */
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.thread-content-wrapper {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .thread-item:hover {
   background: var(--color-interactive-hover);
-  transform: translateY(-1px);
 }
 
 .thread-item.active {
@@ -284,18 +296,53 @@
   white-space: nowrap;
 }
 
-.thread-menu-button {
-  padding: 0.25rem 0.5rem;
+/* Thread Actions */
+.thread-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+  /* Option: hide until hover */
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.thread-item:hover .thread-actions,
+.thread-item:focus-within .thread-actions,
+.thread-item.active .thread-actions {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .thread-actions {
+    opacity: 1;
+  }
+}
+
+.thread-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
   border-radius: 4px;
   background: none;
   border: none;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  padding: 0;
 }
 
-.thread-menu-button:hover {
+.thread-action-btn:hover {
   background: var(--color-interactive-hover);
+  color: var(--color-text-primary);
+}
+
+.thread-action-btn.thread-action-btn-danger:hover {
+  background: var(--color-danger-alpha-10);
+  color: var(--color-danger-400);
 }
 
 /* Thread Menu Dropdown */

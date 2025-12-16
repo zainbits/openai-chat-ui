@@ -11,6 +11,7 @@ import {
   Slider,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import ConfirmModal from "../ConfirmModal";
 import { useAppStore } from "../../state/store";
 import { exportJson, importJson } from "../../utils/storage";
 import { API_PROVIDER_PRESETS, CUSTOM_PROVIDER_ID } from "../../constants";
@@ -105,9 +106,11 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   );
   const [verifying, setVerifying] = useState(false);
   const [nukeModalOpen, setNukeModalOpen] = useState(false);
+  const [deleteChatsModalOpen, setDeleteChatsModalOpen] = useState(false);
   const [nukeConfirmText, setNukeConfirmText] = useState("");
 
   const nukeAll = useAppStore((s) => s.nukeAll);
+  const deleteAllChats = useAppStore((s) => s.deleteAllChats);
 
   // Compute the actual API base URL based on provider selection
   const apiBaseUrl = useMemo(() => {
@@ -303,6 +306,18 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
       color: "red",
     });
   }, [nukeAll]);
+
+  /**
+   * Deletes all chats
+   */
+  const handleDeleteChats = useCallback(() => {
+    deleteAllChats();
+    setDeleteChatsModalOpen(false);
+    notifications.show({
+      message: "All chats have been deleted",
+      color: "green",
+    });
+  }, [deleteAllChats]);
 
   /**
    * Closes the nuke modal and resets confirmation text
@@ -504,22 +519,42 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
                   Danger Zone
                 </Text>
                 <Text size="xs" c="dimmed" mb="sm">
-                  Permanently delete all data including chats, models, and
+                  Permanently delete chats or all data including models and
                   settings.
                 </Text>
-                <Button
-                  color="red"
-                  variant="light"
-                  onClick={() => setNukeModalOpen(true)}
-                  aria-label="Nuke all data"
-                >
-                  Nuke All Data
-                </Button>
+                <Group>
+                  <Button
+                    color="red"
+                    variant="light"
+                    onClick={() => setDeleteChatsModalOpen(true)}
+                    aria-label="Delete all chats"
+                  >
+                    Delete All Chats
+                  </Button>
+                  <Button
+                    color="red"
+                    variant="light"
+                    onClick={() => setNukeModalOpen(true)}
+                    aria-label="Nuke all data"
+                  >
+                    Nuke All Data
+                  </Button>
+                </Group>
               </div>
             </div>
           </Tabs.Panel>
         </Tabs>
       </Modal>
+
+      <ConfirmModal
+        opened={deleteChatsModalOpen}
+        onClose={() => setDeleteChatsModalOpen(false)}
+        onConfirm={handleDeleteChats}
+        title="Delete All Chats"
+        message="Are you sure you want to delete all chats? This action cannot be undone."
+        confirmLabel="Delete Chats"
+        confirmColor="red"
+      />
 
       {/* Nuke Confirmation Modal */}
       <Modal

@@ -116,6 +116,7 @@ interface AppStoreActions {
   togglePinThread: (threadId: string) => void;
   updateThreadTitle: (threadId: string, title: string) => void;
   updateThreadModel: (threadId: string, modelId: string) => void;
+  deleteAllChats: () => void;
   nukeAll: () => void;
 
   // Message Actions
@@ -334,6 +335,12 @@ export const useAppStore = create<AppStore>()(
           },
         };
       }),
+
+    deleteAllChats: () =>
+      set((state) => ({
+        chats: {},
+        ui: { ...state.ui, activeThread: null },
+      })),
 
     nukeAll: () => {
       // Clear localStorage completely
