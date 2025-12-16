@@ -17,7 +17,11 @@ import type {
   DiscoveredModel,
   ChatsById,
 } from "../types";
-import { OpenAICompatibleClient, AnthropicClient, type ApiClient } from "../api/client";
+import {
+  OpenAICompatibleClient,
+  AnthropicClient,
+  type ApiClient,
+} from "../api/client";
 import { loadAppData, saveAppData, wipeAll } from "../utils/storage";
 import { getModelColor } from "../theme/colors";
 import { ANTHROPIC_PROVIDER_ID } from "../constants";
@@ -42,6 +46,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultModel: DEFAULT_MODEL,
   streamingEnabled: true,
   glassEffectEnabled: true,
+  showActiveModelIndicator: true,
 };
 
 const STARTER_MODELS: CustomModel[] = [
@@ -191,14 +196,20 @@ export const useAppStore = create<AppStore>()(
 
     // API Client getter (memoized by settings)
     getClient: () => {
-      const { apiBaseUrl, apiKey, apiProvider, streamingEnabled } = get().settings;
+      const { apiBaseUrl, apiKey, apiProvider, streamingEnabled } =
+        get().settings;
       const key = `${apiProvider ?? ""}:${apiBaseUrl}:${apiKey ?? ""}:${streamingEnabled}`;
 
       if (cachedClient && cachedClientKey === key) {
         return cachedClient;
       }
 
-      const clientOptions = { apiBaseUrl, apiKey, apiProvider, streamingEnabled };
+      const clientOptions = {
+        apiBaseUrl,
+        apiKey,
+        apiProvider,
+        streamingEnabled,
+      };
 
       // Use AnthropicClient for Anthropic provider, OpenAI-compatible for everything else
       if (apiProvider === ANTHROPIC_PROVIDER_ID) {

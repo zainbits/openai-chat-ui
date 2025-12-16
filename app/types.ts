@@ -52,6 +52,7 @@ export interface AppSettings {
   defaultModel: string;
   streamingEnabled: boolean;
   glassEffectEnabled: boolean;
+  showActiveModelIndicator: boolean;
 }
 
 export interface StreamHandle {

@@ -1,7 +1,14 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+  useState,
+} from "react";
 import { useAppStore, selectActiveThread } from "../../state/store";
 import { useChat } from "../../hooks";
 import { renderMarkdown } from "../../utils/markdown";
+import { notifications } from "@mantine/notifications";
 import Composer from "../Composer";
 import "./ChatArea.css";
 
@@ -206,6 +213,72 @@ function EnhancedEmptyState() {
 }
 
 /**
+ * Copy button component for assistant messages
+ */
+function CopyButton({ content }: { content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      notifications.show({
+        message: "Copied to clipboard",
+        color: "green",
+        autoClose: 2000,
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      notifications.show({
+        message: "Failed to copy",
+        color: "red",
+      });
+    }
+  }, [content]);
+
+  return (
+    <button
+      className={`copy-btn ${copied ? "copied" : ""}`}
+      onClick={handleCopy}
+      title="Copy to clipboard"
+      aria-label={copied ? "Copied" : "Copy to clipboard"}
+    >
+      {copied ? (
+        <svg
+          className="copy-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M20 6L9 17l-5-5" />
+        </svg>
+      ) : (
+        <svg
+          className="copy-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+      <span className="copy-text">{copied ? "Copied!" : "Copy"}</span>
+    </button>
+  );
+}
+
+/**
  * Main chat area component displaying messages and the composer
  */
 export default function ChatArea() {
@@ -287,37 +360,42 @@ export default function ChatArea() {
                   {isStreamingActive && isLastMessage && isAssistantMessage && (
                     <span className="streaming-cursor" aria-hidden="true" />
                   )}
-                  {showRegenerateButton && (
-                    <div className="message-actions">
-                      <button
-                        className={`regenerate-btn ${isRegenerating ? "regenerating" : ""}`}
-                        disabled={isRegenerating}
-                        onClick={regenerateLastMessage}
-                        title="Regenerate response"
-                        aria-label={
-                          isRegenerating
-                            ? "Regenerating response"
-                            : "Regenerate response"
-                        }
-                      >
-                        <svg
-                          className="regenerate-icon"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                  {isAssistantMessage && !isEmptyAssistant && (
+                    <div
+                      className={`message-actions ${isLastMessage ? "always-visible" : ""}`}
+                    >
+                      <CopyButton content={m.content} />
+                      {showRegenerateButton && (
+                        <button
+                          className={`regenerate-btn ${isRegenerating ? "regenerating" : ""}`}
+                          disabled={isRegenerating}
+                          onClick={regenerateLastMessage}
+                          title="Regenerate response"
+                          aria-label={
+                            isRegenerating
+                              ? "Regenerating response"
+                              : "Regenerate response"
+                          }
                         >
-                          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85 1.04 6.5 2.75L21 3" />
-                          <path d="M21 3v6h-6" />
-                        </svg>
-                        <span className="regenerate-text">
-                          {isRegenerating ? "Regenerating..." : "Regenerate"}
-                        </span>
-                      </button>
+                          <svg
+                            className="regenerate-icon"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85 1.04 6.5 2.75L21 3" />
+                            <path d="M21 3v6h-6" />
+                          </svg>
+                          <span className="regenerate-text">
+                            {isRegenerating ? "Regenerating..." : "Regenerate"}
+                          </span>
+                        </button>
+                      )}
                     </div>
                   )}
                 </article>

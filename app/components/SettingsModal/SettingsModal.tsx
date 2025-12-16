@@ -64,7 +64,11 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     const provider = getProviderFromSettings();
     const preset = API_PROVIDER_PRESETS.find((p) => p.id === provider);
     // If the saved URL differs from the preset, it's a custom override
-    if (preset && settings.apiBaseUrl && settings.apiBaseUrl !== preset.baseUrl) {
+    if (
+      preset &&
+      settings.apiBaseUrl &&
+      settings.apiBaseUrl !== preset.baseUrl
+    ) {
       return settings.apiBaseUrl;
     }
     // For custom provider, use the saved URL
@@ -78,7 +82,11 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     const provider = getProviderFromSettings();
     if (provider === CUSTOM_PROVIDER_ID) return true;
     const preset = API_PROVIDER_PRESETS.find((p) => p.id === provider);
-    return !!(preset && settings.apiBaseUrl && settings.apiBaseUrl !== preset.baseUrl);
+    return !!(
+      preset &&
+      settings.apiBaseUrl &&
+      settings.apiBaseUrl !== preset.baseUrl
+    );
   });
   const [apiKey, setApiKey] = useState(settings.apiKey ?? "");
   const [streamingEnabled, setStreamingEnabled] = useState(
@@ -87,6 +95,9 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   const [defaultModel, setDefaultModel] = useState(settings.defaultModel);
   const [glassEffectEnabled, setGlassEffectEnabled] = useState(
     settings.glassEffectEnabled ?? true,
+  );
+  const [showActiveModelIndicator, setShowActiveModelIndicator] = useState(
+    settings.showActiveModelIndicator ?? true,
   );
   const [verifying, setVerifying] = useState(false);
   const [nukeModalOpen, setNukeModalOpen] = useState(false);
@@ -164,7 +175,14 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     }
 
     setVerifying(false);
-  }, [apiBaseUrl, apiKey, selectedProvider, updateSettings, getClient, setAvailableModels]);
+  }, [
+    apiBaseUrl,
+    apiKey,
+    selectedProvider,
+    updateSettings,
+    getClient,
+    setAvailableModels,
+  ]);
 
   /**
    * Saves the settings
@@ -198,6 +216,17 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     (enabled: boolean) => {
       setGlassEffectEnabled(enabled);
       updateSettings({ glassEffectEnabled: enabled });
+    },
+    [updateSettings],
+  );
+
+  /**
+   * Handles active model indicator toggle - saves immediately
+   */
+  const handleActiveModelIndicatorChange = useCallback(
+    (enabled: boolean) => {
+      setShowActiveModelIndicator(enabled);
+      updateSettings({ showActiveModelIndicator: enabled });
     },
     [updateSettings],
   );
@@ -304,7 +333,9 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
                   label="API Base URL"
                   value={customBaseUrl}
                   onChange={(e) => setCustomBaseUrl(e.currentTarget.value)}
-                  placeholder={defaultProviderUrl || "https://api.example.com/v1"}
+                  placeholder={
+                    defaultProviderUrl || "https://api.example.com/v1"
+                  }
                   aria-describedby="custom-api-url-description"
                 />
               )}
@@ -383,6 +414,24 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
                     handleGlassEffectChange(e.currentTarget.checked)
                   }
                   aria-describedby="glass-effect-description"
+                />
+              </div>
+
+              <div className="data-section">
+                <Text size="sm" fw={500} mb="xs">
+                  Model Display
+                </Text>
+                <Text size="xs" c="dimmed" mb="sm">
+                  Configure how model information is displayed.
+                </Text>
+                <Switch
+                  label="Show remote model names"
+                  description="Display the remote model name below each model chip"
+                  checked={showActiveModelIndicator}
+                  onChange={(e) =>
+                    handleActiveModelIndicatorChange(e.currentTarget.checked)
+                  }
+                  aria-describedby="active-model-indicator-description"
                 />
               </div>
             </div>

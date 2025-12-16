@@ -111,7 +111,7 @@ function delay(ms: number): Promise<void> {
  */
 async function fetchWithRetry(
   fetchFn: () => Promise<Response>,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<Response> {
   let lastError: Error | null = null;
 
@@ -129,14 +129,14 @@ async function fetchWithRetry(
 
         if (attempt < MAX_RETRY_ATTEMPTS - 1) {
           console.warn(
-            `Request failed with status ${response.status}, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})`
+            `Request failed with status ${response.status}, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})`,
           );
-          
+
           // Check if aborted before waiting
           if (signal?.aborted) {
             throw new DOMException("Aborted", "AbortError");
           }
-          
+
           await delay(retryDelay);
           continue;
         }
@@ -155,13 +155,13 @@ async function fetchWithRetry(
       if (attempt < MAX_RETRY_ATTEMPTS - 1) {
         const retryDelay = calculateBackoffDelay(attempt);
         console.warn(
-          `Request failed with error: ${lastError.message}, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})`
+          `Request failed with error: ${lastError.message}, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS})`,
         );
-        
+
         if (signal?.aborted) {
           throw new DOMException("Aborted", "AbortError");
         }
-        
+
         await delay(retryDelay);
       }
     }
@@ -194,11 +194,11 @@ abstract class BaseApiClient implements ApiClient {
   abstract listModels(): Promise<DiscoveredModel[]>;
   protected abstract postStreamingChat(
     opts: ChatOptions,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<void>;
   protected abstract postNonStreamingChat(
     opts: ChatOptions,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<string>;
 
   /**
@@ -288,7 +288,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
     try {
       const url = `${this.baseUrl}/models`;
       const res = await fetchWithRetry(() =>
-        fetch(url, { headers: this.headers() })
+        fetch(url, { headers: this.headers() }),
       );
       return res.ok;
     } catch {
@@ -303,7 +303,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
    */
   async listModels(): Promise<DiscoveredModel[]> {
     const res = await fetchWithRetry(() =>
-      fetch(`${this.baseUrl}/models`, { headers: this.headers() })
+      fetch(`${this.baseUrl}/models`, { headers: this.headers() }),
     );
 
     if (!res.ok) {
@@ -320,7 +320,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
    */
   protected async postStreamingChat(
     opts: ChatOptions,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<void> {
     const fetchUrl = this.buildFetchUrl();
 
@@ -337,7 +337,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
           }),
           signal,
         }),
-      signal
+      signal,
     );
 
     if (!res.ok || !res.body) {
@@ -353,7 +353,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
    */
   protected async postNonStreamingChat(
     opts: ChatOptions,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<string> {
     const fetchUrl = this.buildFetchUrl();
 
@@ -370,7 +370,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
           }),
           signal,
         }),
-      signal
+      signal,
     );
 
     if (!res.ok) {
@@ -407,7 +407,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
    */
   private async parseSSEStream(
     body: ReadableStream<Uint8Array>,
-    onToken?: (token: string) => void
+    onToken?: (token: string) => void,
   ): Promise<void> {
     const reader = body.getReader();
     const decoder = new TextDecoder();
@@ -519,7 +519,7 @@ export class AnthropicClient extends BaseApiClient {
    */
   protected async postStreamingChat(
     opts: ChatOptions,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<void> {
     const { systemPrompt, messages } = this.convertMessages(opts.messages);
     const fetchUrl = this.buildFetchUrl();
@@ -547,7 +547,7 @@ export class AnthropicClient extends BaseApiClient {
           body: JSON.stringify(body),
           signal,
         }),
-      signal
+      signal,
     );
 
     if (!res.ok || !res.body) {
@@ -563,7 +563,7 @@ export class AnthropicClient extends BaseApiClient {
    */
   protected async postNonStreamingChat(
     opts: ChatOptions,
-    signal: AbortSignal
+    signal: AbortSignal,
   ): Promise<string> {
     const { systemPrompt, messages } = this.convertMessages(opts.messages);
     const fetchUrl = this.buildFetchUrl();
@@ -591,7 +591,7 @@ export class AnthropicClient extends BaseApiClient {
           body: JSON.stringify(body),
           signal,
         }),
-      signal
+      signal,
     );
 
     if (!res.ok) {
@@ -600,9 +600,7 @@ export class AnthropicClient extends BaseApiClient {
     }
 
     const data = (await res.json()) as AnthropicResponse;
-    return (
-      data.content?.find((block) => block.type === "text")?.text ?? ""
-    );
+    return data.content?.find((block) => block.type === "text")?.text ?? "";
   }
 
   /**
@@ -625,7 +623,7 @@ export class AnthropicClient extends BaseApiClient {
    */
   private async parseAnthropicStream(
     body: ReadableStream<Uint8Array>,
-    onToken?: (token: string) => void
+    onToken?: (token: string) => void,
   ): Promise<void> {
     const reader = body.getReader();
     const decoder = new TextDecoder();

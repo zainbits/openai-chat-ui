@@ -326,6 +326,57 @@
   background: var(--accent-danger-bg);
 }
 
+/* ============================================================================
+   Pending Delete State
+   ============================================================================ */
+.thread-item-pending-delete {
+  opacity: 0.5;
+  background: var(--color-danger-alpha-5);
+  border-color: var(--color-danger-500);
+  pointer-events: auto;
+  animation: fadeOut 5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0.2;
+  }
+}
+
+.thread-title-deleted {
+  text-decoration: line-through;
+  color: var(--color-text-disabled);
+}
+
+.thread-preview-deleted {
+  color: var(--color-danger-400);
+  font-style: italic;
+}
+
+.undo-delete-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-danger-400);
+  background: var(--color-danger-alpha-10);
+  border: 1px solid var(--color-danger-400);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.undo-delete-btn:hover {
+  background: var(--color-danger-alpha-15);
+  color: var(--color-danger-300);
+}
+
 /* Responsive */
 @media (min-width: 768px) {
   .sidebar {

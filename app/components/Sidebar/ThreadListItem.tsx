@@ -1,9 +1,13 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Menu, Button, Modal, TextInput, Group } from "@mantine/core";
-import { TbPin, TbPinnedOff, TbPencil, TbTrash } from "react-icons/tb";
+import { notifications } from "@mantine/notifications";
+import { TbPin, TbPinnedOff, TbPencil, TbTrash, TbX } from "react-icons/tb";
 import { useAppStore } from "../../state/store";
 import { toRelativeTime } from "../../utils/time";
 import type { ChatThread } from "../../types";
+
+/** Grace period for undo in milliseconds */
+const UNDO_GRACE_PERIOD_MS = 5000;
 
 // ============================================================================
 // Rename Modal
@@ -148,10 +152,23 @@ function ThreadListItem({ thread }: ThreadListItemProps) {
 
   const model = models.find((m) => m.id === thread.modelId);
   const [renameModalOpen, setRenameModalOpen] = useState(false);
+  const [isPendingDelete, setIsPendingDelete] = useState(false);
+  const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const notificationIdRef = useRef<string | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (deleteTimeoutRef.current) {
+        clearTimeout(deleteTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const activate = useCallback(() => {
+    if (isPendingDelete) return; // Don't activate if pending delete
     setActiveThread(thread.id);
-  }, [setActiveThread, thread.id]);
+  }, [setActiveThread, thread.id, isPendingDelete]);
 
   const handleRename = useCallback(
     (newName: string) => {
@@ -160,9 +177,87 @@ function ThreadListItem({ thread }: ThreadListItemProps) {
     [renameThread, thread.id],
   );
 
+  /**
+   * Cancels the pending delete
+   */
+  const cancelDelete = useCallback(() => {
+    if (deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+      deleteTimeoutRef.current = null;
+    }
+    if (notificationIdRef.current) {
+      notifications.hide(notificationIdRef.current);
+      notificationIdRef.current = null;
+    }
+    setIsPendingDelete(false);
+  }, []);
+
+  /**
+   * Initiates delete with undo grace period
+   */
   const handleDelete = useCallback(() => {
-    deleteThread(thread.id);
-  }, [deleteThread, thread.id]);
+    // Mark as pending delete
+    setIsPendingDelete(true);
+
+    // If this thread is active, deselect it
+    if (activeThreadId === thread.id) {
+      setActiveThread(null);
+    }
+
+    // Generate a unique notification ID
+    const notificationId = `delete-${thread.id}-${Date.now()}`;
+    notificationIdRef.current = notificationId;
+
+    // Show undo notification
+    notifications.show({
+      id: notificationId,
+      title: "Thread deleted",
+      message: (
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ flex: 1 }}>
+            "{thread.title}" will be permanently deleted
+          </span>
+          <Button
+            size="xs"
+            variant="light"
+            onClick={() => {
+              cancelDelete();
+              notifications.show({
+                message: "Deletion cancelled",
+                color: "green",
+                autoClose: 2000,
+              });
+            }}
+          >
+            Undo
+          </Button>
+        </div>
+      ),
+      color: "red",
+      autoClose: UNDO_GRACE_PERIOD_MS,
+      withCloseButton: true,
+      onClose: () => {
+        // Only proceed if still pending (not cancelled)
+        if (notificationIdRef.current === notificationId) {
+          notificationIdRef.current = null;
+        }
+      },
+    });
+
+    // Set timeout to actually delete after grace period
+    deleteTimeoutRef.current = setTimeout(() => {
+      deleteThread(thread.id);
+      deleteTimeoutRef.current = null;
+      notificationIdRef.current = null;
+    }, UNDO_GRACE_PERIOD_MS);
+  }, [
+    thread.id,
+    thread.title,
+    activeThreadId,
+    setActiveThread,
+    deleteThread,
+    cancelDelete,
+  ]);
 
   const handleTogglePin = useCallback(() => {
     togglePinThread(thread.id);
@@ -177,6 +272,36 @@ function ThreadListItem({ thread }: ThreadListItemProps) {
     },
     [activate],
   );
+
+  // Don't render if pending delete
+  if (isPendingDelete) {
+    return (
+      <div
+        className="thread-item thread-item-pending-delete"
+        aria-hidden="true"
+      >
+        <div className="thread-header">
+          <div className="thread-info">
+            <span className="thread-title thread-title-deleted">
+              {thread.title}
+            </span>
+          </div>
+          <div className="thread-meta">
+            <button
+              className="undo-delete-btn"
+              onClick={cancelDelete}
+              aria-label="Undo delete"
+            >
+              Undo
+            </button>
+          </div>
+        </div>
+        <div className="thread-preview thread-preview-deleted">
+          Deleting in 5 seconds...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

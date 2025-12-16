@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef } from "react";
+import React, { useCallback, useState, useRef, useEffect } from "react";
 import { useAppStore, selectActiveThread } from "../../state/store";
 import { useChat } from "../../hooks";
 import GlassSurface from "../GlassSurface";
@@ -14,6 +14,10 @@ const QUICK_ACTIONS = [
   "Explain like I'm 12",
 ];
 
+/** Min and max heights for the textarea */
+const TEXTAREA_MIN_HEIGHT = 48;
+const TEXTAREA_MAX_HEIGHT = 200;
+
 /**
  * Message composer component with quick actions and send functionality
  */
@@ -21,8 +25,34 @@ export default function Composer() {
   const thread = useAppStore(selectActiveThread);
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [textareaHeight, setTextareaHeight] = useState(TEXTAREA_MIN_HEIGHT);
 
   const { isLoading, isRegenerating, sendMessage, cancelStream } = useChat();
+
+  /**
+   * Auto-resize textarea based on content
+   */
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Reset height to min to get accurate scrollHeight
+    textarea.style.height = `${TEXTAREA_MIN_HEIGHT}px`;
+
+    // Calculate new height
+    const newHeight = Math.min(
+      Math.max(textarea.scrollHeight, TEXTAREA_MIN_HEIGHT),
+      TEXTAREA_MAX_HEIGHT,
+    );
+
+    textarea.style.height = `${newHeight}px`;
+    setTextareaHeight(newHeight);
+  }, []);
+
+  // Adjust height when input changes
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [input, adjustTextareaHeight]);
 
   // Show stop button when either loading or regenerating
   const isStreaming = isLoading || isRegenerating;
@@ -34,6 +64,11 @@ export default function Composer() {
     if (!input.trim() || !thread || isStreaming) return;
     const message = input;
     setInput("");
+    // Reset textarea height after sending
+    setTextareaHeight(TEXTAREA_MIN_HEIGHT);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = `${TEXTAREA_MIN_HEIGHT}px`;
+    }
     await sendMessage(message);
   }, [input, thread, isStreaming, sendMessage]);
 
@@ -87,7 +122,7 @@ export default function Composer() {
           ))}
         </div>
         <div className="composer-input-area">
-          <GlassSurface width="100%" height={100}>
+          <GlassSurface width="100%" height={textareaHeight + 24}>
             <textarea
               ref={textareaRef}
               className="composer-textarea"
@@ -96,6 +131,7 @@ export default function Composer() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               aria-label="Message input"
+              style={{ height: `${textareaHeight}px` }}
             />
           </GlassSurface>
           <div className="composer-actions">

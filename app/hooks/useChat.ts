@@ -72,7 +72,10 @@ export function useChat(): UseChatReturn {
     async (threadId: string, firstUserContent: string, modelId: string) => {
       try {
         const client = getClient();
-        const truncatedContent = firstUserContent.slice(0, TITLE_PROMPT_MAX_CHARS);
+        const truncatedContent = firstUserContent.slice(
+          0,
+          TITLE_PROMPT_MAX_CHARS,
+        );
         const prompt = `You are a helpful assistant. Create a concise, 3-${MAX_TITLE_WORDS} word title for this conversation. No quotes, no punctuation at the end. Respond with title only. Conversation starts with: "${truncatedContent}"`;
 
         let title = "";
@@ -252,8 +255,7 @@ export function useChat(): UseChatReturn {
       : [];
 
     const history = updatedThread.messages
-      .filter((m) => m.role !== "assistant" || m.content)
-      .slice(0, -1) // Exclude the empty assistant message we just added
+      .filter((m) => m.role !== "assistant" || m.content) // Exclude empty assistant messages (including the one we just added)
       .map((m) => ({ role: m.role, content: m.content }));
 
     const messages = [...system, ...history];
