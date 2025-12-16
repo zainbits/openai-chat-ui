@@ -31,6 +31,8 @@ export default function GlassButton({
   const glassEffectEnabled = useAppStore(
     (s) => s.settings.glassEffectEnabled ?? true,
   );
+  const lowSpecBlur = useAppStore((s) => s.settings.lowSpecBlur ?? 5);
+
   const isRound = variant === "round";
 
   // Determine the final color to use - customColor overrides color variant
@@ -67,6 +69,8 @@ export default function GlassButton({
     const simpleStyle: React.CSSProperties = {
       ...buttonStyle,
       ...(finalColor ? { backgroundColor: `${finalColor}1A` } : {}),
+      backdropFilter: `blur(${lowSpecBlur}px)`,
+      WebkitBackdropFilter: `blur(${lowSpecBlur}px)`,
     };
 
     return (

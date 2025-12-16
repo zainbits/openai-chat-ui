@@ -67,7 +67,7 @@ export default function ModelChips() {
               <GlassButton
                 onClick={() => selectModel(m.id)}
                 width="auto"
-                height={32}
+                height={showActiveModelIndicator ? 44 : 32}
                 borderRadius={20}
                 title={`${m.name} (${m.model})`}
                 customColor={m.color}
@@ -79,34 +79,38 @@ export default function ModelChips() {
                 aria-label={`Start new chat with ${m.name} model. Right-click to edit.`}
                 aria-pressed={isActive}
               >
-                <span
-                  className="model-indicator"
-                  style={{ background: m.color }}
-                  aria-hidden="true"
-                />
-                {m.name}
-                {isActive && (
-                  <svg
-                    className="active-check"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                )}
+                <div className="model-chip-content">
+                  <div className="model-chip-main">
+                    <span
+                      className="model-indicator"
+                      style={{ background: m.color }}
+                      aria-hidden="true"
+                    />
+                    {m.name}
+                    {isActive && (
+                      <svg
+                        className="active-check"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    )}
+                  </div>
+                  {showActiveModelIndicator && (
+                    <span className="chip-model-name" title={m.model}>
+                      {m.model}
+                    </span>
+                  )}
+                </div>
               </GlassButton>
-              {showActiveModelIndicator && (
-                <span className="chip-model-name" title={m.model}>
-                  {m.model}
-                </span>
-              )}
             </div>
           );
         })}

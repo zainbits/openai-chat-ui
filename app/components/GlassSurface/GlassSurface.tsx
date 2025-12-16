@@ -68,6 +68,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
   const glassEffectEnabled = useAppStore(
     (s) => s.settings.glassEffectEnabled ?? true,
   );
+  const lowSpecBlur = useAppStore((s) => s.settings.lowSpecBlur ?? 5);
 
   const id = useId();
   const filterId = `glass-filter-${id}`;
@@ -210,6 +211,8 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
       width: typeof width === "number" ? `${width}px` : width,
       height: typeof height === "number" ? `${height}px` : height,
       borderRadius: `${borderRadius}px`,
+      backdropFilter: `blur(${lowSpecBlur}px)`,
+      WebkitBackdropFilter: `blur(${lowSpecBlur}px)`,
     };
 
     return (

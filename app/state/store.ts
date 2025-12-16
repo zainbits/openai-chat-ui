@@ -47,6 +47,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   streamingEnabled: true,
   glassEffectEnabled: true,
   showActiveModelIndicator: true,
+  lowSpecBlur: 5,
 };
 
 const STARTER_MODELS: CustomModel[] = [

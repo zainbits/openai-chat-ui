@@ -8,6 +8,7 @@ import {
   Text,
   Group,
   Tabs,
+  Slider,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useAppStore } from "../../state/store";
@@ -95,6 +96,9 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   const [defaultModel, setDefaultModel] = useState(settings.defaultModel);
   const [glassEffectEnabled, setGlassEffectEnabled] = useState(
     settings.glassEffectEnabled ?? true,
+  );
+  const [lowSpecBlur, setLowSpecBlur] = useState(
+    settings.lowSpecBlur ?? 5,
   );
   const [showActiveModelIndicator, setShowActiveModelIndicator] = useState(
     settings.showActiveModelIndicator ?? true,
@@ -196,6 +200,7 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
       streamingEnabled,
       defaultModel,
       glassEffectEnabled,
+      lowSpecBlur,
     });
     onClose();
   }, [
@@ -205,6 +210,7 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     streamingEnabled,
     defaultModel,
     glassEffectEnabled,
+    lowSpecBlur,
     updateSettings,
     onClose,
   ]);
@@ -216,6 +222,17 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
     (enabled: boolean) => {
       setGlassEffectEnabled(enabled);
       updateSettings({ glassEffectEnabled: enabled });
+    },
+    [updateSettings],
+  );
+
+  /**
+   * Handles low spec blur change - saves immediately
+   */
+  const handleLowSpecBlurChange = useCallback(
+    (value: number) => {
+      setLowSpecBlur(value);
+      updateSettings({ lowSpecBlur: value });
     },
     [updateSettings],
   );
@@ -415,6 +432,24 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
                   }
                   aria-describedby="glass-effect-description"
                 />
+                {!glassEffectEnabled && (
+                  <div style={{ marginTop: "1rem" }}>
+                    <Text size="xs" fw={500} mb={4}>
+                      Background Blur Strength ({lowSpecBlur}px)
+                    </Text>
+                    <Text size="xs" c="dimmed" mb="xs">
+                      Adjust the blur amount for non-glass elements to improve readability.
+                    </Text>
+                    <Slider
+                      value={lowSpecBlur}
+                      onChange={handleLowSpecBlurChange}
+                      min={0}
+                      max={20}
+                      step={1}
+                      label={(value) => `${value}px`}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="data-section">

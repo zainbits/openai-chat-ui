@@ -53,6 +53,7 @@ export interface AppSettings {
   streamingEnabled: boolean;
   glassEffectEnabled: boolean;
   showActiveModelIndicator: boolean;
+  lowSpecBlur?: number;
 }
 
 export interface StreamHandle {
