@@ -58,6 +58,7 @@ const STARTER_MODELS: CustomModel[] = [
     system: "You are a helpful AI assistant.",
     model: "qwen3-coder-plus",
     temp: 0.7,
+    thinkingEnabled: false,
   },
   {
     id: "linux",
@@ -67,6 +68,7 @@ const STARTER_MODELS: CustomModel[] = [
       "You are an expert in Linux commands. Always include safety warnings and explain steps.",
     model: "qwen3-coder-plus",
     temp: 0.2,
+    thinkingEnabled: false,
   },
 ];
 
@@ -123,6 +125,7 @@ interface AppStoreActions {
   addUserMessage: (threadId: string, content: string) => void;
   addAssistantMessage: (threadId: string) => void;
   appendToLastMessage: (threadId: string, token: string) => void;
+  setThinkingOnLastMessage: (threadId: string, thinking: string) => void;
   removeMessagesAfterIndex: (threadId: string, index: number) => void;
   setThreadPreview: (threadId: string, preview: string) => void;
 
@@ -413,6 +416,30 @@ export const useAppStore = create<AppStore>()(
         messages[lastIndex] = {
           ...messages[lastIndex],
           content: messages[lastIndex].content + token,
+        };
+
+        return {
+          chats: {
+            ...state.chats,
+            [threadId]: {
+              ...thread,
+              messages,
+              updatedAt: Date.now(),
+            },
+          },
+        };
+      }),
+
+    setThinkingOnLastMessage: (threadId, thinking) =>
+      set((state) => {
+        const thread = state.chats[threadId];
+        if (!thread || thread.messages.length === 0) return state;
+
+        const messages = [...thread.messages];
+        const lastIndex = messages.length - 1;
+        messages[lastIndex] = {
+          ...messages[lastIndex],
+          thinking,
         };
 
         return {

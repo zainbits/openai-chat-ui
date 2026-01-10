@@ -7,10 +7,12 @@ import {
   Select,
   NumberInput,
   ColorInput,
+  Switch,
 } from "@mantine/core";
 import { useAppStore } from "../../state/store";
 import { getModelColor } from "../../theme/colors";
 import { DEFAULT_CHAT_TEMPERATURE } from "../../constants";
+import type { ThinkingEffort } from "../../types";
 import ConfirmModal from "../ConfirmModal";
 import "./ModelEditorModal.css";
 
@@ -45,6 +47,12 @@ export default function ModelEditorModal({
   const [system, setSystem] = useState(existing?.system ?? "");
   const [model, setModel] = useState(existing?.model ?? defaultModel);
   const [temp, setTemp] = useState(existing?.temp ?? DEFAULT_CHAT_TEMPERATURE);
+  const [thinkingEnabled, setThinkingEnabled] = useState(
+    existing?.thinkingEnabled ?? false,
+  );
+  const [thinkingEffort, setThinkingEffort] = useState<ThinkingEffort>(
+    existing?.thinkingEffort ?? "medium",
+  );
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   // Reset form when modal opens or model changes
@@ -54,6 +62,8 @@ export default function ModelEditorModal({
     setSystem(existing?.system ?? "");
     setModel(existing?.model ?? defaultModel);
     setTemp(existing?.temp ?? DEFAULT_CHAT_TEMPERATURE);
+    setThinkingEnabled(existing?.thinkingEnabled ?? false);
+    setThinkingEffort(existing?.thinkingEffort ?? "medium");
   }, [existing, defaultModel]);
 
   const options = (availableModels ?? []).map((m) => ({
@@ -68,9 +78,25 @@ export default function ModelEditorModal({
     if (!name.trim()) return;
 
     if (existing) {
-      updateModel(existing.id, { name, color, system, model, temp });
+      updateModel(existing.id, {
+        name,
+        color,
+        system,
+        model,
+        temp,
+        thinkingEnabled,
+        thinkingEffort,
+      });
     } else {
-      addModel({ name, color, system, model, temp });
+      addModel({
+        name,
+        color,
+        system,
+        model,
+        temp,
+        thinkingEnabled,
+        thinkingEffort,
+      });
     }
     onClose();
   }, [
@@ -79,6 +105,8 @@ export default function ModelEditorModal({
     system,
     model,
     temp,
+    thinkingEnabled,
+    thinkingEffort,
     existing,
     addModel,
     updateModel,
@@ -143,6 +171,27 @@ export default function ModelEditorModal({
             decimalScale={2}
             aria-describedby="temperature-description"
           />
+          <Switch
+            label="Thinking"
+            description="Enable reasoning/thinking mode (only works for models/APIs that support it)"
+            checked={thinkingEnabled}
+            onChange={(e) => setThinkingEnabled(e.currentTarget.checked)}
+          />
+          {thinkingEnabled && (
+            <Select
+              label="Thinking Effort"
+              description="Controls thinking depth (maps to budget_tokens for Anthropic/Gemini, reasoning_effort for OpenAI)"
+              data={[
+                { value: "low", label: "Low" },
+                { value: "medium", label: "Medium" },
+                { value: "high", label: "High" },
+              ]}
+              value={thinkingEffort}
+              onChange={(val) =>
+                setThinkingEffort((val as ThinkingEffort) || "medium")
+              }
+            />
+          )}
           <div className="modal-actions">
             {existing ? (
               <Button

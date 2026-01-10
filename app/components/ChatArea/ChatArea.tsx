@@ -11,6 +11,7 @@ import { renderMarkdown } from "../../utils/markdown";
 import { sanitizeText } from "../../utils/textSanitizer";
 import { notifications } from "@mantine/notifications";
 import Composer from "../Composer";
+import ThinkingBlock from "../ThinkingBlock";
 import "./ChatArea.css";
 
 /**
@@ -288,6 +289,9 @@ export default function ChatArea() {
 
   const messages = useMemo(() => thread?.messages ?? [], [thread]);
   const listRef = useRef<HTMLDivElement | null>(null);
+  // Track if user has scrolled up to cancel auto-scroll
+  const userScrolledUpRef = useRef(false);
+  const lastScrollTopRef = useRef(0);
 
   // Combined streaming state for both regular loading and regeneration
   const isStreamingActive = isLoading || isRegenerating;
@@ -299,10 +303,50 @@ export default function ChatArea() {
     return lastMessage?.role === "assistant" && lastMessage?.content === "";
   }, [isStreamingActive, messages]);
 
-  // Auto-scroll to bottom when messages change
+  // Detect when user scrolls up during streaming to cancel auto-scroll
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
+
+    const handleScroll = () => {
+      const currentScrollTop = el.scrollTop;
+      const maxScrollTop = el.scrollHeight - el.clientHeight;
+      const isAtBottom = maxScrollTop - currentScrollTop < 50; // 50px threshold
+      
+      // User scrolled up if current position is less than last and not at bottom
+      if (currentScrollTop < lastScrollTopRef.current && !isAtBottom) {
+        userScrolledUpRef.current = true;
+      }
+      
+      // Reset when user scrolls back to bottom
+      if (isAtBottom) {
+        userScrolledUpRef.current = false;
+      }
+      
+      lastScrollTopRef.current = currentScrollTop;
+    };
+
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Reset scroll tracking when streaming starts
+  useEffect(() => {
+    if (isStreamingActive) {
+      userScrolledUpRef.current = false;
+    }
+  }, [isStreamingActive]);
+
+  // Auto-scroll to bottom when messages change, unless user scrolled up
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    
+    // Don't auto-scroll if user has scrolled up during streaming
+    if (userScrolledUpRef.current && isStreamingActive) {
+      return;
+    }
+    
     el.scrollTop = el.scrollHeight;
   }, [messages, isStreaming, isStreamingActive]);
 
@@ -413,6 +457,9 @@ export default function ChatArea() {
                   <div className="message-role" aria-hidden="true">
                     {m.role === "user" ? "You" : "Assistant"}
                   </div>
+                  {isAssistantMessage && m.thinking && (
+                    <ThinkingBlock thinking={m.thinking} />
+                  )}
                   {isFailedResponse ? (
                     <div className="message-content message-failed">
                       <span className="failed-icon">⚠</span>

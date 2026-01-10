@@ -29,6 +29,30 @@ function getErrorMessage(error: unknown): string {
   return "An unexpected error occurred";
 }
 
+/**
+ * Best-effort detector for "thinking"/reasoning parameter rejections.
+ * We use this to auto-disable the thinking toggle and retry once without it.
+ */
+function isThinkingUnsupportedError(error: unknown): boolean {
+  const msg = getErrorMessage(error).toLowerCase();
+
+  const mentionsThinkingParam =
+    msg.includes("thinking") ||
+    msg.includes("reasoning_effort") ||
+    msg.includes("reasoning effort");
+
+  const looksLikeParamRejection =
+    msg.includes("unrecognized") ||
+    msg.includes("unknown") ||
+    msg.includes("unexpected") ||
+    msg.includes("not permitted") ||
+    msg.includes("invalid") ||
+    msg.includes("additional properties") ||
+    msg.includes("extra inputs");
+
+  return mentionsThinkingParam && looksLikeParamRejection;
+}
+
 interface UseChatReturn {
   /** Whether a message is currently being sent/streamed */
   isLoading: boolean;
@@ -60,9 +84,13 @@ export function useChat(): UseChatReturn {
   const addUserMessage = useAppStore((s) => s.addUserMessage);
   const addAssistantMessage = useAppStore((s) => s.addAssistantMessage);
   const appendToLastMessage = useAppStore((s) => s.appendToLastMessage);
+  const setThinkingOnLastMessage = useAppStore(
+    (s) => s.setThinkingOnLastMessage,
+  );
   const removeMessagesAfterIndex = useAppStore(
     (s) => s.removeMessagesAfterIndex,
   );
+  const updateModel = useAppStore((s) => s.updateModel);
   const updateThreadTitle = useAppStore((s) => s.updateThreadTitle);
 
   /**
@@ -131,6 +159,8 @@ export function useChat(): UseChatReturn {
 
       const threadId = thread.id;
       const trimmedContent = content.trim();
+      const userMessageIndex = thread.messages.length;
+      let retriedWithoutThinking = false;
 
       // Add user message
       addUserMessage(threadId, trimmedContent);
@@ -140,69 +170,119 @@ export function useChat(): UseChatReturn {
 
       setIsLoading(true);
 
-      // Prepare messages for API
-      const system = model.system
-        ? [{ role: "system" as const, content: model.system }]
-        : [];
+      const startRequest = (thinkingEnabled: boolean) => {
+        const currentState = useAppStore.getState();
+        const currentThread = currentState.chats[threadId];
+        const currentModel = currentThread
+          ? currentState.models.find((m) => m.id === currentThread.modelId)
+          : null;
 
-      const history = [
-        ...thread.messages,
-        { role: "user" as const, content: trimmedContent },
-      ].map((m) => ({ role: m.role, content: m.content }));
-
-      const messages = [...system, ...history];
-      const client = getClient();
-
-      // Send the message (streaming or non-streaming based on settings)
-      streamRef.current = client.chat({
-        model: model.model,
-        messages,
-        temperature: model.temp,
-        onToken: (token) => {
-          appendToLastMessage(threadId, token);
-        },
-        onDone: async () => {
+        if (!currentThread || !currentModel) {
           setIsLoading(false);
           streamRef.current = null;
+          return;
+        }
 
-          // Generate title if this is a new chat
-          const currentState = useAppStore.getState();
-          const currentThread = currentState.chats[threadId];
-          if (currentThread) {
-            const hasDefaultTitle =
-              currentThread.title.trim().toLowerCase() === "new chat";
-            const hasUserMessage = currentThread.messages.some(
-              (m) => m.role === "user",
-            );
+        const system = currentModel.system
+          ? [{ role: "system" as const, content: currentModel.system }]
+          : [];
 
-            if (hasDefaultTitle && hasUserMessage) {
-              const firstUser = currentThread.messages.find(
+        const history = currentThread.messages
+          // Exclude empty assistant placeholders
+          .filter((m) => m.role !== "assistant" || m.content)
+          .map((m) => ({ role: m.role, content: m.content }));
+
+        const messages = [...system, ...history];
+        const client = getClient();
+
+        streamRef.current = client.chat({
+          model: currentModel.model,
+          messages,
+          temperature: currentModel.temp,
+          thinkingEnabled,
+          thinkingEffort: currentModel.thinkingEffort,
+          onToken: (token) => {
+            appendToLastMessage(threadId, token);
+          },
+          onThinking: (thinking) => {
+            setThinkingOnLastMessage(threadId, thinking);
+          },
+          onDone: async () => {
+            setIsLoading(false);
+            streamRef.current = null;
+
+            // Generate title if this is a new chat
+            const latestState = useAppStore.getState();
+            const latestThread = latestState.chats[threadId];
+            if (latestThread) {
+              const hasDefaultTitle =
+                latestThread.title.trim().toLowerCase() === "new chat";
+              const hasUserMessage = latestThread.messages.some(
                 (m) => m.role === "user",
               );
-              if (firstUser) {
-                await generateTitle(threadId, firstUser.content, model.model);
+
+              if (hasDefaultTitle && hasUserMessage) {
+                const firstUser = latestThread.messages.find(
+                  (m) => m.role === "user",
+                );
+                if (firstUser) {
+                  await generateTitle(
+                    threadId,
+                    firstUser.content,
+                    currentModel.model,
+                  );
+                }
               }
             }
-          }
-        },
-        onError: (error) => {
-          setIsLoading(false);
-          streamRef.current = null;
-          notifications.show({
-            title: "Message failed",
-            message: getErrorMessage(error),
-            color: "red",
-          });
-        },
-      });
+          },
+          onError: (error) => {
+            // If thinking was enabled and the API rejects it, auto-disable and retry once.
+            if (
+              thinkingEnabled &&
+              !retriedWithoutThinking &&
+              isThinkingUnsupportedError(error)
+            ) {
+              retriedWithoutThinking = true;
+              updateModel(currentModel.id, { thinkingEnabled: false });
+
+              notifications.show({
+                title: "Thinking disabled",
+                message:
+                  "This model/provider rejected the thinking parameter. I turned it off and retried.",
+                color: "yellow",
+              });
+
+              // Remove the (possibly partial) assistant message and retry without thinking
+              removeMessagesAfterIndex(threadId, userMessageIndex);
+              addAssistantMessage(threadId);
+              streamRef.current = null;
+              startRequest(false);
+              return;
+            }
+
+            setIsLoading(false);
+            streamRef.current = null;
+            notifications.show({
+              title: "Message failed",
+              message: getErrorMessage(error),
+              color: "red",
+            });
+          },
+        });
+      };
+
+      startRequest(!!model.thinkingEnabled);
     },
     [
       getClient,
       addUserMessage,
       addAssistantMessage,
       appendToLastMessage,
+      setThinkingOnLastMessage,
       generateTitle,
       setIsLoading,
+      updateModel,
+      removeMessagesAfterIndex,
     ],
   );
 
@@ -234,6 +314,7 @@ export function useChat(): UseChatReturn {
     if (lastUserIndex === -1) return;
 
     setIsRegenerating(true);
+    let retriedWithoutThinking = false;
 
     // Remove messages after the last user message
     removeMessagesAfterIndex(thread.id, lastUserIndex);
@@ -241,55 +322,92 @@ export function useChat(): UseChatReturn {
     // Add empty assistant message for streaming
     addAssistantMessage(thread.id);
 
-    // Get the updated thread state
-    const updatedState = useAppStore.getState();
-    const updatedThread = updatedState.chats[thread.id];
-    if (!updatedThread) {
-      setIsRegenerating(false);
-      return;
-    }
+    const startRequest = (thinkingEnabled: boolean) => {
+      const updatedState = useAppStore.getState();
+      const updatedThread = updatedState.chats[thread.id];
+      const updatedModel = updatedThread
+        ? updatedState.models.find((m) => m.id === updatedThread.modelId)
+        : null;
 
-    // Prepare messages for API
-    const system = model.system
-      ? [{ role: "system" as const, content: model.system }]
-      : [];
-
-    const history = updatedThread.messages
-      .filter((m) => m.role !== "assistant" || m.content) // Exclude empty assistant messages (including the one we just added)
-      .map((m) => ({ role: m.role, content: m.content }));
-
-    const messages = [...system, ...history];
-    const client = getClient();
-
-    // Send the message (streaming or non-streaming based on settings)
-    streamRef.current = client.chat({
-      model: model.model,
-      messages,
-      temperature: model.temp,
-      onToken: (token) => {
-        appendToLastMessage(thread.id, token);
-      },
-      onDone: () => {
+      if (!updatedThread || !updatedModel) {
         setIsRegenerating(false);
         streamRef.current = null;
-      },
-      onError: (error) => {
-        setIsRegenerating(false);
-        streamRef.current = null;
-        notifications.show({
-          title: "Regeneration failed",
-          message: getErrorMessage(error),
-          color: "red",
-        });
-      },
-    });
+        return;
+      }
+
+      // Prepare messages for API
+      const system = updatedModel.system
+        ? [{ role: "system" as const, content: updatedModel.system }]
+        : [];
+
+      const history = updatedThread.messages
+        .filter((m) => m.role !== "assistant" || m.content) // Exclude empty assistant messages (including the one we just added)
+        .map((m) => ({ role: m.role, content: m.content }));
+
+      const messages = [...system, ...history];
+      const client = getClient();
+
+      // Send the message (streaming or non-streaming based on settings)
+      streamRef.current = client.chat({
+        model: updatedModel.model,
+        messages,
+        temperature: updatedModel.temp,
+        thinkingEnabled,
+        thinkingEffort: updatedModel.thinkingEffort,
+        onToken: (token) => {
+          appendToLastMessage(thread.id, token);
+        },
+        onThinking: (thinking) => {
+          setThinkingOnLastMessage(thread.id, thinking);
+        },
+        onDone: () => {
+          setIsRegenerating(false);
+          streamRef.current = null;
+        },
+        onError: (error) => {
+          if (
+            thinkingEnabled &&
+            !retriedWithoutThinking &&
+            isThinkingUnsupportedError(error)
+          ) {
+            retriedWithoutThinking = true;
+            updateModel(updatedModel.id, { thinkingEnabled: false });
+
+            notifications.show({
+              title: "Thinking disabled",
+              message:
+                "This model/provider rejected the thinking parameter. I turned it off and retried.",
+              color: "yellow",
+            });
+
+            removeMessagesAfterIndex(thread.id, lastUserIndex);
+            addAssistantMessage(thread.id);
+            streamRef.current = null;
+            startRequest(false);
+            return;
+          }
+
+          setIsRegenerating(false);
+          streamRef.current = null;
+          notifications.show({
+            title: "Regeneration failed",
+            message: getErrorMessage(error),
+            color: "red",
+          });
+        },
+      });
+    };
+
+    startRequest(!!model.thinkingEnabled);
   }, [
     getClient,
     removeMessagesAfterIndex,
     addAssistantMessage,
     appendToLastMessage,
+    setThinkingOnLastMessage,
     isRegenerating,
     setIsRegenerating,
+    updateModel,
   ]);
 
   return {

@@ -7,6 +7,7 @@ import type {
   DiscoveredModel,
   OpenAIChatMessage,
   StreamHandle,
+  ThinkingEffort,
 } from "../types";
 import {
   DEFAULT_CHAT_TEMPERATURE,
@@ -42,10 +43,22 @@ export interface ChatOptions {
   messages: OpenAIChatMessage[];
   /** Temperature for response randomness (0-2, default: 0.7) */
   temperature?: number;
+  /**
+   * Enables "thinking"/reasoning mode for models/APIs that support it.
+   * Optional for backwards compatibility.
+   */
+  thinkingEnabled?: boolean;
+  /**
+   * Controls thinking depth. Maps to reasoning_effort (OpenAI) or budget_tokens (Anthropic/Gemini).
+   * Defaults to "medium" if not specified.
+   */
+  thinkingEffort?: ThinkingEffort;
   /** Optional abort signal for cancellation */
   signal?: AbortSignal;
-  /** Callback invoked for each token received (streaming only) */
+  /** Callback invoked for each content token received (streaming only) */
   onToken?: (token: string) => void;
+  /** Callback invoked with complete thinking content when thinking finishes */
+  onThinking?: (thinking: string) => void;
   /** Callback invoked when streaming completes */
   onDone?: () => void;
   /** Callback invoked on error */
@@ -66,6 +79,8 @@ interface ChatCompletionResponse {
   choices: Array<{
     message: {
       content: string;
+      /** Thinking/reasoning content from models that support it */
+      reasoning_content?: string;
     };
   }>;
 }
@@ -324,17 +339,32 @@ export class OpenAICompatibleClient extends BaseApiClient {
   ): Promise<void> {
     const fetchUrl = this.buildFetchUrl();
 
+    const body: Record<string, unknown> = {
+      model: opts.model,
+      messages: opts.messages,
+      temperature: opts.temperature ?? DEFAULT_CHAT_TEMPERATURE,
+      stream: true,
+    };
+
+    if (opts.thinkingEnabled) {
+      const effort = opts.thinkingEffort ?? "medium";
+      // Provider-specific best-effort mapping:
+      // - OpenAI: reasoning_effort for reasoning-capable models
+      // - Other OpenAI-compatible APIs: budget_tokens mapping (common in gateways)
+      if (this.apiProvider === "openai") {
+        body.reasoning_effort = effort;
+      } else {
+        const budgetMap = { low: 8192, medium: 16384, high: 32768 };
+        body.thinking = { type: "enabled", budget_tokens: budgetMap[effort] };
+      }
+    }
+
     const res = await fetchWithRetry(
       () =>
         fetch(fetchUrl, {
           method: "POST",
           headers: this.headers(),
-          body: JSON.stringify({
-            model: opts.model,
-            messages: opts.messages,
-            temperature: opts.temperature ?? DEFAULT_CHAT_TEMPERATURE,
-            stream: true,
-          }),
+          body: JSON.stringify(body),
           signal,
         }),
       signal,
@@ -345,7 +375,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
       throw new Error(`Chat request failed: ${res.status} - ${errorText}`);
     }
 
-    await this.parseSSEStream(res.body, opts.onToken);
+    await this.parseSSEStream(res.body, opts.onToken, opts.onThinking);
   }
 
   /**
@@ -357,17 +387,29 @@ export class OpenAICompatibleClient extends BaseApiClient {
   ): Promise<string> {
     const fetchUrl = this.buildFetchUrl();
 
+    const body: Record<string, unknown> = {
+      model: opts.model,
+      messages: opts.messages,
+      temperature: opts.temperature ?? DEFAULT_CHAT_TEMPERATURE,
+      stream: false,
+    };
+
+    if (opts.thinkingEnabled) {
+      const effort = opts.thinkingEffort ?? "medium";
+      if (this.apiProvider === "openai") {
+        body.reasoning_effort = effort;
+      } else {
+        const budgetMap = { low: 8192, medium: 16384, high: 32768 };
+        body.thinking = { type: "enabled", budget_tokens: budgetMap[effort] };
+      }
+    }
+
     const res = await fetchWithRetry(
       () =>
         fetch(fetchUrl, {
           method: "POST",
           headers: this.headers(),
-          body: JSON.stringify({
-            model: opts.model,
-            messages: opts.messages,
-            temperature: opts.temperature ?? DEFAULT_CHAT_TEMPERATURE,
-            stream: false,
-          }),
+          body: JSON.stringify(body),
           signal,
         }),
       signal,
@@ -379,6 +421,11 @@ export class OpenAICompatibleClient extends BaseApiClient {
     }
 
     const data = (await res.json()) as ChatCompletionResponse;
+    // For non-streaming, emit thinking content if present and callback provided
+    const reasoningContent = data.choices?.[0]?.message?.reasoning_content;
+    if (reasoningContent && opts.onThinking) {
+      opts.onThinking(reasoningContent);
+    }
     return data.choices?.[0]?.message?.content ?? "";
   }
 
@@ -404,43 +451,90 @@ export class OpenAICompatibleClient extends BaseApiClient {
 
   /**
    * Parses Server-Sent Events stream for OpenAI format
+   * Streams content tokens but accumulates thinking and emits once complete
+   * Properly buffers incomplete chunks to handle message boundaries
    */
   private async parseSSEStream(
     body: ReadableStream<Uint8Array>,
     onToken?: (token: string) => void,
+    onThinking?: (thinking: string) => void,
   ): Promise<void> {
     const reader = body.getReader();
     const decoder = new TextDecoder();
+    let buffer = "";
+    let accumulatedThinking = "";
 
     try {
       while (true) {
         const { value, done } = await reader.read();
-        if (done) break;
+        if (done) {
+          // Process any remaining buffered data
+          if (buffer.trim()) {
+            accumulatedThinking += this.processSSELine(buffer, onToken);
+          }
+          break;
+        }
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split(/\n/).filter(Boolean);
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process complete lines (SSE messages are newline-delimited)
+        const lines = buffer.split("\n");
+        // Keep the last potentially incomplete line in the buffer
+        buffer = lines.pop() ?? "";
 
         for (const line of lines) {
           const trimmed = line.trim();
-          if (!trimmed.startsWith("data:")) continue;
-
-          const payload = trimmed.slice(5).trim();
-          if (payload === "[DONE]") return;
-
-          try {
-            const data = JSON.parse(payload);
-            const delta = data?.choices?.[0]?.delta?.content ?? "";
-            if (delta && onToken) {
-              onToken(delta);
+          if (!trimmed || trimmed.startsWith(":")) continue; // Skip empty lines and comments
+          
+          if (trimmed.startsWith("data:")) {
+            const payload = trimmed.slice(5).trim();
+            if (payload === "[DONE]") {
+              // Emit accumulated thinking before finishing
+              if (accumulatedThinking && onThinking) {
+                onThinking(accumulatedThinking);
+              }
+              return;
             }
-          } catch {
-            // Non-JSON lines in some implementations; ignore
+            
+            accumulatedThinking += this.processSSELine(payload, onToken);
           }
         }
+      }
+      
+      // Emit accumulated thinking at the end
+      if (accumulatedThinking && onThinking) {
+        onThinking(accumulatedThinking);
       }
     } finally {
       reader.releaseLock();
     }
+  }
+
+  /**
+   * Process a single SSE data payload
+   * Returns thinking content to accumulate, streams content via callback
+   */
+  private processSSELine(
+    payload: string,
+    onToken?: (token: string) => void,
+  ): string {
+    try {
+      const data = JSON.parse(payload);
+      const delta = data?.choices?.[0]?.delta;
+
+      // Handle content tokens - stream immediately
+      const content = delta?.content ?? "";
+      if (content && onToken) {
+        onToken(content);
+      }
+
+      // Handle thinking tokens - return to accumulate
+      // Some APIs return thinking in delta.thinking, delta.reasoning, or delta.reasoning_content
+      return delta?.thinking ?? delta?.reasoning ?? delta?.reasoning_content ?? "";
+    } catch {
+      // Non-JSON lines in some implementations; ignore
+    }
+    return "";
   }
 
   /**
@@ -539,6 +633,14 @@ export class AnthropicClient extends BaseApiClient {
       body.temperature = opts.temperature;
     }
 
+    if (opts.thinkingEnabled) {
+      // Best-effort Anthropic "thinking" request shape.
+      // If the gateway/model doesn't support it, we'll auto-disable on error in the UI layer.
+      const effort = opts.thinkingEffort ?? "medium";
+      const budgetMap = { low: 8192, medium: 16384, high: 32768 };
+      body.thinking = { type: "enabled", budget_tokens: budgetMap[effort] };
+    }
+
     const res = await fetchWithRetry(
       () =>
         fetch(fetchUrl, {
@@ -555,7 +657,11 @@ export class AnthropicClient extends BaseApiClient {
       throw new Error(`Anthropic request failed: ${res.status} - ${errorText}`);
     }
 
-    await this.parseAnthropicStream(res.body, opts.onToken);
+    await this.parseAnthropicStream(
+      res.body,
+      opts.onToken,
+      opts.onThinking,
+    );
   }
 
   /**
@@ -583,6 +689,12 @@ export class AnthropicClient extends BaseApiClient {
       body.temperature = opts.temperature;
     }
 
+    if (opts.thinkingEnabled) {
+      const effort = opts.thinkingEffort ?? "medium";
+      const budgetMap = { low: 8192, medium: 16384, high: 32768 };
+      body.thinking = { type: "enabled", budget_tokens: budgetMap[effort] };
+    }
+
     const res = await fetchWithRetry(
       () =>
         fetch(fetchUrl, {
@@ -600,6 +712,13 @@ export class AnthropicClient extends BaseApiClient {
     }
 
     const data = (await res.json()) as AnthropicResponse;
+    // For non-streaming, emit thinking content if present and callback provided
+    const thinkingBlock = data.content?.find(
+      (block) => block.type === "thinking",
+    );
+    if (thinkingBlock?.text && opts.onThinking) {
+      opts.onThinking(thinkingBlock.text);
+    }
     return data.content?.find((block) => block.type === "text")?.text ?? "";
   }
 
@@ -620,48 +739,134 @@ export class AnthropicClient extends BaseApiClient {
 
   /**
    * Parses Server-Sent Events stream for Anthropic format
+   * Streams content tokens but accumulates thinking and emits once complete
+   * Properly buffers incomplete chunks to handle message boundaries
    */
   private async parseAnthropicStream(
     body: ReadableStream<Uint8Array>,
     onToken?: (token: string) => void,
+    onThinking?: (thinking: string) => void,
   ): Promise<void> {
     const reader = body.getReader();
     const decoder = new TextDecoder();
+    let buffer = "";
+    let accumulatedThinking = "";
+    // Track current content block type to route deltas correctly
+    let currentBlockType: "text" | "thinking" | null = null;
 
     try {
       while (true) {
         const { value, done } = await reader.read();
-        if (done) break;
+        if (done) {
+          // Process any remaining buffered data
+          if (buffer.trim()) {
+            const result = this.processAnthropicLine(
+              buffer,
+              currentBlockType,
+              onToken,
+            );
+            accumulatedThinking += result.thinking;
+            if (result.newBlockType !== undefined) {
+              currentBlockType = result.newBlockType;
+            }
+          }
+          break;
+        }
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split(/\n/).filter(Boolean);
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete lines (SSE messages are newline-delimited)
+        const lines = buffer.split("\n");
+        // Keep the last potentially incomplete line in the buffer
+        buffer = lines.pop() ?? "";
 
         for (const line of lines) {
           const trimmed = line.trim();
-          if (!trimmed.startsWith("data:")) continue;
+          if (!trimmed || trimmed.startsWith(":")) continue; // Skip empty lines and comments
 
-          const payload = trimmed.slice(5).trim();
-          if (payload === "[DONE]") return;
-
-          try {
-            const data = JSON.parse(payload);
-
-            if (data.type === "content_block_delta") {
-              const delta = data.delta?.text ?? "";
-              if (delta && onToken) {
-                onToken(delta);
+          if (trimmed.startsWith("data:")) {
+            const payload = trimmed.slice(5).trim();
+            if (payload === "[DONE]") {
+              // Emit accumulated thinking before finishing
+              if (accumulatedThinking && onThinking) {
+                onThinking(accumulatedThinking);
               }
-            } else if (data.type === "message_stop") {
               return;
             }
-          } catch {
-            // Non-JSON lines; ignore
+
+            const result = this.processAnthropicLine(
+              payload,
+              currentBlockType,
+              onToken,
+            );
+            accumulatedThinking += result.thinking;
+            if (result.shouldStop) {
+              // Emit accumulated thinking before stopping
+              if (accumulatedThinking && onThinking) {
+                onThinking(accumulatedThinking);
+              }
+              return;
+            }
+            if (result.newBlockType !== undefined) {
+              currentBlockType = result.newBlockType;
+            }
           }
         }
+      }
+      
+      // Emit accumulated thinking at the end
+      if (accumulatedThinking && onThinking) {
+        onThinking(accumulatedThinking);
       }
     } finally {
       reader.releaseLock();
     }
+  }
+
+  /**
+   * Process a single Anthropic SSE data payload
+   * Returns thinking content to accumulate, streams content via callback
+   */
+  private processAnthropicLine(
+    payload: string,
+    currentBlockType: "text" | "thinking" | null,
+    onToken?: (token: string) => void,
+  ): { shouldStop?: boolean; newBlockType?: "text" | "thinking" | null; thinking: string } {
+    try {
+      const data = JSON.parse(payload);
+
+      if (data.type === "content_block_start") {
+        // Track what type of block we're receiving
+        return { newBlockType: data.content_block?.type ?? null, thinking: "" };
+      } else if (data.type === "content_block_delta") {
+        // Route delta to appropriate callback based on block type or delta type
+        const deltaType = data.delta?.type;
+
+        if (
+          deltaType === "thinking_delta" ||
+          currentBlockType === "thinking"
+        ) {
+          // Return thinking to accumulate
+          return { thinking: data.delta?.thinking ?? "" };
+        } else if (
+          deltaType === "text_delta" ||
+          currentBlockType === "text"
+        ) {
+          // Stream text immediately
+          const text = data.delta?.text ?? "";
+          if (text && onToken) {
+            onToken(text);
+          }
+        }
+      } else if (data.type === "content_block_stop") {
+        return { newBlockType: null, thinking: "" };
+      } else if (data.type === "message_stop") {
+        return { shouldStop: true, thinking: "" };
+      }
+    } catch {
+      // Non-JSON lines; ignore
+    }
+    return { thinking: "" };
   }
 
   /**

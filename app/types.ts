@@ -1,5 +1,12 @@
 export type Role = "user" | "assistant";
 
+/**
+ * Thinking/reasoning effort level - maps to provider-specific values:
+ * - OpenAI: reasoning_effort parameter ("low", "medium", "high")
+ * - Anthropic/Gemini: budget_tokens (8192, 16384, 32768)
+ */
+export type ThinkingEffort = "low" | "medium" | "high";
+
 export interface CustomModel {
   id: string;
   name: string;
@@ -7,12 +14,26 @@ export interface CustomModel {
   system: string;
   model: string; // remote model id
   temp: number;
+  /**
+   * Enables "thinking"/reasoning mode for models/APIs that support it.
+   * Optional for backwards compatibility with existing persisted data.
+   */
+  thinkingEnabled?: boolean;
+  /**
+   * Controls thinking depth/budget. Defaults to "medium" if not set.
+   */
+  thinkingEffort?: ThinkingEffort;
 }
 
 export interface ChatMessage {
   role: Role;
   content: string;
   ts: number; // epoch ms
+  /**
+   * Thinking/reasoning content from models that support extended thinking.
+   * Present only on assistant messages when the model returns thinking blocks.
+   */
+  thinking?: string;
 }
 
 export interface ChatThread {
