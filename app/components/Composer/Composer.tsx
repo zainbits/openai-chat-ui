@@ -3,7 +3,8 @@ import { useAppStore, selectActiveThread } from "../../state/store";
 import { useChat } from "../../hooks";
 import GlassSurface from "../GlassSurface";
 import GlassButton from "../GlassButton";
-import { GrSend, GrClose } from "react-icons/gr";
+import { GrClose } from "react-icons/gr";
+import { IoArrowUp } from "react-icons/io5";
 import "./Composer.css";
 
 /** Min and max heights for the textarea */
@@ -120,32 +121,36 @@ export default function Composer() {
       <div className="composer-content">
         <div className="composer-input-area">
           <GlassSurface width="100%" height={textareaHeight + 24}>
-            <textarea
-              ref={textareaRef}
-              className="composer-textarea"
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              aria-label="Message input"
-              style={{ height: `${textareaHeight}px` }}
-            />
+            <div className="composer-input-container">
+              <textarea
+                ref={textareaRef}
+                className="composer-textarea"
+                placeholder="Type your message..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                aria-label="Message input"
+                style={{ height: `${textareaHeight}px` }}
+              />
+              <div className="composer-actions">
+                <GlassButton
+                  variant="round"
+                  width={32}
+                  height={32}
+                  glassClassName="composer-send-button-glass"
+                  disabled={(!input.trim() && !isStreaming) || !thread}
+                  onClick={isStreaming ? cancelStream : handleSend}
+                  aria-label={isStreaming ? "Stop generation" : "Send message"}
+                >
+                  {isStreaming ? (
+                    <GrClose className="composer-icon" aria-hidden="true" />
+                  ) : (
+                    <IoArrowUp className="composer-icon" aria-hidden="true" />
+                  )}
+                </GlassButton>
+              </div>
+            </div>
           </GlassSurface>
-          <div className="composer-actions">
-            <GlassButton
-              variant="round"
-              color={isStreaming ? "danger" : "primary"}
-              disabled={(!input.trim() && !isStreaming) || !thread}
-              onClick={isStreaming ? cancelStream : handleSend}
-              aria-label={isStreaming ? "Stop generation" : "Send message"}
-            >
-              {isStreaming ? (
-                <GrClose className="composer-icon" aria-hidden="true" />
-              ) : (
-                <GrSend className="composer-icon" aria-hidden="true" />
-              )}
-            </GlassButton>
-          </div>
         </div>
       </div>
     </footer>
