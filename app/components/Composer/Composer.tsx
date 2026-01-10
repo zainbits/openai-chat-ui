@@ -6,14 +6,6 @@ import GlassButton from "../GlassButton";
 import { GrSend, GrClose } from "react-icons/gr";
 import "./Composer.css";
 
-/** Quick action prompts for common tasks */
-const QUICK_ACTIONS = [
-  "Make this concise",
-  "Fix grammar and tone",
-  "Turn this into bullet points",
-  "Explain like I'm 12",
-];
-
 /** Min and max heights for the textarea */
 const TEXTAREA_MIN_HEIGHT = 48;
 const TEXTAREA_MAX_HEIGHT = 200;
@@ -25,9 +17,37 @@ export default function Composer() {
   const thread = useAppStore(selectActiveThread);
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLElement>(null);
   const [textareaHeight, setTextareaHeight] = useState(TEXTAREA_MIN_HEIGHT);
 
   const { isLoading, isRegenerating, sendMessage, cancelStream } = useChat();
+
+  /**
+   * Update CSS custom property for composer height so messages container can adjust padding
+   */
+  useEffect(() => {
+    const updateComposerHeight = () => {
+      if (composerRef.current) {
+        const height = composerRef.current.offsetHeight;
+        document.documentElement.style.setProperty(
+          "--composer-height",
+          `${height}px`,
+        );
+      }
+    };
+
+    updateComposerHeight();
+
+    // Use ResizeObserver to track composer height changes
+    const resizeObserver = new ResizeObserver(updateComposerHeight);
+    if (composerRef.current) {
+      resizeObserver.observe(composerRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [textareaHeight]);
 
   /**
    * Auto-resize textarea based on content
@@ -90,37 +110,14 @@ export default function Composer() {
     [handleSend],
   );
 
-  /**
-   * Adds a quick action to the input
-   */
-  const addQuickAction = useCallback((action: string) => {
-    setInput((v) => (v ? v + "\n\n" + action : action));
-  }, []);
-
   return (
-    <footer className="composer" role="region" aria-label="Message composer">
+    <footer
+      ref={composerRef}
+      className="composer"
+      role="region"
+      aria-label="Message composer"
+    >
       <div className="composer-content">
-        <div
-          className="quick-actions"
-          role="toolbar"
-          aria-label="Quick action shortcuts"
-        >
-          {QUICK_ACTIONS.map((q) => (
-            <GlassButton
-              key={q}
-              variant="default"
-              width="auto"
-              height={32}
-              borderRadius={16}
-              color="danger"
-              glassClassName="glass-button-text-xs glass-button-px-3"
-              onClick={() => addQuickAction(q)}
-              aria-label={`Add quick action: ${q}`}
-            >
-              {q}
-            </GlassButton>
-          ))}
-        </div>
         <div className="composer-input-area">
           <GlassSurface width="100%" height={textareaHeight + 24}>
             <textarea

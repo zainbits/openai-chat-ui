@@ -16,7 +16,8 @@
   min-height: 0;
   overflow-y: auto;
   background: transparent;
-  padding: 4rem 1rem 1rem 1rem;
+  /* Dynamic bottom padding based on composer height (set via JS) with extra buffer for scroll-behind effect */
+  padding: 4rem 1rem calc(var(--composer-height, 160px) + 20px) 1rem;
 }
 
 .messages-container::-webkit-scrollbar {

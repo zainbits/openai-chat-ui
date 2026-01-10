@@ -476,7 +476,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
         }
 
         buffer += decoder.decode(value, { stream: true });
-        
+
         // Process complete lines (SSE messages are newline-delimited)
         const lines = buffer.split("\n");
         // Keep the last potentially incomplete line in the buffer
@@ -485,7 +485,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed || trimmed.startsWith(":")) continue; // Skip empty lines and comments
-          
+
           if (trimmed.startsWith("data:")) {
             const payload = trimmed.slice(5).trim();
             if (payload === "[DONE]") {
@@ -495,12 +495,12 @@ export class OpenAICompatibleClient extends BaseApiClient {
               }
               return;
             }
-            
+
             accumulatedThinking += this.processSSELine(payload, onToken);
           }
         }
       }
-      
+
       // Emit accumulated thinking at the end
       if (accumulatedThinking && onThinking) {
         onThinking(accumulatedThinking);
@@ -530,7 +530,9 @@ export class OpenAICompatibleClient extends BaseApiClient {
 
       // Handle thinking tokens - return to accumulate
       // Some APIs return thinking in delta.thinking, delta.reasoning, or delta.reasoning_content
-      return delta?.thinking ?? delta?.reasoning ?? delta?.reasoning_content ?? "";
+      return (
+        delta?.thinking ?? delta?.reasoning ?? delta?.reasoning_content ?? ""
+      );
     } catch {
       // Non-JSON lines in some implementations; ignore
     }
@@ -657,11 +659,7 @@ export class AnthropicClient extends BaseApiClient {
       throw new Error(`Anthropic request failed: ${res.status} - ${errorText}`);
     }
 
-    await this.parseAnthropicStream(
-      res.body,
-      opts.onToken,
-      opts.onThinking,
-    );
+    await this.parseAnthropicStream(res.body, opts.onToken, opts.onThinking);
   }
 
   /**
@@ -813,7 +811,7 @@ export class AnthropicClient extends BaseApiClient {
           }
         }
       }
-      
+
       // Emit accumulated thinking at the end
       if (accumulatedThinking && onThinking) {
         onThinking(accumulatedThinking);
@@ -831,7 +829,11 @@ export class AnthropicClient extends BaseApiClient {
     payload: string,
     currentBlockType: "text" | "thinking" | null,
     onToken?: (token: string) => void,
-  ): { shouldStop?: boolean; newBlockType?: "text" | "thinking" | null; thinking: string } {
+  ): {
+    shouldStop?: boolean;
+    newBlockType?: "text" | "thinking" | null;
+    thinking: string;
+  } {
     try {
       const data = JSON.parse(payload);
 
@@ -842,16 +844,10 @@ export class AnthropicClient extends BaseApiClient {
         // Route delta to appropriate callback based on block type or delta type
         const deltaType = data.delta?.type;
 
-        if (
-          deltaType === "thinking_delta" ||
-          currentBlockType === "thinking"
-        ) {
+        if (deltaType === "thinking_delta" || currentBlockType === "thinking") {
           // Return thinking to accumulate
           return { thinking: data.delta?.thinking ?? "" };
-        } else if (
-          deltaType === "text_delta" ||
-          currentBlockType === "text"
-        ) {
+        } else if (deltaType === "text_delta" || currentBlockType === "text") {
           // Stream text immediately
           const text = data.delta?.text ?? "";
           if (text && onToken) {

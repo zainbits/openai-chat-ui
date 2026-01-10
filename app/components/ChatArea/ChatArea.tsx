@@ -312,17 +312,17 @@ export default function ChatArea() {
       const currentScrollTop = el.scrollTop;
       const maxScrollTop = el.scrollHeight - el.clientHeight;
       const isAtBottom = maxScrollTop - currentScrollTop < 50; // 50px threshold
-      
+
       // User scrolled up if current position is less than last and not at bottom
       if (currentScrollTop < lastScrollTopRef.current && !isAtBottom) {
         userScrolledUpRef.current = true;
       }
-      
+
       // Reset when user scrolls back to bottom
       if (isAtBottom) {
         userScrolledUpRef.current = false;
       }
-      
+
       lastScrollTopRef.current = currentScrollTop;
     };
 
@@ -341,12 +341,12 @@ export default function ChatArea() {
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    
+
     // Don't auto-scroll if user has scrolled up during streaming
     if (userScrolledUpRef.current && isStreamingActive) {
       return;
     }
-    
+
     el.scrollTop = el.scrollHeight;
   }, [messages, isStreaming, isStreamingActive]);
 
@@ -519,6 +519,11 @@ export default function ChatArea() {
                         )}
                       </div>
                     )}
+                  {!isAssistantMessage && (
+                    <div className="message-actions">
+                      <CopyButton content={m.content} />
+                    </div>
+                  )}
                 </article>
               );
             })}

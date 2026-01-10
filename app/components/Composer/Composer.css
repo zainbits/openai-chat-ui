@@ -8,6 +8,13 @@
   padding-right: 2rem;
   z-index: 10;
   flex-shrink: 0;
+  /* Position fixed at bottom for immersive scroll-behind effect */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  /* Safe area inset for mobile devices with home indicators */
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
 .composer-content {
@@ -15,12 +22,6 @@
   flex: 1;
   flex-direction: column;
   gap: 0.5rem;
-}
-
-.quick-actions {
-  display: flex;
-  gap: 0.5rem;
-  overflow-x: auto;
 }
 
 .composer-input-area {

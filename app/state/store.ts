@@ -45,9 +45,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   apiBaseUrl: DEFAULT_API_BASE_URL,
   defaultModel: DEFAULT_MODEL,
   streamingEnabled: true,
-  glassEffectEnabled: true,
+  glassEffectEnabled: false,
   showActiveModelIndicator: true,
-  lowSpecBlur: 5,
+  lowSpecBlur: 8,
 };
 
 const STARTER_MODELS: CustomModel[] = [
