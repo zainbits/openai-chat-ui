@@ -63,6 +63,8 @@
   left: 0;
   right: 0;
   z-index: 10;
+  /* Smooth transition for padding offset to match sidebar animation */
+  transition: padding-left 0.3s ease;
 }
 
 /* Menu icon styling */
