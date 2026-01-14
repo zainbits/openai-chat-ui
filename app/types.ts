@@ -75,6 +75,10 @@ export interface AppSettings {
   glassEffectEnabled: boolean;
   showActiveModelIndicator: boolean;
   lowSpecBlur?: number;
+  // Cloud sync settings
+  cloudSyncEnabled?: boolean;
+  adminApiUrl?: string;
+  adminPassword?: string;
 }
 
 export interface StreamHandle {

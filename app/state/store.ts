@@ -22,6 +22,7 @@ import {
   AnthropicClient,
   type ApiClient,
 } from "../api/client";
+import { ModelsSyncClient, type SyncResult } from "../api/sync";
 import { loadAppData, saveAppData, wipeAll } from "../utils/storage";
 import { getModelColor } from "../theme/colors";
 import { ANTHROPIC_PROVIDER_ID } from "../constants";
@@ -148,6 +149,10 @@ interface AppStoreActions {
 
   // Persistence
   _hydrate: () => void;
+
+  // Cloud Sync Actions
+  syncModelsToCloud: () => Promise<SyncResult>;
+  syncModelsFromCloud: () => Promise<SyncResult>;
 }
 
 type AppStore = AppStoreState & AppStoreActions;
@@ -574,6 +579,58 @@ export const useAppStore = create<AppStore>()(
       } else {
         set({ _hydrated: true });
       }
+    },
+
+    // ========================================================================
+    // Cloud Sync Actions
+    // ========================================================================
+
+    syncModelsToCloud: async () => {
+      const { settings, models } = get();
+      const { adminApiUrl, adminPassword } = settings;
+
+      if (!adminApiUrl || !adminPassword) {
+        return {
+          success: false,
+          models: [],
+          error:
+            "Cloud sync not configured. Set Admin API URL and Password in settings.",
+        };
+      }
+
+      const client = new ModelsSyncClient({ adminApiUrl, adminPassword });
+      const result = await client.syncModels(models);
+
+      // If sync was successful, update local models with cloud models
+      if (result.success && result.models.length > 0) {
+        set({ models: result.models });
+      }
+
+      return result;
+    },
+
+    syncModelsFromCloud: async () => {
+      const { settings } = get();
+      const { adminApiUrl, adminPassword } = settings;
+
+      if (!adminApiUrl || !adminPassword) {
+        return {
+          success: false,
+          models: [],
+          error:
+            "Cloud sync not configured. Set Admin API URL and Password in settings.",
+        };
+      }
+
+      const client = new ModelsSyncClient({ adminApiUrl, adminPassword });
+      const result = await client.fetchModels();
+
+      // If fetch was successful and we got models, update local state
+      if (result.success && result.models.length > 0) {
+        set({ models: result.models });
+      }
+
+      return result;
     },
   })),
 );
