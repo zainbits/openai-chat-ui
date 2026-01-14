@@ -23,6 +23,11 @@ export interface CustomModel {
    * Controls thinking depth/budget. Defaults to "medium" if not set.
    */
   thinkingEffort?: ThinkingEffort;
+  /**
+   * Timestamp of last update (ISO string from server).
+   * Used for conflict detection when syncing across machines.
+   */
+  updatedAt?: string;
 }
 
 export interface ChatMessage {

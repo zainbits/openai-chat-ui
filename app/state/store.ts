@@ -22,7 +22,11 @@ import {
   AnthropicClient,
   type ApiClient,
 } from "../api/client";
-import { ModelsSyncClient, type SyncResult } from "../api/sync";
+import {
+  ModelsSyncClient,
+  type SyncResult,
+  type SingleModelResult,
+} from "../api/sync";
 import { loadAppData, saveAppData, wipeAll } from "../utils/storage";
 import { getModelColor } from "../theme/colors";
 import { ANTHROPIC_PROVIDER_ID } from "../constants";
@@ -130,10 +134,18 @@ interface AppStoreActions {
   removeMessagesAfterIndex: (threadId: string, index: number) => void;
   setThreadPreview: (threadId: string, preview: string) => void;
 
-  // Model Actions
-  addModel: (model: Omit<CustomModel, "id">) => void;
-  updateModel: (modelId: string, updates: Partial<CustomModel>) => void;
-  deleteModel: (modelId: string) => void;
+  // Model Actions (cloud-first: all changes sync to MongoDB)
+  addModel: (model: Omit<CustomModel, "id">) => Promise<SingleModelResult>;
+  updateModel: (
+    modelId: string,
+    updates: Partial<CustomModel>,
+  ) => Promise<SingleModelResult>;
+  deleteModel: (
+    modelId: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+
+  // Local-only model actions (for cache management)
+  setModels: (models: CustomModel[]) => void;
 
   // Settings Actions
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -151,8 +163,9 @@ interface AppStoreActions {
   _hydrate: () => void;
 
   // Cloud Sync Actions
-  syncModelsToCloud: () => Promise<SyncResult>;
-  syncModelsFromCloud: () => Promise<SyncResult>;
+  syncModels: () => Promise<SyncResult>;
+  isCloudConfigured: () => boolean;
+  getSyncClient: () => ModelsSyncClient | null;
 }
 
 type AppStore = AppStoreState & AppStoreActions;
@@ -488,32 +501,89 @@ export const useAppStore = create<AppStore>()(
       })),
 
     // ========================================================================
-    // Model Actions
+    // Model Actions (Cloud-First: MongoDB is source of truth)
     // ========================================================================
 
-    addModel: (modelData) => {
+    addModel: async (modelData) => {
       // Generate a secure random suffix for the model ID
       const randomSuffix = generateId().slice(0, 8);
       const id =
         modelData.name.toLowerCase().replace(/\s+/g, "-") + "-" + randomSuffix;
       const model: CustomModel = { ...modelData, id };
 
-      set((state) => ({
-        models: [...state.models, model],
-      }));
+      const client = get().getSyncClient();
+      if (client) {
+        // Cloud-first: save to MongoDB, then update local cache
+        const result = await client.upsertModel(model);
+        if (result.success) {
+          set((state) => ({
+            models: [...state.models, result.model ?? model],
+          }));
+        }
+        return result;
+      } else {
+        // Fallback: local-only mode
+        set((state) => ({
+          models: [...state.models, model],
+        }));
+        return { success: true, model };
+      }
     },
 
-    updateModel: (modelId, updates) =>
-      set((state) => ({
-        models: state.models.map((m) =>
-          m.id === modelId ? { ...m, ...updates } : m,
-        ),
-      })),
+    updateModel: async (modelId, updates) => {
+      const state = get();
+      const existing = state.models.find((m) => m.id === modelId);
+      if (!existing) {
+        return { success: false, error: "Model not found" };
+      }
 
-    deleteModel: (modelId) =>
-      set((state) => ({
-        models: state.models.filter((m) => m.id !== modelId),
-      })),
+      const updatedModel: CustomModel = { ...existing, ...updates };
+      const client = state.getSyncClient();
+
+      if (client) {
+        // Cloud-first: save to MongoDB, then update local cache
+        const result = await client.upsertModel(updatedModel);
+        if (result.success) {
+          set((state) => ({
+            models: state.models.map((m) =>
+              m.id === modelId ? (result.model ?? updatedModel) : m,
+            ),
+          }));
+        }
+        return result;
+      } else {
+        // Fallback: local-only mode
+        set((state) => ({
+          models: state.models.map((m) =>
+            m.id === modelId ? updatedModel : m,
+          ),
+        }));
+        return { success: true, model: updatedModel };
+      }
+    },
+
+    deleteModel: async (modelId) => {
+      const client = get().getSyncClient();
+
+      if (client) {
+        // Cloud-first: delete from MongoDB, then update local cache
+        const result = await client.deleteModel(modelId);
+        if (result.success) {
+          set((state) => ({
+            models: state.models.filter((m) => m.id !== modelId),
+          }));
+        }
+        return result;
+      } else {
+        // Fallback: local-only mode
+        set((state) => ({
+          models: state.models.filter((m) => m.id !== modelId),
+        }));
+        return { success: true };
+      }
+    },
+
+    setModels: (models) => set({ models }),
 
     // ========================================================================
     // Settings Actions
@@ -585,35 +655,23 @@ export const useAppStore = create<AppStore>()(
     // Cloud Sync Actions
     // ========================================================================
 
-    syncModelsToCloud: async () => {
-      const { settings, models } = get();
-      const { adminApiUrl, adminPassword } = settings;
-
+    getSyncClient: () => {
+      const { adminApiUrl, adminPassword } = get().settings;
       if (!adminApiUrl || !adminPassword) {
-        return {
-          success: false,
-          models: [],
-          error:
-            "Cloud sync not configured. Set Admin API URL and Password in settings.",
-        };
+        return null;
       }
-
-      const client = new ModelsSyncClient({ adminApiUrl, adminPassword });
-      const result = await client.syncModels(models);
-
-      // If sync was successful, update local models with cloud models
-      if (result.success && result.models.length > 0) {
-        set({ models: result.models });
-      }
-
-      return result;
+      return new ModelsSyncClient({ adminApiUrl, adminPassword });
     },
 
-    syncModelsFromCloud: async () => {
-      const { settings } = get();
-      const { adminApiUrl, adminPassword } = settings;
+    isCloudConfigured: () => {
+      const { adminApiUrl, adminPassword } = get().settings;
+      return !!(adminApiUrl && adminPassword);
+    },
 
-      if (!adminApiUrl || !adminPassword) {
+    syncModels: async () => {
+      const client = get().getSyncClient();
+
+      if (!client) {
         return {
           success: false,
           models: [],
@@ -622,11 +680,10 @@ export const useAppStore = create<AppStore>()(
         };
       }
 
-      const client = new ModelsSyncClient({ adminApiUrl, adminPassword });
+      // Fetch from cloud (source of truth) and update local cache
       const result = await client.fetchModels();
 
-      // If fetch was successful and we got models, update local state
-      if (result.success && result.models.length > 0) {
+      if (result.success) {
         set({ models: result.models });
       }
 

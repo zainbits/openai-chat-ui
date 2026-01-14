@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { useAppStore, useThreads } from "../../state/store";
 import { groupByDateBucket } from "../../utils/time";
 import SettingsModal from "../SettingsModal";
+import ModelEditorModal from "../ModelEditorModal";
 import SidebarHeader from "./SidebarHeader";
 import ThreadFilters from "./ThreadFilters";
 import ThreadListItem from "./ThreadListItem";
@@ -21,6 +22,34 @@ export default function Sidebar() {
 
   const [sortBy, setSortBy] = useState<SortOption>("date");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [modelEditorOpen, setModelEditorOpen] = useState(false);
+  const [editingModelId, setEditingModelId] = useState<string | undefined>(
+    undefined,
+  );
+  // Track if we came from settings to return there after editing
+  const [returnToSettings, setReturnToSettings] = useState(false);
+
+  /**
+   * Handle edit model request from SettingsModal's CloudModelsTab
+   */
+  const handleEditModel = useCallback((modelId: string) => {
+    setReturnToSettings(true);
+    setSettingsOpen(false);
+    setEditingModelId(modelId);
+    setModelEditorOpen(true);
+  }, []);
+
+  /**
+   * Handle closing the model editor - return to settings if we came from there
+   */
+  const handleModelEditorClose = useCallback(() => {
+    setModelEditorOpen(false);
+    setEditingModelId(undefined);
+    if (returnToSettings) {
+      setReturnToSettings(false);
+      setSettingsOpen(true);
+    }
+  }, [returnToSettings]);
 
   // Filter and sort threads
   const filtered = useMemo(() => {
@@ -109,6 +138,13 @@ export default function Sidebar() {
         <SettingsModal
           opened={settingsOpen}
           onClose={() => setSettingsOpen(false)}
+          onEditModel={handleEditModel}
+        />
+
+        <ModelEditorModal
+          opened={modelEditorOpen}
+          onClose={handleModelEditorClose}
+          modelId={editingModelId}
         />
       </aside>
     </>

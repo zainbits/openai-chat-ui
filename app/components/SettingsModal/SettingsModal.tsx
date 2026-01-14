@@ -9,10 +9,10 @@ import {
   Group,
   Tabs,
   Slider,
-  PasswordInput,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import ConfirmModal from "../ConfirmModal";
+import CloudModelsTab from "../CloudModelsTab";
 import { useAppStore } from "../../state/store";
 import { exportJson, importJson } from "../../utils/storage";
 import { API_PROVIDER_PRESETS, CUSTOM_PROVIDER_ID } from "../../constants";
@@ -22,12 +22,17 @@ import "./SettingsModal.css";
 interface SettingsModalProps {
   opened: boolean;
   onClose: () => void;
+  onEditModel?: (modelId: string) => void;
 }
 
 /**
  * Modal for managing application settings
  */
-export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
+export default function SettingsModal({
+  opened,
+  onClose,
+  onEditModel,
+}: SettingsModalProps) {
   const settings = useAppStore((s) => s.settings);
   const availableModels = useAppStore((s) => s.availableModels);
   const updateSettings = useAppStore((s) => s.updateSettings);
@@ -110,15 +115,6 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
 
   const nukeAll = useAppStore((s) => s.nukeAll);
   const deleteAllChats = useAppStore((s) => s.deleteAllChats);
-  const syncModelsToCloud = useAppStore((s) => s.syncModelsToCloud);
-  const syncModelsFromCloud = useAppStore((s) => s.syncModelsFromCloud);
-
-  // Cloud sync state
-  const [adminApiUrl, setAdminApiUrl] = useState(settings.adminApiUrl ?? "");
-  const [adminPassword, setAdminPassword] = useState(
-    settings.adminPassword ?? "",
-  );
-  const [syncing, setSyncing] = useState(false);
 
   // Compute the actual API base URL based on provider selection
   const apiBaseUrl = useMemo(() => {
@@ -336,77 +332,17 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
   }, []);
 
   /**
-   * Saves cloud sync settings
+   * Handle edit model from CloudModelsTab
    */
-  const saveCloudSyncSettings = useCallback(() => {
-    updateSettings({ adminApiUrl, adminPassword });
-    notifications.show({
-      message: "Cloud sync settings saved",
-      color: "green",
-    });
-  }, [adminApiUrl, adminPassword, updateSettings]);
-
-  /**
-   * Handles syncing models to cloud (upload)
-   */
-  const handleSyncToCloud = useCallback(async () => {
-    // Save settings first to ensure they're persisted
-    updateSettings({ adminApiUrl, adminPassword });
-
-    setSyncing(true);
-    try {
-      const result = await syncModelsToCloud();
-      if (result.success) {
-        notifications.show({
-          message: `Synced ${result.models.length} models to cloud`,
-          color: "green",
-        });
-      } else {
-        notifications.show({
-          message: result.error || "Failed to sync models",
-          color: "red",
-        });
+  const handleEditModel = useCallback(
+    (modelId: string) => {
+      if (onEditModel) {
+        onClose();
+        onEditModel(modelId);
       }
-    } catch (err) {
-      notifications.show({
-        message: err instanceof Error ? err.message : "Sync failed",
-        color: "red",
-      });
-    } finally {
-      setSyncing(false);
-    }
-  }, [adminApiUrl, adminPassword, updateSettings, syncModelsToCloud]);
-
-  /**
-   * Handles syncing models from cloud (download)
-   */
-  const handleSyncFromCloud = useCallback(async () => {
-    // Save settings first to ensure they're persisted
-    updateSettings({ adminApiUrl, adminPassword });
-
-    setSyncing(true);
-    try {
-      const result = await syncModelsFromCloud();
-      if (result.success) {
-        notifications.show({
-          message: `Downloaded ${result.models.length} models from cloud`,
-          color: "green",
-        });
-      } else {
-        notifications.show({
-          message: result.error || "Failed to download models",
-          color: "red",
-        });
-      }
-    } catch (err) {
-      notifications.show({
-        message: err instanceof Error ? err.message : "Download failed",
-        color: "red",
-      });
-    } finally {
-      setSyncing(false);
-    }
-  }, [adminApiUrl, adminPassword, updateSettings, syncModelsFromCloud]);
+    },
+    [onClose, onEditModel],
+  );
 
   return (
     <>
@@ -417,14 +353,22 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
         size="lg"
         aria-labelledby="settings-modal-title"
       >
-        <Tabs defaultValue="models" classNames={{ root: "settings-tabs" }}>
+        <Tabs
+          defaultValue="cloud-models"
+          classNames={{ root: "settings-tabs" }}
+        >
           <Tabs.List className="settings-tabs-list">
-            <Tabs.Tab value="models">Models</Tabs.Tab>
+            <Tabs.Tab value="cloud-models">Cloud Models</Tabs.Tab>
+            <Tabs.Tab value="api">API</Tabs.Tab>
             <Tabs.Tab value="interface">Interface</Tabs.Tab>
             <Tabs.Tab value="data">Data</Tabs.Tab>
           </Tabs.List>
 
-          <Tabs.Panel value="models" pt="md">
+          <Tabs.Panel value="cloud-models" pt="md">
+            <CloudModelsTab onEditModel={handleEditModel} />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="api" pt="md">
             <div className="modal-content">
               <Select
                 label="API Provider"
@@ -571,50 +515,6 @@ export default function SettingsModal({ opened, onClose }: SettingsModalProps) {
 
           <Tabs.Panel value="data" pt="md">
             <div className="modal-content">
-              <div className="data-section">
-                <Text size="sm" fw={500} mb="xs">
-                  Cloud Sync
-                </Text>
-                <Text size="xs" c="dimmed" mb="sm">
-                  Sync your custom models to the cloud. Models are stored
-                  locally and synced manually to save API calls.
-                </Text>
-                <TextInput
-                  label="Admin API URL"
-                  placeholder="http://localhost:3017/admin/api"
-                  value={adminApiUrl}
-                  onChange={(e) => setAdminApiUrl(e.currentTarget.value)}
-                  mb="sm"
-                />
-                <PasswordInput
-                  label="Admin Password"
-                  placeholder="Your admin password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.currentTarget.value)}
-                  mb="sm"
-                />
-                <Group gap="sm">
-                  <Button
-                    variant="light"
-                    onClick={handleSyncToCloud}
-                    loading={syncing}
-                    disabled={!adminApiUrl || !adminPassword}
-                    aria-label="Upload models to cloud"
-                  >
-                    Upload to Cloud
-                  </Button>
-                  <Button
-                    variant="light"
-                    onClick={handleSyncFromCloud}
-                    loading={syncing}
-                    disabled={!adminApiUrl || !adminPassword}
-                    aria-label="Download models from cloud"
-                  >
-                    Download from Cloud
-                  </Button>
-                </Group>
-              </div>
-
               <div className="data-section">
                 <Text size="sm" fw={500} mb="xs">
                   Export & Import
