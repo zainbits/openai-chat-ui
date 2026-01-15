@@ -3,6 +3,7 @@
  * @module storage
  */
 import type { AppData, UiState } from "../types";
+import { APP_DATA_VERSION, normalizePersistedAppData } from "./appData";
 
 /** Storage key for app data */
 const KEY = "custommodels-chat:v1";
@@ -15,19 +16,35 @@ type PersistedUiState = Omit<UiState, TransientUiKeys>;
 
 /** App data structure for persistence (with filtered UI state) */
 interface PersistedAppData extends Omit<AppData, "ui" | "connectionStatus"> {
+  version: number;
   ui: PersistedUiState;
 }
+
+const sanitizeChatsForStorage = (chats: AppData["chats"]): AppData["chats"] =>
+  Object.fromEntries(
+    Object.entries(chats).map(([threadId, thread]) => {
+      const messages = thread.messages.map((message) => {
+        if (message.imageIds && message.imageIds.length > 0) {
+          const { images, ...restMessage } = message;
+          return restMessage;
+        }
+        return message;
+      });
+      return [threadId, { ...thread, messages }];
+    }),
+  ) as AppData["chats"];
 
 /**
  * Loads app data from localStorage
  * @returns The saved app data, or null if not found or invalid
  */
-export function loadAppData(): AppData | null {
+export function loadAppData(defaults: AppData): AppData | null {
   if (typeof localStorage === "undefined") return null;
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as AppData;
+    const parsed = JSON.parse(raw);
+    return normalizePersistedAppData(parsed, defaults);
   } catch (err) {
     console.error("Failed to load app data:", err);
     return null;
@@ -48,6 +65,8 @@ export function saveAppData(data: AppData): void {
 
     const dataToStore: PersistedAppData = {
       ...rest,
+      chats: sanitizeChatsForStorage(rest.chats),
+      version: APP_DATA_VERSION,
       ui: persistedUi,
     };
 
@@ -63,7 +82,15 @@ export function saveAppData(data: AppData): void {
  * @returns Formatted JSON string
  */
 export function exportJson(data: AppData): string {
-  return JSON.stringify(data, null, 2);
+  return JSON.stringify(
+    {
+      ...data,
+      chats: sanitizeChatsForStorage(data.chats),
+      version: APP_DATA_VERSION,
+    },
+    null,
+    2,
+  );
 }
 
 /**
@@ -72,9 +99,8 @@ export function exportJson(data: AppData): string {
  * @returns Parsed app data
  * @throws Error if the JSON is invalid
  */
-export function importJson(json: string): AppData {
-  const parsed = JSON.parse(json) as AppData;
-  return parsed;
+export function importJson(json: string): unknown {
+  return JSON.parse(json);
 }
 
 /**

@@ -9,12 +9,21 @@ import {
   selectActiveThread,
   selectActiveModel,
 } from "../state/store";
-import type { StreamHandle, OpenAIChatMessage, ContentPart } from "../types";
+import type {
+  StreamHandle,
+  OpenAIChatMessage,
+  ContentPart,
+  ChatMessage,
+  ChatThread,
+  CustomModel,
+} from "../types";
 import {
   TITLE_GENERATION_TEMPERATURE,
   TITLE_PROMPT_MAX_CHARS,
   MAX_TITLE_WORDS,
 } from "../constants";
+import { getImagesByIds, saveImages } from "../utils/imageStore";
+import { generateId } from "../state/utils";
 
 /**
  * Extracts a user-friendly error message from various error types
@@ -83,6 +92,50 @@ function buildMessageContent(
   return parts;
 }
 
+/**
+ * Builds OpenAI-compatible messages from a thread and model settings.
+ */
+async function resolveMessageImages(
+  message: ChatMessage,
+): Promise<string[] | undefined> {
+  if (message.images && message.images.length > 0) {
+    return message.images;
+  }
+
+  if (message.imageIds && message.imageIds.length > 0) {
+    try {
+      const resolved = await getImagesByIds(message.imageIds);
+      return resolved.filter(Boolean) as string[];
+    } catch (error) {
+      console.warn("Failed to resolve image IDs:", error);
+      return undefined;
+    }
+  }
+
+  return undefined;
+}
+
+async function buildChatMessages(
+  thread: ChatThread,
+  model: CustomModel,
+): Promise<OpenAIChatMessage[]> {
+  const system: OpenAIChatMessage[] = model.system
+    ? [{ role: "system" as const, content: model.system }]
+    : [];
+
+  const history: OpenAIChatMessage[] = await Promise.all(
+    thread.messages
+      // Exclude empty assistant placeholders
+      .filter((m) => m.role !== "assistant" || m.content)
+      .map(async (m) => ({
+        role: m.role,
+        content: buildMessageContent(m.content, await resolveMessageImages(m)),
+      })),
+  );
+
+  return [...system, ...history];
+}
+
 interface UseChatReturn {
   /** Whether a message is currently being sent/streamed */
   isLoading: boolean;
@@ -122,6 +175,37 @@ export function useChat(): UseChatReturn {
   );
   const updateModel = useAppStore((s) => s.updateModel);
   const updateThreadTitle = useAppStore((s) => s.updateThreadTitle);
+
+  /**
+   * Starts a streaming chat request and wires up common callbacks.
+   */
+  const startStream = useCallback(
+    (
+      threadId: string,
+      model: CustomModel,
+      messages: OpenAIChatMessage[],
+      thinkingEnabled: boolean,
+      handlers: { onDone: () => void; onError: (error: unknown) => void },
+    ) => {
+      const client = getClient();
+      streamRef.current = client.chat({
+        model: model.model,
+        messages,
+        temperature: model.temp,
+        thinkingEnabled,
+        thinkingEffort: model.thinkingEffort,
+        onToken: (token) => {
+          appendToLastMessage(threadId, token);
+        },
+        onThinking: (thinking) => {
+          setThinkingOnLastMessage(threadId, thinking);
+        },
+        onDone: handlers.onDone,
+        onError: handlers.onError,
+      });
+    },
+    [getClient, appendToLastMessage, setThinkingOnLastMessage],
+  );
 
   /**
    * Generates a title for a thread based on the first user message
@@ -195,15 +279,29 @@ export function useChat(): UseChatReturn {
       const userMessageIndex = thread.messages.length;
       let retriedWithoutThinking = false;
 
+      let imageIds: string[] | undefined;
+      if (images && images.length > 0) {
+        const records = images.map((dataUrl) => ({
+          id: generateId(),
+          dataUrl,
+        }));
+        imageIds = records.map((record) => record.id);
+        const stored = await saveImages(records);
+        if (!stored) {
+          console.warn("Failed to store images in IndexedDB");
+          imageIds = undefined;
+        }
+      }
+
       // Add user message with optional images
-      addUserMessage(threadId, trimmedContent, images);
+      addUserMessage(threadId, trimmedContent, images, imageIds);
 
       // Add empty assistant message for streaming
       addAssistantMessage(threadId);
 
       setIsLoading(true);
 
-      const startRequest = (thinkingEnabled: boolean) => {
+      const startRequest = async (thinkingEnabled: boolean) => {
         const currentState = useAppStore.getState();
         const currentThread = currentState.chats[threadId];
         const currentModel = currentThread
@@ -216,33 +314,9 @@ export function useChat(): UseChatReturn {
           return;
         }
 
-        const system: OpenAIChatMessage[] = currentModel.system
-          ? [{ role: "system" as const, content: currentModel.system }]
-          : [];
+        const messages = await buildChatMessages(currentThread, currentModel);
 
-        const history: OpenAIChatMessage[] = currentThread.messages
-          // Exclude empty assistant placeholders
-          .filter((m) => m.role !== "assistant" || m.content)
-          .map((m) => ({
-            role: m.role,
-            content: buildMessageContent(m.content, m.images),
-          }));
-
-        const messages = [...system, ...history];
-        const client = getClient();
-
-        streamRef.current = client.chat({
-          model: currentModel.model,
-          messages,
-          temperature: currentModel.temp,
-          thinkingEnabled,
-          thinkingEffort: currentModel.thinkingEffort,
-          onToken: (token) => {
-            appendToLastMessage(threadId, token);
-          },
-          onThinking: (thinking) => {
-            setThinkingOnLastMessage(threadId, thinking);
-          },
+        startStream(threadId, currentModel, messages, thinkingEnabled, {
           onDone: async () => {
             setIsLoading(false);
             streamRef.current = null;
@@ -263,9 +337,12 @@ export function useChat(): UseChatReturn {
                 );
                 if (firstUser) {
                   // Use text content for title, or indicate image-only message
+                  const hasImages =
+                    (firstUser.images && firstUser.images.length > 0) ||
+                    (firstUser.imageIds && firstUser.imageIds.length > 0);
                   const titleContent =
                     firstUser.content ||
-                    (firstUser.images?.length ? "Image conversation" : "");
+                    (hasImages ? "Image conversation" : "");
                   if (titleContent) {
                     await generateTitle(
                       threadId,
@@ -298,7 +375,7 @@ export function useChat(): UseChatReturn {
               removeMessagesAfterIndex(threadId, userMessageIndex);
               addAssistantMessage(threadId);
               streamRef.current = null;
-              startRequest(false);
+              void startRequest(false);
               return;
             }
 
@@ -313,18 +390,16 @@ export function useChat(): UseChatReturn {
         });
       };
 
-      startRequest(!!model.thinkingEnabled);
+      void startRequest(!!model.thinkingEnabled);
     },
     [
-      getClient,
       addUserMessage,
       addAssistantMessage,
-      appendToLastMessage,
-      setThinkingOnLastMessage,
       generateTitle,
       setIsLoading,
       updateModel,
       removeMessagesAfterIndex,
+      startStream,
     ],
   );
 
@@ -364,7 +439,7 @@ export function useChat(): UseChatReturn {
     // Add empty assistant message for streaming
     addAssistantMessage(thread.id);
 
-    const startRequest = (thinkingEnabled: boolean) => {
+    const startRequest = async (thinkingEnabled: boolean) => {
       const updatedState = useAppStore.getState();
       const updatedThread = updatedState.chats[thread.id];
       const updatedModel = updatedThread
@@ -377,34 +452,10 @@ export function useChat(): UseChatReturn {
         return;
       }
 
-      // Prepare messages for API
-      const system: OpenAIChatMessage[] = updatedModel.system
-        ? [{ role: "system" as const, content: updatedModel.system }]
-        : [];
-
-      const history: OpenAIChatMessage[] = updatedThread.messages
-        .filter((m) => m.role !== "assistant" || m.content) // Exclude empty assistant messages (including the one we just added)
-        .map((m) => ({
-          role: m.role,
-          content: buildMessageContent(m.content, m.images),
-        }));
-
-      const messages = [...system, ...history];
-      const client = getClient();
+      const messages = await buildChatMessages(updatedThread, updatedModel);
 
       // Send the message (streaming or non-streaming based on settings)
-      streamRef.current = client.chat({
-        model: updatedModel.model,
-        messages,
-        temperature: updatedModel.temp,
-        thinkingEnabled,
-        thinkingEffort: updatedModel.thinkingEffort,
-        onToken: (token) => {
-          appendToLastMessage(thread.id, token);
-        },
-        onThinking: (thinking) => {
-          setThinkingOnLastMessage(thread.id, thinking);
-        },
+      startStream(thread.id, updatedModel, messages, thinkingEnabled, {
         onDone: () => {
           setIsRegenerating(false);
           streamRef.current = null;
@@ -428,7 +479,7 @@ export function useChat(): UseChatReturn {
             removeMessagesAfterIndex(thread.id, lastUserIndex);
             addAssistantMessage(thread.id);
             streamRef.current = null;
-            startRequest(false);
+            void startRequest(false);
             return;
           }
 
@@ -443,16 +494,14 @@ export function useChat(): UseChatReturn {
       });
     };
 
-    startRequest(!!model.thinkingEnabled);
+    void startRequest(!!model.thinkingEnabled);
   }, [
-    getClient,
     removeMessagesAfterIndex,
     addAssistantMessage,
-    appendToLastMessage,
-    setThinkingOnLastMessage,
     isRegenerating,
     setIsRegenerating,
     updateModel,
+    startStream,
   ]);
 
   return {

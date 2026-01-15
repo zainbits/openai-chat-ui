@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Modal,
   Button,
@@ -15,7 +15,14 @@ import ConfirmModal from "../ConfirmModal";
 import CloudModelsTab from "../CloudModelsTab";
 import { useAppStore } from "../../state/store";
 import { exportJson, importJson } from "../../utils/storage";
+import { normalizePersistedAppData } from "../../utils/appData";
+import {
+  cleanupImageStore,
+  isImageStoreReady,
+  listImageIds,
+} from "../../utils/imageStore";
 import { API_PROVIDER_PRESETS, CUSTOM_PROVIDER_ID } from "../../constants";
+import { createApiClient } from "../../api/client";
 import type { AppData } from "../../types";
 import "./SettingsModal.css";
 
@@ -37,7 +44,6 @@ export default function SettingsModal({
   const availableModels = useAppStore((s) => s.availableModels);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const setAvailableModels = useAppStore((s) => s.setAvailableModels);
-  const getClient = useAppStore((s) => s.getClient);
 
   // Get full state for export
   const getFullState = (): AppData => {
@@ -112,9 +118,48 @@ export default function SettingsModal({
   const [nukeModalOpen, setNukeModalOpen] = useState(false);
   const [deleteChatsModalOpen, setDeleteChatsModalOpen] = useState(false);
   const [nukeConfirmText, setNukeConfirmText] = useState("");
+  const [imageStoreStatus, setImageStoreStatus] = useState<
+    "checking" | "available" | "unavailable"
+  >("checking");
+  const [imageStoreCount, setImageStoreCount] = useState<number | null>(null);
+  const [cleaningImages, setCleaningImages] = useState(false);
 
   const nukeAll = useAppStore((s) => s.nukeAll);
   const deleteAllChats = useAppStore((s) => s.deleteAllChats);
+
+  useEffect(() => {
+    if (!opened) return;
+    let cancelled = false;
+
+    const checkImageStore = async () => {
+      setImageStoreStatus("checking");
+      const available = await isImageStoreReady();
+      if (cancelled) return;
+      setImageStoreStatus(available ? "available" : "unavailable");
+
+      if (!available) {
+        setImageStoreCount(null);
+        return;
+      }
+
+      try {
+        const ids = await listImageIds();
+        if (!cancelled) {
+          setImageStoreCount(ids.length);
+        }
+      } catch {
+        if (!cancelled) {
+          setImageStoreCount(null);
+        }
+      }
+    };
+
+    void checkImageStore();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [opened]);
 
   // Compute the actual API base URL based on provider selection
   const apiBaseUrl = useMemo(() => {
@@ -167,11 +212,13 @@ export default function SettingsModal({
     if (apiKey.length === 0) return;
     setVerifying(true);
 
-    // Temporarily update settings to test the connection (include provider)
-    updateSettings({ apiBaseUrl, apiKey, apiProvider: selectedProvider });
-
     try {
-      const client = getClient();
+      const client = createApiClient({
+        apiBaseUrl,
+        apiKey,
+        apiProvider: selectedProvider,
+        streamingEnabled,
+      });
       const ok = await client.verify();
 
       if (ok) {
@@ -190,8 +237,7 @@ export default function SettingsModal({
     apiBaseUrl,
     apiKey,
     selectedProvider,
-    updateSettings,
-    getClient,
+    streamingEnabled,
     setAvailableModels,
   ]);
 
@@ -282,13 +328,14 @@ export default function SettingsModal({
       const text = await file.text();
       try {
         const data = importJson(text);
+        const normalized = normalizePersistedAppData(data, getFullState());
         // Update the store with imported data
         useAppStore.setState({
-          models: data.models,
-          chats: data.chats,
-          ui: data.ui,
-          settings: data.settings,
-          availableModels: data.availableModels,
+          models: normalized.models,
+          chats: normalized.chats,
+          ui: normalized.ui,
+          settings: normalized.settings,
+          availableModels: normalized.availableModels,
         });
         notifications.show({ message: "Data imported", color: "green" });
       } catch {
@@ -322,6 +369,42 @@ export default function SettingsModal({
       color: "green",
     });
   }, [deleteAllChats]);
+
+  const handleCleanupImages = useCallback(async () => {
+    if (imageStoreStatus !== "available") return;
+    setCleaningImages(true);
+    try {
+      const chats = useAppStore.getState().chats;
+      const referencedIds: string[] = [];
+      Object.values(chats).forEach((thread) => {
+        thread.messages.forEach((message) => {
+          if (message.imageIds && message.imageIds.length > 0) {
+            referencedIds.push(...message.imageIds);
+          }
+        });
+      });
+
+      const removedCount = await cleanupImageStore(referencedIds);
+      const ids = await listImageIds();
+      setImageStoreCount(ids.length);
+
+      notifications.show({
+        message:
+          removedCount > 0
+            ? `Removed ${removedCount} unused images`
+            : "No unused images found",
+        color: "green",
+      });
+    } catch (error) {
+      console.error("Failed to clean up images:", error);
+      notifications.show({
+        message: "Failed to clean up images",
+        color: "red",
+      });
+    } finally {
+      setCleaningImages(false);
+    }
+  }, [imageStoreStatus]);
 
   /**
    * Closes the nuke modal and resets confirmation text
@@ -522,6 +605,9 @@ export default function SettingsModal({
                 <Text size="xs" c="dimmed" mb="sm">
                   Backup your data or restore from a previous export.
                 </Text>
+                <Text size="xs" c="dimmed" mb="sm">
+                  Note: Exports do not include images stored in browser storage.
+                </Text>
                 <div className="modal-actions-group">
                   <Button
                     variant="light"
@@ -538,6 +624,48 @@ export default function SettingsModal({
                     Import JSON
                   </Button>
                 </div>
+              </div>
+
+              <div className="data-section">
+                <Text size="sm" fw={500} mb="xs">
+                  Image Storage
+                </Text>
+                <Text size="xs" c="dimmed" mb="sm">
+                  Images are stored locally in your browser for performance and
+                  privacy.
+                </Text>
+                <Group gap="sm">
+                  <Text size="xs" c="dimmed">
+                    Status:{" "}
+                    {imageStoreStatus === "checking"
+                      ? "Checking..."
+                      : imageStoreStatus === "available"
+                        ? "Available"
+                        : "Unavailable"}
+                  </Text>
+                  {imageStoreStatus === "available" && (
+                    <Text size="xs" c="dimmed">
+                      Stored images: {imageStoreCount ?? "—"}
+                    </Text>
+                  )}
+                </Group>
+                {imageStoreStatus === "unavailable" && (
+                  <Text size="xs" c="red" mt="xs">
+                    Image persistence is unavailable in this browser.
+                  </Text>
+                )}
+                <Group gap="sm" style={{ marginTop: "0.5rem" }}>
+                  <Button
+                    size="xs"
+                    variant="light"
+                    onClick={handleCleanupImages}
+                    loading={cleaningImages}
+                    disabled={imageStoreStatus !== "available"}
+                    aria-label="Clean up unused images"
+                  >
+                    Clean Up Unused Images
+                  </Button>
+                </Group>
               </div>
 
               <div className="data-section data-section-danger">

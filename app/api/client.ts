@@ -14,6 +14,7 @@ import {
   DEFAULT_CHAT_TEMPERATURE,
   ANTHROPIC_DEFAULT_MAX_TOKENS,
   ANTHROPIC_API_VERSION,
+  ANTHROPIC_PROVIDER_ID,
   MAX_RETRY_ATTEMPTS,
   RETRY_BASE_DELAY_MS,
   RETRY_MAX_DELAY_MS,
@@ -963,4 +964,14 @@ export class AnthropicClient extends BaseApiClient {
     }
     return headers;
   }
+}
+
+/**
+ * Factory helper to build the correct API client for a provider.
+ */
+export function createApiClient(options: ClientOptions): ApiClient {
+  if (options.apiProvider === ANTHROPIC_PROVIDER_ID) {
+    return new AnthropicClient(options);
+  }
+  return new OpenAICompatibleClient(options);
 }

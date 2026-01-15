@@ -233,6 +233,16 @@
   transform: scale(1.02);
 }
 
+.message-images-missing {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px dashed var(--color-border-primary);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  background: var(--color-background-surface);
+}
+
 /* Responsive image sizing */
 @media (max-width: 768px) {
   .message-image-container {

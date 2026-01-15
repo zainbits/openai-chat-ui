@@ -9,6 +9,7 @@ import { useAppStore, selectActiveThread } from "../../state/store";
 import { useChat } from "../../hooks";
 import { renderMarkdown } from "../../utils/markdown";
 import { sanitizeText } from "../../utils/textSanitizer";
+import { getImagesByIds } from "../../utils/imageStore";
 import { notifications } from "@mantine/notifications";
 import Composer from "../Composer";
 import ThinkingBlock from "../ThinkingBlock";
@@ -299,6 +300,7 @@ export default function ChatArea() {
   // Track if user has scrolled up to cancel auto-scroll
   const userScrolledUpRef = useRef(false);
   const lastScrollTopRef = useRef(0);
+  const [imageMap, setImageMap] = useState<Record<string, string | null>>({});
 
   // Image viewer state
   const [imageViewer, setImageViewer] = useState<ImageViewerState | null>(null);
@@ -359,6 +361,45 @@ export default function ChatArea() {
 
     el.scrollTop = el.scrollHeight;
   }, [messages, isStreaming, isStreamingActive]);
+
+  // Resolve image IDs to data URLs for rendering
+  useEffect(() => {
+    const pendingIds = new Set<string>();
+    messages.forEach((message) => {
+      message.imageIds?.forEach((id) => {
+        if (!Object.prototype.hasOwnProperty.call(imageMap, id)) {
+          pendingIds.add(id);
+        }
+      });
+    });
+
+    if (pendingIds.size === 0) return;
+
+    let cancelled = false;
+    const ids = Array.from(pendingIds);
+
+    const loadImages = async () => {
+      try {
+        const resolved = await getImagesByIds(ids);
+        if (cancelled) return;
+        setImageMap((prev) => {
+          const next = { ...prev };
+          ids.forEach((id, index) => {
+            const dataUrl = resolved[index];
+            next[id] = dataUrl ?? null;
+          });
+          return next;
+        });
+      } catch (error) {
+        console.warn("Failed to load images from storage:", error);
+      }
+    };
+
+    void loadImages();
+    return () => {
+      cancelled = true;
+    };
+  }, [messages, imageMap]);
 
   // Handle copy code button clicks (both standard and sanitized)
   useEffect(() => {
@@ -448,6 +489,18 @@ export default function ChatArea() {
               // Show regenerate on last assistant message (even if empty/failed)
               const showRegenerateButton =
                 isLastMessage && isAssistantMessage && !isStreamingActive;
+              const resolvedImages =
+                m.images && m.images.length > 0
+                  ? m.images
+                  : m.imageIds
+                    ? m.imageIds
+                        .map((id) => imageMap[id])
+                        .filter((img): img is string => typeof img === "string")
+                    : [];
+              const showMissingImagesNotice =
+                (!resolvedImages || resolvedImages.length === 0) &&
+                !!m.imageIds &&
+                m.imageIds.length > 0;
 
               // Don't render empty assistant messages during streaming - show typing indicator instead
               if (isEmptyAssistant && isStreamingActive) {
@@ -471,9 +524,9 @@ export default function ChatArea() {
                     <ThinkingBlock thinking={m.thinking} />
                   )}
                   {/* Display image attachments for user messages */}
-                  {m.images && m.images.length > 0 && (
+                  {resolvedImages.length > 0 && (
                     <div className="message-images">
-                      {m.images.map((imgUrl, imgIdx) => (
+                      {resolvedImages.map((imgUrl, imgIdx) => (
                         <div key={imgIdx} className="message-image-container">
                           <img
                             src={imgUrl}
@@ -482,13 +535,18 @@ export default function ChatArea() {
                             loading="lazy"
                             onClick={() =>
                               setImageViewer({
-                                images: m.images!,
+                                images: resolvedImages,
                                 initialIndex: imgIdx,
                               })
                             }
                           />
                         </div>
                       ))}
+                    </div>
+                  )}
+                  {showMissingImagesNotice && (
+                    <div className="message-images-missing" role="status">
+                      Images unavailable
                     </div>
                   )}
                   {isFailedResponse ? (

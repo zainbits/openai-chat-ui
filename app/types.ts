@@ -68,9 +68,13 @@ export interface ChatMessage {
   thinking?: string;
   /**
    * Image attachments for this message (user messages only).
-   * Stored as base64 data URLs for persistence and API calls.
+   * Stored as base64 data URLs for immediate rendering and API calls.
    */
   images?: string[];
+  /**
+   * Image IDs stored in IndexedDB for persistence without localStorage bloat.
+   */
+  imageIds?: string[];
 }
 
 export interface ChatThread {
