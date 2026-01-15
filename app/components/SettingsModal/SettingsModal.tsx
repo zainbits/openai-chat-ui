@@ -436,20 +436,13 @@ export default function SettingsModal({
         size="lg"
         aria-labelledby="settings-modal-title"
       >
-        <Tabs
-          defaultValue="cloud-models"
-          classNames={{ root: "settings-tabs" }}
-        >
+        <Tabs defaultValue="api" classNames={{ root: "settings-tabs" }}>
           <Tabs.List className="settings-tabs-list">
-            <Tabs.Tab value="cloud-models">Cloud Models</Tabs.Tab>
             <Tabs.Tab value="api">API</Tabs.Tab>
             <Tabs.Tab value="interface">Interface</Tabs.Tab>
             <Tabs.Tab value="data">Data</Tabs.Tab>
+            <Tabs.Tab value="cloud-models">Cloud Models</Tabs.Tab>
           </Tabs.List>
-
-          <Tabs.Panel value="cloud-models" pt="md">
-            <CloudModelsTab onEditModel={handleEditModel} />
-          </Tabs.Panel>
 
           <Tabs.Panel value="api" pt="md">
             <div className="modal-content">
@@ -696,6 +689,10 @@ export default function SettingsModal({
                 </Group>
               </div>
             </div>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="cloud-models" pt="md">
+            <CloudModelsTab onEditModel={handleEditModel} />
           </Tabs.Panel>
         </Tabs>
       </Modal>
