@@ -32,6 +32,11 @@ const isThinkingEffort = (
 ): value is CustomModel["thinkingEffort"] =>
   value === "low" || value === "medium" || value === "high";
 
+const isStorageBackend = (
+  value: unknown,
+): value is AppSettings["storageBackend"] =>
+  value === "localstorage" || value === "indexeddb";
+
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every(isString);
 
@@ -152,6 +157,9 @@ const normalizeSettings = (
     lowSpecBlur: isNumber(value.lowSpecBlur)
       ? value.lowSpecBlur
       : defaults.lowSpecBlur,
+    storageBackend: isStorageBackend(value.storageBackend)
+      ? value.storageBackend
+      : defaults.storageBackend,
     cloudSyncEnabled: isBoolean(value.cloudSyncEnabled)
       ? value.cloudSyncEnabled
       : defaults.cloudSyncEnabled,
@@ -237,4 +245,41 @@ export function normalizePersistedAppData(
   }
 
   return normalizeAppData(input, defaults);
+}
+
+/**
+ * Sanitizes chat data for storage by removing inline image data
+ * (images should be stored separately via imageIds)
+ */
+export const sanitizeChatsForStorage = (
+  chats: AppData["chats"],
+): AppData["chats"] =>
+  Object.fromEntries(
+    Object.entries(chats).map(([threadId, thread]) => {
+      const messages = thread.messages.map((message) => {
+        if (message.imageIds && message.imageIds.length > 0) {
+          const { images, ...restMessage } = message;
+          return restMessage;
+        }
+        return message;
+      });
+      return [threadId, { ...thread, messages }];
+    }),
+  ) as AppData["chats"];
+
+/**
+ * Exports app data as a formatted JSON string
+ * @param data - The app data to export
+ * @returns Formatted JSON string
+ */
+export function exportJson(data: AppData): string {
+  return JSON.stringify(
+    {
+      ...data,
+      chats: sanitizeChatsForStorage(data.chats),
+      version: APP_DATA_VERSION,
+    },
+    null,
+    2,
+  );
 }

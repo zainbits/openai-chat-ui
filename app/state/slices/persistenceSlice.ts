@@ -1,6 +1,14 @@
 import type { StateCreator } from "zustand";
 import type { AppStore } from "../types";
-import { loadAppData, wipeAll } from "../../utils/storage";
+import {
+  deleteLocalStorageAppData,
+  loadAppData,
+  wipeAll,
+} from "../../utils/storage";
+import {
+  clearAppDataFromDb,
+  loadAppDataFromDb,
+} from "../../utils/appDataStore";
 import {
   DEFAULT_APP_DATA,
   DEFAULT_SETTINGS,
@@ -30,26 +38,36 @@ export const createPersistenceSlice: StateCreator<
   _hydrated: false,
 
   _hydrate: () => {
-    const saved = loadAppData(DEFAULT_APP_DATA);
-    if (saved) {
-      set({
-        models: saved.models,
-        chats: saved.chats,
-        ui: { ...DEFAULT_UI, ...saved.ui, sidebarOpen: false },
-        settings: saved.settings,
-        availableModels: saved.availableModels ?? [],
-        connectionStatus: "unknown",
-        _hydrated: true,
-      });
-      void migrateImagesToStore(saved.chats, set);
-    } else {
-      set({ _hydrated: true });
-    }
+    void (async () => {
+      const fromDb = await loadAppDataFromDb(DEFAULT_APP_DATA);
+      const fromLocal = loadAppData(DEFAULT_APP_DATA);
+      const saved = fromDb ?? fromLocal;
+
+      if (saved) {
+        set({
+          models: saved.models,
+          chats: saved.chats,
+          ui: { ...DEFAULT_UI, ...saved.ui, sidebarOpen: false },
+          settings: saved.settings,
+          availableModels: saved.availableModels ?? [],
+          connectionStatus: "unknown",
+          _hydrated: true,
+        });
+        void migrateImagesToStore(saved.chats, set);
+
+        if (saved.settings?.storageBackend === "indexeddb") {
+          deleteLocalStorageAppData();
+        }
+      } else {
+        set({ _hydrated: true });
+      }
+    })();
   },
 
   nukeAll: () => {
     // Clear localStorage completely
     wipeAll();
+    void clearAppDataFromDb();
     void clearImageStore();
     // Reset state to defaults
     set({

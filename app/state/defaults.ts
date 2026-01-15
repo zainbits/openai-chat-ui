@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   glassEffectEnabled: false,
   showActiveModelIndicator: true,
   lowSpecBlur: 8,
+  storageBackend: "localstorage",
 };
 
 export const STARTER_MODELS: CustomModel[] = [

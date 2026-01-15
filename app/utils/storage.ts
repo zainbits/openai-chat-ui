@@ -3,7 +3,12 @@
  * @module storage
  */
 import type { AppData, UiState } from "../types";
-import { APP_DATA_VERSION, normalizePersistedAppData } from "./appData";
+import {
+  APP_DATA_VERSION,
+  normalizePersistedAppData,
+  sanitizeChatsForStorage,
+} from "./appData";
+import { saveAppDataToDb } from "./appDataStore";
 
 /** Storage key for app data */
 const KEY = "custommodels-chat:v1";
@@ -19,20 +24,6 @@ interface PersistedAppData extends Omit<AppData, "ui" | "connectionStatus"> {
   version: number;
   ui: PersistedUiState;
 }
-
-const sanitizeChatsForStorage = (chats: AppData["chats"]): AppData["chats"] =>
-  Object.fromEntries(
-    Object.entries(chats).map(([threadId, thread]) => {
-      const messages = thread.messages.map((message) => {
-        if (message.imageIds && message.imageIds.length > 0) {
-          const { images, ...restMessage } = message;
-          return restMessage;
-        }
-        return message;
-      });
-      return [threadId, { ...thread, messages }];
-    }),
-  ) as AppData["chats"];
 
 /**
  * Loads app data from localStorage
@@ -51,13 +42,28 @@ export function loadAppData(defaults: AppData): AppData | null {
   }
 }
 
+export function deleteLocalStorageAppData(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(KEY);
+  } catch (err) {
+    console.error("Failed to delete local app data:", err);
+  }
+}
+
 /**
  * Saves app data to localStorage
  * Excludes transient UI state like sidebarOpen so responsive defaults can be applied on load
  * @param data - The app data to save
  */
 export function saveAppData(data: AppData): void {
+  if (data.settings?.storageBackend === "indexeddb") {
+    void saveAppDataToDb(data);
+    return;
+  }
+
   if (typeof localStorage === "undefined") return;
+
   try {
     // Destructure to exclude transient state
     const { sidebarOpen, ...persistedUi } = data.ui;
@@ -74,23 +80,6 @@ export function saveAppData(data: AppData): void {
   } catch (err) {
     console.error("Failed to save app data:", err);
   }
-}
-
-/**
- * Exports app data as a formatted JSON string
- * @param data - The app data to export
- * @returns Formatted JSON string
- */
-export function exportJson(data: AppData): string {
-  return JSON.stringify(
-    {
-      ...data,
-      chats: sanitizeChatsForStorage(data.chats),
-      version: APP_DATA_VERSION,
-    },
-    null,
-    2,
-  );
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { exportJson } from "../utils/storage";
+import { exportJson } from "../utils/appData";
 import { DEFAULT_APP_DATA } from "../state/defaults";
 
 describe("exportJson", () => {
