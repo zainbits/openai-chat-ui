@@ -32,11 +32,6 @@ const isThinkingEffort = (
 ): value is CustomModel["thinkingEffort"] =>
   value === "low" || value === "medium" || value === "high";
 
-const isStorageBackend = (
-  value: unknown,
-): value is AppSettings["storageBackend"] =>
-  value === "localstorage" || value === "indexeddb";
-
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every(isString);
 
@@ -157,9 +152,6 @@ const normalizeSettings = (
     lowSpecBlur: isNumber(value.lowSpecBlur)
       ? value.lowSpecBlur
       : defaults.lowSpecBlur,
-    storageBackend: isStorageBackend(value.storageBackend)
-      ? value.storageBackend
-      : defaults.storageBackend,
     cloudSyncEnabled: isBoolean(value.cloudSyncEnabled)
       ? value.cloudSyncEnabled
       : defaults.cloudSyncEnabled,

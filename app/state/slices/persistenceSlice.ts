@@ -1,11 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { AppStore } from "../types";
 import {
-  deleteLocalStorageAppData,
-  loadAppData,
-  wipeAll,
-} from "../../utils/storage";
-import {
   clearAppDataFromDb,
   loadAppDataFromDb,
 } from "../../utils/appDataStore";
@@ -39,9 +34,7 @@ export const createPersistenceSlice: StateCreator<
 
   _hydrate: () => {
     void (async () => {
-      const fromDb = await loadAppDataFromDb(DEFAULT_APP_DATA);
-      const fromLocal = loadAppData(DEFAULT_APP_DATA);
-      const saved = fromDb ?? fromLocal;
+      const saved = await loadAppDataFromDb(DEFAULT_APP_DATA);
 
       if (saved) {
         set({
@@ -54,10 +47,6 @@ export const createPersistenceSlice: StateCreator<
           _hydrated: true,
         });
         void migrateImagesToStore(saved.chats, set);
-
-        if (saved.settings?.storageBackend === "indexeddb") {
-          deleteLocalStorageAppData();
-        }
       } else {
         set({ _hydrated: true });
       }
@@ -65,8 +54,6 @@ export const createPersistenceSlice: StateCreator<
   },
 
   nukeAll: () => {
-    // Clear localStorage completely
-    wipeAll();
     void clearAppDataFromDb();
     void clearImageStore();
     // Reset state to defaults

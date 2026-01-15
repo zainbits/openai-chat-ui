@@ -116,11 +116,6 @@ export interface AppSettings {
   glassEffectEnabled: boolean;
   showActiveModelIndicator: boolean;
   lowSpecBlur?: number;
-  /**
-   * Controls where app state is persisted.
-   * Defaults to localStorage for compatibility.
-   */
-  storageBackend?: "localstorage" | "indexeddb";
   // Cloud sync settings
   cloudSyncEnabled?: boolean;
   adminApiUrl?: string;

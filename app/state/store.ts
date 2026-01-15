@@ -40,7 +40,7 @@ export const useAppStore = create<AppStore>()(
 // Persistence Subscription
 // ============================================================================
 
-// Subscribe to state changes and persist to localStorage
+// Subscribe to state changes and persist to IndexedDB
 useAppStore.subscribe(
   (state) => ({
     models: state.models,

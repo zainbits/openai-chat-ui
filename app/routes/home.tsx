@@ -62,7 +62,7 @@ function HomeContent() {
   const hydrated = useAppStore((s) => s._hydrated);
   const checkConnection = useAppStore((s) => s.checkConnection);
 
-  // Hydrate state from localStorage on mount
+  // Hydrate state from IndexedDB on mount
   useEffect(() => {
     if (!hydrated) {
       hydrate();

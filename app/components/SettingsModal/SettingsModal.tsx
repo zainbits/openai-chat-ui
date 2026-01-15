@@ -14,14 +14,13 @@ import { notifications } from "@mantine/notifications";
 import ConfirmModal from "../ConfirmModal";
 import CloudModelsTab from "../CloudModelsTab";
 import { useAppStore } from "../../state/store";
-import { deleteLocalStorageAppData, importJson } from "../../utils/storage";
+import { importJson } from "../../utils/storage";
 import { exportJson, normalizePersistedAppData } from "../../utils/appData";
 import {
   cleanupImageStore,
   isImageStoreReady,
   listImageIds,
 } from "../../utils/imageStore";
-import { isAppDataStoreReady, saveAppDataToDb } from "../../utils/appDataStore";
 import { API_PROVIDER_PRESETS, CUSTOM_PROVIDER_ID } from "../../constants";
 import { createApiClient } from "../../api/client";
 import type { AppData } from "../../types";
@@ -124,11 +123,9 @@ export default function SettingsModal({
   >("checking");
   const [imageStoreCount, setImageStoreCount] = useState<number | null>(null);
   const [cleaningImages, setCleaningImages] = useState(false);
-  const [migratingStorage, setMigratingStorage] = useState(false);
 
   const nukeAll = useAppStore((s) => s.nukeAll);
   const deleteAllChats = useAppStore((s) => s.deleteAllChats);
-  const storageBackend = settings.storageBackend ?? "localstorage";
 
   useEffect(() => {
     if (!opened) return;
@@ -372,44 +369,6 @@ export default function SettingsModal({
       color: "green",
     });
   }, [deleteAllChats]);
-
-  const handleMoveToIndexedDb = useCallback(async () => {
-    setMigratingStorage(true);
-    try {
-      const ready = await isAppDataStoreReady();
-      if (!ready) {
-        notifications.show({
-          message: "IndexedDB is unavailable in this browser",
-          color: "red",
-        });
-        return;
-      }
-
-      const stored = await saveAppDataToDb(getFullState());
-      if (!stored) {
-        notifications.show({
-          message: "Failed to move data to IndexedDB",
-          color: "red",
-        });
-        return;
-      }
-
-      deleteLocalStorageAppData();
-      updateSettings({ storageBackend: "indexeddb" });
-      notifications.show({
-        message: "Data moved to IndexedDB",
-        color: "green",
-      });
-    } catch (error) {
-      console.error("Failed to move data to IndexedDB:", error);
-      notifications.show({
-        message: "Failed to move data to IndexedDB",
-        color: "red",
-      });
-    } finally {
-      setMigratingStorage(false);
-    }
-  }, [getFullState, updateSettings]);
 
   const handleCleanupImages = useCallback(async () => {
     if (imageStoreStatus !== "available") return;
@@ -665,30 +624,6 @@ export default function SettingsModal({
                     Import JSON
                   </Button>
                 </div>
-              </div>
-
-              <div className="data-section">
-                <Text size="sm" fw={500} mb="xs">
-                  Storage Backend
-                </Text>
-                <Text size="xs" c="dimmed" mb="sm">
-                  Current:{" "}
-                  {storageBackend === "indexeddb"
-                    ? "IndexedDB"
-                    : "LocalStorage"}
-                </Text>
-                <Group gap="sm">
-                  <Button
-                    size="xs"
-                    variant="light"
-                    onClick={handleMoveToIndexedDb}
-                    loading={migratingStorage}
-                    disabled={storageBackend === "indexeddb"}
-                    aria-label="Move data to IndexedDB"
-                  >
-                    Move Data to IndexedDB
-                  </Button>
-                </Group>
               </div>
 
               <div className="data-section">

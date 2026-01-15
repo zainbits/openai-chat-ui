@@ -1,6 +1,6 @@
 /**
  * API client for syncing custom models to cloud (MongoDB via openai-proxy-ts)
- * Cloud is the source of truth, localStorage is just a cache layer.
+ * Cloud is the source of truth, IndexedDB is just a cache layer.
  * @module api/sync
  */
 import type { CustomModel } from "../types";
