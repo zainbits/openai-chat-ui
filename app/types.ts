@@ -7,6 +7,33 @@ export type Role = "user" | "assistant";
  */
 export type ThinkingEffort = "low" | "medium" | "high";
 
+/**
+ * Content part for multimodal messages (OpenAI Vision API format)
+ */
+export interface TextContentPart {
+  type: "text";
+  text: string;
+}
+
+export interface ImageContentPart {
+  type: "image_url";
+  image_url: {
+    url: string; // base64 data URL or remote URL
+  };
+}
+
+export type ContentPart = TextContentPart | ImageContentPart;
+
+/**
+ * Image attachment for pending uploads in the composer
+ */
+export interface ImageAttachment {
+  id: string;
+  file: File;
+  previewUrl: string; // Object URL for preview
+  base64?: string; // Base64 data URL (set after processing)
+}
+
 export interface CustomModel {
   id: string;
   name: string;
@@ -39,6 +66,11 @@ export interface ChatMessage {
    * Present only on assistant messages when the model returns thinking blocks.
    */
   thinking?: string;
+  /**
+   * Image attachments for this message (user messages only).
+   * Stored as base64 data URLs for persistence and API calls.
+   */
+  images?: string[];
 }
 
 export interface ChatThread {
@@ -100,7 +132,7 @@ export interface DiscoveredModel {
 
 export interface OpenAIChatMessage {
   role: "system" | "user" | "assistant" | "tool";
-  content: string;
+  content: string | ContentPart[];
 }
 
 export interface SendMessageParams {

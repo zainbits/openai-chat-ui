@@ -127,7 +127,11 @@ interface AppStoreActions {
   nukeAll: () => void;
 
   // Message Actions
-  addUserMessage: (threadId: string, content: string) => void;
+  addUserMessage: (
+    threadId: string,
+    content: string,
+    images?: string[],
+  ) => void;
   addAssistantMessage: (threadId: string) => void;
   appendToLastMessage: (threadId: string, token: string) => void;
   setThinkingOnLastMessage: (threadId: string, thinking: string) => void;
@@ -381,9 +385,14 @@ export const useAppStore = create<AppStore>()(
     // Message Actions
     // ========================================================================
 
-    addUserMessage: (threadId, content) => {
+    addUserMessage: (threadId, content, images) => {
       const now = Date.now();
-      const message: ChatMessage = { role: "user", content, ts: now };
+      const message: ChatMessage = {
+        role: "user",
+        content,
+        ts: now,
+        ...(images && images.length > 0 ? { images } : {}),
+      };
 
       set((state) => {
         const thread = state.chats[threadId];
@@ -396,7 +405,10 @@ export const useAppStore = create<AppStore>()(
               ...thread,
               messages: [...thread.messages, message],
               updatedAt: now,
-              preview: thread.preview || content.slice(0, 80),
+              preview:
+                thread.preview ||
+                content.slice(0, 80) ||
+                (images?.length ? "[Image]" : ""),
             },
           },
         };

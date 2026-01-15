@@ -8,6 +8,7 @@ import type {
   OpenAIChatMessage,
   StreamHandle,
   ThinkingEffort,
+  ContentPart,
 } from "../types";
 import {
   DEFAULT_CHAT_TEMPERATURE,
@@ -560,8 +561,25 @@ export class OpenAICompatibleClient extends BaseApiClient {
 /** Anthropic message format */
 interface AnthropicMessage {
   role: "user" | "assistant";
-  content: string;
+  content: string | AnthropicContentPart[];
 }
+
+/** Anthropic content part types */
+interface AnthropicTextPart {
+  type: "text";
+  text: string;
+}
+
+interface AnthropicImagePart {
+  type: "image";
+  source: {
+    type: "base64";
+    media_type: string;
+    data: string;
+  };
+}
+
+type AnthropicContentPart = AnthropicTextPart | AnthropicImagePart;
 
 /**
  * Client for interacting with Anthropic's Messages API
@@ -878,18 +896,57 @@ export class AnthropicClient extends BaseApiClient {
 
     for (const msg of messages) {
       if (msg.role === "system") {
-        systemPrompt = systemPrompt
-          ? `${systemPrompt}\n\n${msg.content}`
-          : msg.content;
+        // System messages are always text-only
+        const content = typeof msg.content === "string" ? msg.content : "";
+        systemPrompt = systemPrompt ? `${systemPrompt}\n\n${content}` : content;
       } else if (msg.role === "user" || msg.role === "assistant") {
         anthropicMessages.push({
           role: msg.role,
-          content: msg.content,
+          content: this.convertContentToAnthropic(msg.content),
         });
       }
     }
 
     return { systemPrompt, messages: anthropicMessages };
+  }
+
+  /**
+   * Converts OpenAI content format to Anthropic content format
+   */
+  private convertContentToAnthropic(
+    content: string | ContentPart[],
+  ): string | AnthropicContentPart[] {
+    // If it's a string, return as-is
+    if (typeof content === "string") {
+      return content;
+    }
+
+    // Convert ContentPart array to Anthropic format
+    const anthropicParts: AnthropicContentPart[] = [];
+
+    for (const part of content) {
+      if (part.type === "text") {
+        anthropicParts.push({ type: "text", text: part.text });
+      } else if (part.type === "image_url") {
+        // Parse base64 data URL
+        const url = part.image_url.url;
+        if (url.startsWith("data:")) {
+          const match = url.match(/^data:([^;]+);base64,(.+)$/);
+          if (match && match[1] && match[2]) {
+            anthropicParts.push({
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: match[1],
+                data: match[2],
+              },
+            });
+          }
+        }
+      }
+    }
+
+    return anthropicParts.length > 0 ? anthropicParts : "";
   }
 
   /**

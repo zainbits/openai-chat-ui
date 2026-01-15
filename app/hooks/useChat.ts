@@ -9,7 +9,7 @@ import {
   selectActiveThread,
   selectActiveModel,
 } from "../state/store";
-import type { StreamHandle } from "../types";
+import type { StreamHandle, OpenAIChatMessage, ContentPart } from "../types";
 import {
   TITLE_GENERATION_TEMPERATURE,
   TITLE_PROMPT_MAX_CHARS,
@@ -53,13 +53,43 @@ function isThinkingUnsupportedError(error: unknown): boolean {
   return mentionsThinkingParam && looksLikeParamRejection;
 }
 
+/**
+ * Builds OpenAI-compatible message content from text and optional images.
+ * Returns a string for text-only messages, or a ContentPart array for multimodal.
+ */
+function buildMessageContent(
+  text: string,
+  images?: string[],
+): string | ContentPart[] {
+  if (!images || images.length === 0) {
+    return text;
+  }
+
+  const parts: ContentPart[] = [];
+
+  // Add text part if there's text content
+  if (text) {
+    parts.push({ type: "text", text });
+  }
+
+  // Add image parts
+  for (const imageUrl of images) {
+    parts.push({
+      type: "image_url",
+      image_url: { url: imageUrl },
+    });
+  }
+
+  return parts;
+}
+
 interface UseChatReturn {
   /** Whether a message is currently being sent/streamed */
   isLoading: boolean;
   /** Whether the last message is being regenerated */
   isRegenerating: boolean;
-  /** Send a message to the AI */
-  sendMessage: (content: string) => Promise<void>;
+  /** Send a message to the AI, optionally with image attachments (base64 data URLs) */
+  sendMessage: (content: string, images?: string[]) => Promise<void>;
   /** Cancel the current streaming response */
   cancelStream: () => void;
   /** Regenerate the last assistant response */
@@ -148,22 +178,25 @@ export function useChat(): UseChatReturn {
 
   /**
    * Sends a message and streams the AI response
+   * @param content - The text content of the message
+   * @param images - Optional array of base64 data URLs for image attachments
    */
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, images?: string[]) => {
       const state = useAppStore.getState();
       const thread = selectActiveThread(state);
       const model = selectActiveModel(state);
 
-      if (!thread || !model || !content.trim()) return;
+      const hasContent = content.trim() || (images && images.length > 0);
+      if (!thread || !model || !hasContent) return;
 
       const threadId = thread.id;
       const trimmedContent = content.trim();
       const userMessageIndex = thread.messages.length;
       let retriedWithoutThinking = false;
 
-      // Add user message
-      addUserMessage(threadId, trimmedContent);
+      // Add user message with optional images
+      addUserMessage(threadId, trimmedContent, images);
 
       // Add empty assistant message for streaming
       addAssistantMessage(threadId);
@@ -183,14 +216,17 @@ export function useChat(): UseChatReturn {
           return;
         }
 
-        const system = currentModel.system
+        const system: OpenAIChatMessage[] = currentModel.system
           ? [{ role: "system" as const, content: currentModel.system }]
           : [];
 
-        const history = currentThread.messages
+        const history: OpenAIChatMessage[] = currentThread.messages
           // Exclude empty assistant placeholders
           .filter((m) => m.role !== "assistant" || m.content)
-          .map((m) => ({ role: m.role, content: m.content }));
+          .map((m) => ({
+            role: m.role,
+            content: buildMessageContent(m.content, m.images),
+          }));
 
         const messages = [...system, ...history];
         const client = getClient();
@@ -226,11 +262,17 @@ export function useChat(): UseChatReturn {
                   (m) => m.role === "user",
                 );
                 if (firstUser) {
-                  await generateTitle(
-                    threadId,
-                    firstUser.content,
-                    currentModel.model,
-                  );
+                  // Use text content for title, or indicate image-only message
+                  const titleContent =
+                    firstUser.content ||
+                    (firstUser.images?.length ? "Image conversation" : "");
+                  if (titleContent) {
+                    await generateTitle(
+                      threadId,
+                      titleContent,
+                      currentModel.model,
+                    );
+                  }
                 }
               }
             }
@@ -336,13 +378,16 @@ export function useChat(): UseChatReturn {
       }
 
       // Prepare messages for API
-      const system = updatedModel.system
+      const system: OpenAIChatMessage[] = updatedModel.system
         ? [{ role: "system" as const, content: updatedModel.system }]
         : [];
 
-      const history = updatedThread.messages
+      const history: OpenAIChatMessage[] = updatedThread.messages
         .filter((m) => m.role !== "assistant" || m.content) // Exclude empty assistant messages (including the one we just added)
-        .map((m) => ({ role: m.role, content: m.content }));
+        .map((m) => ({
+          role: m.role,
+          content: buildMessageContent(m.content, m.images),
+        }));
 
       const messages = [...system, ...history];
       const client = getClient();

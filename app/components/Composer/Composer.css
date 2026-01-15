@@ -92,3 +92,73 @@
   border-radius: 50% !important;
   overflow: hidden;
 }
+
+/* ============================================================================
+   Image Attachment Button
+   ============================================================================ */
+.composer-action-button-glass {
+  background-color: var(--color-white-alpha-10) !important;
+  border-radius: 50% !important;
+}
+
+.composer-action-button-glass:hover:not(:disabled) {
+  background-color: var(--color-white-alpha-20) !important;
+}
+
+.composer-action-button-glass .composer-icon {
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================================
+   Image Previews
+   ============================================================================ */
+.composer-image-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.composer-image-preview {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-primary);
+  background: var(--color-background-surface);
+}
+
+.composer-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.composer-remove-image {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background-elevated);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.composer-remove-image:hover {
+  background: var(--color-danger-500);
+  color: var(--color-white);
+}
+
+.composer-remove-image svg {
+  width: 10px;
+  height: 10px;
+}

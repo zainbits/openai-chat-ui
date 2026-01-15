@@ -12,6 +12,7 @@ import { sanitizeText } from "../../utils/textSanitizer";
 import { notifications } from "@mantine/notifications";
 import Composer from "../Composer";
 import ThinkingBlock from "../ThinkingBlock";
+import ImageViewer from "../ImageViewer";
 import "./ChatArea.css";
 
 /**
@@ -283,6 +284,12 @@ function CopyButton({ content }: { content: string }) {
 /**
  * Main chat area component displaying messages and the composer
  */
+/** State for the image viewer */
+interface ImageViewerState {
+  images: string[];
+  initialIndex: number;
+}
+
 export default function ChatArea() {
   const thread = useAppStore(selectActiveThread);
   const { isLoading, isRegenerating, regenerateLastMessage } = useChat();
@@ -292,6 +299,9 @@ export default function ChatArea() {
   // Track if user has scrolled up to cancel auto-scroll
   const userScrolledUpRef = useRef(false);
   const lastScrollTopRef = useRef(0);
+
+  // Image viewer state
+  const [imageViewer, setImageViewer] = useState<ImageViewerState | null>(null);
 
   // Combined streaming state for both regular loading and regeneration
   const isStreamingActive = isLoading || isRegenerating;
@@ -460,19 +470,40 @@ export default function ChatArea() {
                   {isAssistantMessage && m.thinking && (
                     <ThinkingBlock thinking={m.thinking} />
                   )}
+                  {/* Display image attachments for user messages */}
+                  {m.images && m.images.length > 0 && (
+                    <div className="message-images">
+                      {m.images.map((imgUrl, imgIdx) => (
+                        <div key={imgIdx} className="message-image-container">
+                          <img
+                            src={imgUrl}
+                            alt={`Attachment ${imgIdx + 1}`}
+                            className="message-image"
+                            loading="lazy"
+                            onClick={() =>
+                              setImageViewer({
+                                images: m.images!,
+                                initialIndex: imgIdx,
+                              })
+                            }
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {isFailedResponse ? (
                     <div className="message-content message-failed">
                       <span className="failed-icon">⚠</span>
                       <span>Response failed. Try regenerating.</span>
                     </div>
-                  ) : (
+                  ) : m.content ? (
                     <div
                       className="message-content"
                       dangerouslySetInnerHTML={{
                         __html: renderMarkdown(m.content),
                       }}
                     />
-                  )}
+                  ) : null}
                   {isStreamingActive && isLastMessage && isAssistantMessage && (
                     <span className="streaming-cursor" aria-hidden="true" />
                   )}
@@ -532,6 +563,15 @@ export default function ChatArea() {
         )}
       </section>
       <Composer />
+
+      {/* Image Viewer Modal */}
+      {imageViewer && (
+        <ImageViewer
+          images={imageViewer.images}
+          initialIndex={imageViewer.initialIndex}
+          onClose={() => setImageViewer(null)}
+        />
+      )}
     </main>
   );
 }
