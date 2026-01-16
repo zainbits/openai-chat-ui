@@ -11,6 +11,7 @@ export interface UiSlice {
   setActiveThread: (threadId: string | null) => void;
   setSearchQuery: (query: string) => void;
   setSelectedModel: (modelId: string | "all") => void;
+  setSelectedLlmModel: (modelId: string | null) => void;
 }
 
 export const createUiSlice: StateCreator<AppStore, [], [], UiSlice> = (
@@ -46,5 +47,10 @@ export const createUiSlice: StateCreator<AppStore, [], [], UiSlice> = (
   setSelectedModel: (modelId) =>
     set((state) => ({
       ui: { ...state.ui, selectedModel: modelId },
+    })),
+
+  setSelectedLlmModel: (modelId) =>
+    set((state) => ({
+      ui: { ...state.ui, selectedLlmModel: modelId },
     })),
 });

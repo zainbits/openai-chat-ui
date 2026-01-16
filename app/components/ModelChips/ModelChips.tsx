@@ -17,9 +17,6 @@ export default function ModelChips() {
   const updateThreadModel = useAppStore((s) => s.updateThreadModel);
   const activeThread = useAppStore(selectActiveThread);
   const activeModel = useAppStore(selectActiveModel);
-  const showActiveModelIndicator = useAppStore(
-    (s) => s.settings.showActiveModelIndicator ?? true,
-  );
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingModelId, setEditingModelId] = useState<string | undefined>(
@@ -67,9 +64,9 @@ export default function ModelChips() {
               <GlassButton
                 onClick={() => selectModel(m.id)}
                 width="auto"
-                height={showActiveModelIndicator ? 44 : 32}
+                height={32}
                 borderRadius={20}
-                title={`${m.name} (${m.model})`}
+                title={m.name}
                 customColor={m.color}
                 className={isActive ? "model-chip-active" : ""}
                 onContextMenu={(e) => {
@@ -104,11 +101,6 @@ export default function ModelChips() {
                       </svg>
                     )}
                   </div>
-                  {showActiveModelIndicator && (
-                    <span className="chip-model-name" title={m.model}>
-                      {m.model}
-                    </span>
-                  )}
                 </div>
               </GlassButton>
             </div>

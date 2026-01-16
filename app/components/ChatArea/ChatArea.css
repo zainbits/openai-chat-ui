@@ -497,6 +497,129 @@
 }
 
 /* ============================================================================
+   Edit Button Styles
+   ============================================================================ */
+.edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.edit-btn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  background: var(--color-background-elevated);
+  border-color: var(--color-border-secondary);
+}
+
+.edit-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.edit-icon {
+  flex-shrink: 0;
+}
+
+.edit-text {
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   Edit Container Styles
+   ============================================================================ */
+.edit-container {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.edit-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  background: var(--color-background-surface);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 8px;
+  resize: vertical;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.edit-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary-400);
+  box-shadow: 0 0 0 2px var(--shadow-primary-subtle);
+}
+
+.edit-textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+.edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.edit-save-btn,
+.edit-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  border: 1px solid transparent;
+}
+
+.edit-save-btn {
+  color: var(--color-success-400);
+  background: var(--color-success-alpha-10);
+  border-color: var(--color-success-400);
+}
+
+.edit-save-btn:hover {
+  background: var(--color-success-alpha-20);
+  color: var(--color-success-300);
+}
+
+.edit-cancel-btn {
+  color: var(--color-text-muted);
+  background: transparent;
+  border-color: var(--color-border-primary);
+}
+
+.edit-cancel-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-background-elevated);
+  border-color: var(--color-border-secondary);
+}
+
+.edit-save-btn:active,
+.edit-cancel-btn:active {
+  transform: scale(0.97);
+}
+
+/* ============================================================================
    Failed Response Styles
    ============================================================================ */
 .message-bubble.failed {
@@ -544,15 +667,30 @@
 
   /* Make buttons larger for touch targets */
   .regenerate-btn,
-  .copy-btn {
+  .copy-btn,
+  .edit-btn {
     padding: 0.5rem 0.75rem;
     font-size: 0.8125rem;
     min-height: 36px;
   }
 
   .regenerate-icon,
-  .copy-icon {
+  .copy-icon,
+  .edit-icon {
     width: 18px;
     height: 18px;
+  }
+
+  /* Edit container responsive */
+  .edit-textarea {
+    min-height: 100px;
+    font-size: 1rem;
+  }
+
+  .edit-save-btn,
+  .edit-cancel-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    min-height: 36px;
   }
 }

@@ -18,7 +18,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   defaultModel: DEFAULT_MODEL,
   streamingEnabled: true,
   glassEffectEnabled: false,
-  showActiveModelIndicator: true,
   lowSpecBlur: 8,
 };
 
@@ -28,7 +27,6 @@ export const STARTER_MODELS: CustomModel[] = [
     name: "General Chat",
     color: getModelColor("general"),
     system: "You are a helpful AI assistant.",
-    model: "qwen3-coder-plus",
     temp: 0.7,
     thinkingEnabled: false,
   },
@@ -38,7 +36,6 @@ export const STARTER_MODELS: CustomModel[] = [
     color: getModelColor("linux"),
     system:
       "You are an expert in Linux commands. Always include safety warnings and explain steps.",
-    model: "qwen3-coder-plus",
     temp: 0.2,
     thinkingEnabled: false,
   },
@@ -50,6 +47,7 @@ export const DEFAULT_UI: UiState = {
   activeThread: null,
   searchQuery: "",
   selectedModel: "all",
+  selectedLlmModel: null,
 };
 
 export const DEFAULT_APP_DATA: AppData = {

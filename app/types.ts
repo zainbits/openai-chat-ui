@@ -39,7 +39,6 @@ export interface CustomModel {
   name: string;
   color: string; // tailwind color hex or token
   system: string;
-  model: string; // remote model id
   temp: number;
   /**
    * Enables "thinking"/reasoning mode for models/APIs that support it.
@@ -96,6 +95,11 @@ export interface UiState {
   activeThread: string | null;
   searchQuery: string;
   selectedModel: string | "all";
+  /**
+   * The currently selected LLM model ID for API calls.
+   * This is the global model picker value used across all custom models.
+   */
+  selectedLlmModel: string | null;
 }
 
 export interface AppData {
@@ -114,7 +118,6 @@ export interface AppSettings {
   defaultModel: string;
   streamingEnabled: boolean;
   glassEffectEnabled: boolean;
-  showActiveModelIndicator: boolean;
   lowSpecBlur?: number;
   // Cloud sync settings
   cloudSyncEnabled?: boolean;

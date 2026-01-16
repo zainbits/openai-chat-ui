@@ -250,7 +250,7 @@ export default function CloudModelsTab({ onEditModel }: CloudModelsTabProps) {
                       {model.name}
                     </Text>
                     <Text size="xs" c="dimmed">
-                      {model.model} • Temp: {model.temp}
+                      Temp: {model.temp}
                       {model.thinkingEnabled && " • Thinking"}
                     </Text>
                   </div>

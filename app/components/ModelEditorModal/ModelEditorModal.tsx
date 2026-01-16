@@ -33,8 +33,6 @@ export default function ModelEditorModal({
   modelId,
 }: ModelEditorModalProps) {
   const models = useAppStore((s) => s.models);
-  const availableModels = useAppStore((s) => s.availableModels);
-  const defaultModel = useAppStore((s) => s.settings.defaultModel);
   const addModel = useAppStore((s) => s.addModel);
   const updateModel = useAppStore((s) => s.updateModel);
   const deleteModel = useAppStore((s) => s.deleteModel);
@@ -49,7 +47,6 @@ export default function ModelEditorModal({
   const [name, setName] = useState(existing?.name ?? "");
   const [color, setColor] = useState(existing?.color ?? getModelColor());
   const [system, setSystem] = useState(existing?.system ?? "");
-  const [model, setModel] = useState(existing?.model ?? defaultModel);
   const [temp, setTemp] = useState(existing?.temp ?? DEFAULT_CHAT_TEMPERATURE);
   const [thinkingEnabled, setThinkingEnabled] = useState(
     existing?.thinkingEnabled ?? false,
@@ -77,18 +74,12 @@ export default function ModelEditorModal({
     setName(existing?.name ?? "");
     setColor(existing?.color ?? getModelColor());
     setSystem(existing?.system ?? "");
-    setModel(existing?.model ?? defaultModel);
     setTemp(existing?.temp ?? DEFAULT_CHAT_TEMPERATURE);
     setThinkingEnabled(existing?.thinkingEnabled ?? false);
     setThinkingEffort(existing?.thinkingEffort ?? "medium");
     // Track original timestamp for conflict detection
     setOriginalUpdatedAt(existing?.updatedAt);
-  }, [existing, defaultModel]);
-
-  const options = (availableModels ?? []).map((m) => ({
-    value: m.id,
-    label: m.id,
-  }));
+  }, [existing]);
 
   /**
    * Build the current local model from form state
@@ -99,7 +90,6 @@ export default function ModelEditorModal({
       name,
       color,
       system,
-      model,
       temp,
       thinkingEnabled,
       thinkingEffort,
@@ -110,7 +100,6 @@ export default function ModelEditorModal({
     name,
     color,
     system,
-    model,
     temp,
     thinkingEnabled,
     thinkingEffort,
@@ -131,7 +120,6 @@ export default function ModelEditorModal({
             name: saveData.name,
             color: saveData.color,
             system: saveData.system,
-            model: saveData.model,
             temp: saveData.temp,
             thinkingEnabled: saveData.thinkingEnabled,
             thinkingEffort: saveData.thinkingEffort,
@@ -141,7 +129,6 @@ export default function ModelEditorModal({
             name: saveData.name,
             color: saveData.color,
             system: saveData.system,
-            model: saveData.model,
             temp: saveData.temp,
             thinkingEnabled: saveData.thinkingEnabled,
             thinkingEffort: saveData.thinkingEffort,
@@ -314,14 +301,6 @@ export default function ModelEditorModal({
             value={system}
             onChange={(e) => setSystem(e.currentTarget.value)}
             aria-describedby="system-prompt-description"
-          />
-          <Select
-            label="Remote Model"
-            searchable
-            data={options}
-            value={model}
-            onChange={(val) => setModel(val || defaultModel)}
-            aria-label="Select the remote AI model to use"
           />
           <NumberInput
             label="Temperature"

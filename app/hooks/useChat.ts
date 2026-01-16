@@ -177,6 +177,15 @@ export function useChat(): UseChatReturn {
   const updateThreadTitle = useAppStore((s) => s.updateThreadTitle);
 
   /**
+   * Gets the effective LLM model ID to use for API calls.
+   * Priority: ui.selectedLlmModel > settings.defaultModel
+   */
+  const getEffectiveLlmModel = useCallback(() => {
+    const state = useAppStore.getState();
+    return state.ui.selectedLlmModel || state.settings.defaultModel;
+  }, []);
+
+  /**
    * Starts a streaming chat request and wires up common callbacks.
    */
   const startStream = useCallback(
@@ -188,8 +197,9 @@ export function useChat(): UseChatReturn {
       handlers: { onDone: () => void; onError: (error: unknown) => void },
     ) => {
       const client = getClient();
+      const llmModelId = getEffectiveLlmModel();
       streamRef.current = client.chat({
-        model: model.model,
+        model: llmModelId,
         messages,
         temperature: model.temp,
         thinkingEnabled,
@@ -204,16 +214,22 @@ export function useChat(): UseChatReturn {
         onError: handlers.onError,
       });
     },
-    [getClient, appendToLastMessage, setThinkingOnLastMessage],
+    [
+      getClient,
+      getEffectiveLlmModel,
+      appendToLastMessage,
+      setThinkingOnLastMessage,
+    ],
   );
 
   /**
    * Generates a title for a thread based on the first user message
    */
   const generateTitle = useCallback(
-    async (threadId: string, firstUserContent: string, modelId: string) => {
+    async (threadId: string, firstUserContent: string) => {
       try {
         const client = getClient();
+        const llmModelId = getEffectiveLlmModel();
         const truncatedContent = firstUserContent.slice(
           0,
           TITLE_PROMPT_MAX_CHARS,
@@ -223,7 +239,7 @@ export function useChat(): UseChatReturn {
         let title = "";
         await new Promise<void>((resolve, reject) => {
           client.chat({
-            model: modelId,
+            model: llmModelId,
             temperature: TITLE_GENERATION_TEMPERATURE,
             messages: [
               { role: "system", content: "You create short chat titles." },
@@ -257,7 +273,7 @@ export function useChat(): UseChatReturn {
         console.warn("Title generation failed:", err);
       }
     },
-    [getClient, updateThreadTitle],
+    [getClient, getEffectiveLlmModel, updateThreadTitle],
   );
 
   /**
@@ -344,11 +360,7 @@ export function useChat(): UseChatReturn {
                     firstUser.content ||
                     (hasImages ? "Image conversation" : "");
                   if (titleContent) {
-                    await generateTitle(
-                      threadId,
-                      titleContent,
-                      currentModel.model,
-                    );
+                    await generateTitle(threadId, titleContent);
                   }
                 }
               }

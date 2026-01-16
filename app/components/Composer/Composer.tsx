@@ -3,6 +3,7 @@ import { useAppStore, selectActiveThread } from "../../state/store";
 import { useChat } from "../../hooks";
 import GlassSurface from "../GlassSurface";
 import GlassButton from "../GlassButton";
+import ModelPicker from "../ModelPicker";
 import { GrClose } from "react-icons/gr";
 import { IoArrowUp, IoImageOutline } from "react-icons/io5";
 import type { ImageAttachment } from "../../types";
@@ -310,6 +311,11 @@ export default function Composer() {
       />
 
       <div className="composer-content">
+        {/* Model picker at top left */}
+        <div className="composer-model-picker">
+          <ModelPicker />
+        </div>
+
         {/* Image previews */}
         {images.length > 0 && (
           <div className="composer-image-previews">

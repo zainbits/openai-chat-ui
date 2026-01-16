@@ -106,14 +106,10 @@ export default function SettingsModal({
   const [streamingEnabled, setStreamingEnabled] = useState(
     settings.streamingEnabled,
   );
-  const [defaultModel, setDefaultModel] = useState(settings.defaultModel);
   const [glassEffectEnabled, setGlassEffectEnabled] = useState(
     settings.glassEffectEnabled ?? true,
   );
   const [lowSpecBlur, setLowSpecBlur] = useState(settings.lowSpecBlur ?? 5);
-  const [showActiveModelIndicator, setShowActiveModelIndicator] = useState(
-    settings.showActiveModelIndicator ?? true,
-  );
   const [verifying, setVerifying] = useState(false);
   const [nukeModalOpen, setNukeModalOpen] = useState(false);
   const [deleteChatsModalOpen, setDeleteChatsModalOpen] = useState(false);
@@ -251,7 +247,6 @@ export default function SettingsModal({
       apiKey,
       apiProvider: selectedProvider,
       streamingEnabled,
-      defaultModel,
       glassEffectEnabled,
       lowSpecBlur,
     });
@@ -261,7 +256,6 @@ export default function SettingsModal({
     apiKey,
     selectedProvider,
     streamingEnabled,
-    defaultModel,
     glassEffectEnabled,
     lowSpecBlur,
     updateSettings,
@@ -286,17 +280,6 @@ export default function SettingsModal({
     (value: number) => {
       setLowSpecBlur(value);
       updateSettings({ lowSpecBlur: value });
-    },
-    [updateSettings],
-  );
-
-  /**
-   * Handles active model indicator toggle - saves immediately
-   */
-  const handleActiveModelIndicatorChange = useCallback(
-    (enabled: boolean) => {
-      setShowActiveModelIndicator(enabled);
-      updateSettings({ showActiveModelIndicator: enabled });
     },
     [updateSettings],
   );
@@ -488,23 +471,6 @@ export default function SettingsModal({
                 onChange={(e) => setStreamingEnabled(e.currentTarget.checked)}
                 aria-describedby="streaming-description"
               />
-              <Select
-                label="Default remote model (used for titles & new models)"
-                placeholder={
-                  (availableModels?.length ?? 0) > 0
-                    ? "Select a model"
-                    : "Verify API to load models"
-                }
-                searchable
-                disabled={(availableModels?.length ?? 0) === 0}
-                data={(availableModels ?? []).map((m) => ({
-                  value: m.id,
-                  label: m.id,
-                }))}
-                value={defaultModel}
-                onChange={(val) => setDefaultModel(val || defaultModel)}
-                aria-label="Select default AI model"
-              />
               <div className="modal-actions">
                 <div className="modal-actions-group" />
                 <div className="modal-actions-group">
@@ -567,24 +533,6 @@ export default function SettingsModal({
                     />
                   </div>
                 )}
-              </div>
-
-              <div className="data-section">
-                <Text size="sm" fw={500} mb="xs">
-                  Model Display
-                </Text>
-                <Text size="xs" c="dimmed" mb="sm">
-                  Configure how model information is displayed.
-                </Text>
-                <Switch
-                  label="Show remote model names"
-                  description="Display the remote model name below each model chip"
-                  checked={showActiveModelIndicator}
-                  onChange={(e) =>
-                    handleActiveModelIndicatorChange(e.currentTarget.checked)
-                  }
-                  aria-describedby="active-model-indicator-description"
-                />
               </div>
             </div>
           </Tabs.Panel>

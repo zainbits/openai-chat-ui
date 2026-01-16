@@ -4,6 +4,8 @@ import React, {
   useRef,
   useCallback,
   useState,
+  type ChangeEvent,
+  type KeyboardEvent,
 } from "react";
 import { useAppStore, selectActiveThread } from "../../state/store";
 import { useChat } from "../../hooks";
@@ -283,6 +285,36 @@ function CopyButton({ content }: { content: string }) {
 }
 
 /**
+ * Edit button component for messages
+ */
+function EditButton({ onEdit }: { onEdit: () => void }) {
+  return (
+    <button
+      className="edit-btn"
+      onClick={onEdit}
+      title="Edit message"
+      aria-label="Edit message"
+    >
+      <svg
+        className="edit-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      </svg>
+      <span className="edit-text">Edit</span>
+    </button>
+  );
+}
+
+/**
  * Main chat area component displaying messages and the composer
  */
 /** State for the image viewer */
@@ -293,6 +325,9 @@ interface ImageViewerState {
 
 export default function ChatArea() {
   const thread = useAppStore(selectActiveThread);
+  const updateMessageContent = useAppStore(
+    (state) => state.updateMessageContent,
+  );
   const { isLoading, isRegenerating, regenerateLastMessage } = useChat();
 
   const messages = useMemo(() => thread?.messages ?? [], [thread]);
@@ -304,6 +339,11 @@ export default function ChatArea() {
 
   // Image viewer state
   const [imageViewer, setImageViewer] = useState<ImageViewerState | null>(null);
+
+  // Edit state
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const editTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Combined streaming state for both regular loading and regeneration
   const isStreamingActive = isLoading || isRegenerating;
@@ -469,6 +509,63 @@ export default function ChatArea() {
     return () => container.removeEventListener("click", handleCopyClick);
   }, []);
 
+  // Focus textarea when editing starts
+  useEffect(() => {
+    if (editingIndex !== null && editTextareaRef.current) {
+      editTextareaRef.current.focus();
+      // Move cursor to end
+      const len = editTextareaRef.current.value.length;
+      editTextareaRef.current.setSelectionRange(len, len);
+    }
+  }, [editingIndex]);
+
+  // Handle starting edit
+  const handleStartEdit = useCallback((index: number, content: string) => {
+    setEditingIndex(index);
+    setEditContent(content);
+  }, []);
+
+  // Handle saving edit
+  const handleSaveEdit = useCallback(() => {
+    if (editingIndex !== null && thread) {
+      updateMessageContent(thread.id, editingIndex, editContent);
+      setEditingIndex(null);
+      setEditContent("");
+      notifications.show({
+        message: "Message updated",
+        color: "green",
+        autoClose: 2000,
+      });
+    }
+  }, [editingIndex, thread, editContent, updateMessageContent]);
+
+  // Handle canceling edit
+  const handleCancelEdit = useCallback(() => {
+    setEditingIndex(null);
+    setEditContent("");
+  }, []);
+
+  // Handle edit textarea change
+  const handleEditChange = useCallback(
+    (e: ChangeEvent<HTMLTextAreaElement>) => {
+      setEditContent(e.target.value);
+    },
+    [],
+  );
+
+  // Handle keyboard shortcuts in edit mode
+  const handleEditKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Escape") {
+        handleCancelEdit();
+      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleSaveEdit();
+      }
+    },
+    [handleCancelEdit, handleSaveEdit],
+  );
+
   return (
     <main className="chat-main" role="main" aria-label="Chat conversation">
       <section
@@ -565,6 +662,61 @@ export default function ChatArea() {
                   {isStreamingActive && isLastMessage && isAssistantMessage && (
                     <span className="streaming-cursor" aria-hidden="true" />
                   )}
+                  {/* Edit mode UI */}
+                  {editingIndex === idx && (
+                    <div className="edit-container">
+                      <textarea
+                        ref={editTextareaRef}
+                        className="edit-textarea"
+                        value={editContent}
+                        onChange={handleEditChange}
+                        onKeyDown={handleEditKeyDown}
+                        rows={Math.max(3, editContent.split("\n").length)}
+                        placeholder="Edit message..."
+                      />
+                      <div className="edit-actions">
+                        <button
+                          className="edit-save-btn"
+                          onClick={handleSaveEdit}
+                          title="Save (Ctrl+Enter)"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                          <span>Save</span>
+                        </button>
+                        <button
+                          className="edit-cancel-btn"
+                          onClick={handleCancelEdit}
+                          title="Cancel (Esc)"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M18 6L6 18" />
+                            <path d="M6 6l12 12" />
+                          </svg>
+                          <span>Cancel</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {isAssistantMessage &&
                     (!isEmptyAssistant || isFailedResponse) && (
                       <div
@@ -572,6 +724,11 @@ export default function ChatArea() {
                       >
                         {!isFailedResponse && (
                           <CopyButton content={m.content} />
+                        )}
+                        {!isFailedResponse && editingIndex !== idx && (
+                          <EditButton
+                            onEdit={() => handleStartEdit(idx, m.content)}
+                          />
                         )}
                         {showRegenerateButton && (
                           <button
@@ -611,6 +768,11 @@ export default function ChatArea() {
                   {!isAssistantMessage && (
                     <div className="message-actions">
                       <CopyButton content={m.content} />
+                      {editingIndex !== idx && (
+                        <EditButton
+                          onEdit={() => handleStartEdit(idx, m.content)}
+                        />
+                      )}
                     </div>
                   )}
                 </article>

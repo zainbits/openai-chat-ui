@@ -69,7 +69,6 @@ const isCustomModel = (value: unknown): value is CustomModel => {
   if (!isString(value.name)) return false;
   if (!isString(value.color)) return false;
   if (!isString(value.system)) return false;
-  if (!isString(value.model)) return false;
   if (!isNumber(value.temp)) return false;
   if (
     value.thinkingEnabled !== undefined &&
@@ -146,9 +145,6 @@ const normalizeSettings = (
     glassEffectEnabled: isBoolean(value.glassEffectEnabled)
       ? value.glassEffectEnabled
       : defaults.glassEffectEnabled,
-    showActiveModelIndicator: isBoolean(value.showActiveModelIndicator)
-      ? value.showActiveModelIndicator
-      : defaults.showActiveModelIndicator,
     lowSpecBlur: isNumber(value.lowSpecBlur)
       ? value.lowSpecBlur
       : defaults.lowSpecBlur,

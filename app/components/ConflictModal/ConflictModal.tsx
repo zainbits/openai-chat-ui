@@ -50,7 +50,6 @@ export default function ConflictModal({
     name: isDifferent(localModel.name, serverModel.name),
     color: isDifferent(localModel.color, serverModel.color),
     system: isDifferent(localModel.system, serverModel.system),
-    model: isDifferent(localModel.model, serverModel.model),
     temp: isDifferent(localModel.temp, serverModel.temp),
     thinkingEnabled: isDifferent(
       localModel.thinkingEnabled,
@@ -119,18 +118,6 @@ export default function ConflictModal({
                   {localModel.color}
                 </Text>
               </div>
-            </div>
-
-            <div className="conflict-field">
-              <Text size="xs" fw={500} c="dimmed">
-                Remote Model
-              </Text>
-              <Text
-                size="sm"
-                className={differences.model ? "conflict-changed" : ""}
-              >
-                {localModel.model}
-              </Text>
             </div>
 
             <div className="conflict-field">
@@ -232,18 +219,6 @@ export default function ConflictModal({
                   {serverModel.color}
                 </Text>
               </div>
-            </div>
-
-            <div className="conflict-field">
-              <Text size="xs" fw={500} c="dimmed">
-                Remote Model
-              </Text>
-              <Text
-                size="sm"
-                className={differences.model ? "conflict-changed" : ""}
-              >
-                {serverModel.model}
-              </Text>
             </div>
 
             <div className="conflict-field">

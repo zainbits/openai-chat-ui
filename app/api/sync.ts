@@ -137,7 +137,6 @@ export class ModelsSyncClient {
           name: model.name,
           color: model.color,
           system: model.system,
-          model: model.model,
           temp: model.temp,
           thinkingEnabled: model.thinkingEnabled,
           thinkingEffort: model.thinkingEffort,

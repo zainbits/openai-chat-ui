@@ -25,6 +25,11 @@ export interface ChatSlice {
   setThinkingOnLastMessage: (threadId: string, thinking: string) => void;
   removeMessagesAfterIndex: (threadId: string, index: number) => void;
   setThreadPreview: (threadId: string, preview: string) => void;
+  updateMessageContent: (
+    threadId: string,
+    messageIndex: number,
+    content: string,
+  ) => void;
 }
 
 const createThreadForModel = (modelId: string): ChatThread => {
@@ -299,4 +304,28 @@ export const createChatSlice: StateCreator<AppStore, [], [], ChatSlice> = (
         },
       },
     })),
+
+  updateMessageContent: (threadId, messageIndex, content) =>
+    set((state) => {
+      const thread = state.chats[threadId];
+      if (!thread || messageIndex < 0 || messageIndex >= thread.messages.length)
+        return state;
+
+      const messages = [...thread.messages];
+      messages[messageIndex] = {
+        ...messages[messageIndex],
+        content,
+      };
+
+      return {
+        chats: {
+          ...state.chats,
+          [threadId]: {
+            ...thread,
+            messages,
+            updatedAt: Date.now(),
+          },
+        },
+      };
+    }),
 });
