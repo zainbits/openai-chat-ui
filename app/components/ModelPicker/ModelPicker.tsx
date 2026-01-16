@@ -74,7 +74,14 @@ export default function ModelPicker() {
       }
     };
 
-    const handleResize = () => setIsOpen(false);
+    // On mobile/touch devices, don't close on resize - it's usually the keyboard
+    const isTouchDevice =
+      "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    const handleResize = () => {
+      if (!isTouchDevice) {
+        setIsOpen(false);
+      }
+    };
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
@@ -90,13 +97,21 @@ export default function ModelPicker() {
     };
   }, [isOpen]);
 
-  // Focus search input when dropdown opens
+  // Focus search input when dropdown opens (but not on mobile to prevent keyboard issues)
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      // Use requestAnimationFrame to wait for portal to render
-      requestAnimationFrame(() => {
-        inputRef.current?.focus();
-      });
+      // Don't auto-focus on mobile/touch devices - the keyboard opening causes
+      // a resize event which closes the dropdown immediately
+      const isMobile = window.matchMedia("(max-width: 640px)").matches;
+      const isTouchDevice =
+        "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+      if (!isMobile && !isTouchDevice) {
+        // Use requestAnimationFrame to wait for portal to render
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+        });
+      }
     }
   }, [isOpen]);
 
