@@ -22,13 +22,6 @@
   min-width: 0; /* Prevent flex overflow */
 }
 
-/* Model picker container */
-.composer-model-picker {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.25rem;
-}
-
 .composer-input-area {
   display: flex;
   flex: 1;
@@ -37,11 +30,15 @@
 }
 
 .composer-input-container {
-  position: relative;
   display: flex;
+  flex-direction: column;
   flex: 1;
   width: 100%;
-  align-items: flex-end;
+}
+
+.composer-textarea-wrapper {
+  width: 100%;
+  padding: 0;
 }
 
 .composer-textarea {
@@ -51,8 +48,7 @@
   max-height: 200px;
   border-radius: 6px;
   outline: none;
-  padding: 12px;
-  padding-right: 2.5rem; /* Space for the send button */
+  padding: 12px 16px;
   background: transparent;
   border: none;
   color: var(--color-text-primary);
@@ -62,20 +58,31 @@
   font-family: inherit;
   font-size: inherit;
   transition: height 0.1s ease-out;
+  display: block;
 }
 
 .composer-textarea::placeholder {
   color: var(--color-text-disabled);
 }
 
+.composer-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 12px 12px 12px;
+  width: 100%;
+}
+
 .composer-actions {
-  position: absolute;
-  right: 6px;
-  bottom: 6px;
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  z-index: 10;
+}
+
+/* Container for model picker on the left */
+.composer-model-picker-container {
+  display: flex;
+  align-items: center;
 }
 
 /* Composer icon styling */

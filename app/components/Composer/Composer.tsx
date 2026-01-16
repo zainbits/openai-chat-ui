@@ -311,11 +311,6 @@ export default function Composer() {
       />
 
       <div className="composer-content">
-        {/* Model picker at top left */}
-        <div className="composer-model-picker">
-          <ModelPicker />
-        </div>
-
         {/* Image previews */}
         {images.length > 0 && (
           <div className="composer-image-previews">
@@ -340,57 +335,68 @@ export default function Composer() {
         )}
 
         <div className="composer-input-area">
-          <GlassSurface width="100%" height={textareaHeight + 24}>
+          <GlassSurface width="100%" height="auto" padding={0}>
             <div className="composer-input-container">
-              <textarea
-                ref={textareaRef}
-                className="composer-textarea"
-                placeholder="Type your message..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onPaste={handlePaste}
-                aria-label="Message input"
-                style={{ height: `${textareaHeight}px` }}
-              />
-              <div className="composer-actions">
-                {/* Image upload button */}
-                <GlassButton
-                  variant="round"
-                  width={32}
-                  height={32}
-                  glassClassName="composer-action-button-glass"
-                  disabled={!canAddMoreImages || !thread}
-                  onClick={openFilePicker}
-                  aria-label="Attach image"
-                  title={
-                    canAddMoreImages
-                      ? "Attach image"
-                      : `Max ${MAX_IMAGES_PER_MESSAGE} images`
-                  }
-                >
-                  <IoImageOutline
-                    className="composer-icon"
-                    aria-hidden="true"
-                  />
-                </GlassButton>
+              <div className="composer-textarea-wrapper">
+                <textarea
+                  ref={textareaRef}
+                  className="composer-textarea"
+                  placeholder="Type your message..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
+                  aria-label="Message input"
+                  style={{ height: `${textareaHeight}px` }}
+                />
+              </div>
+              <div className="composer-bottom-row">
+                {/* Model Picker */}
+                <div className="composer-model-picker-container">
+                  <ModelPicker />
+                </div>
 
-                {/* Send/Stop button */}
-                <GlassButton
-                  variant="round"
-                  width={32}
-                  height={32}
-                  glassClassName="composer-send-button-glass"
-                  disabled={(!hasContent && !isStreaming) || !thread}
-                  onClick={isStreaming ? cancelStream : handleSend}
-                  aria-label={isStreaming ? "Stop generation" : "Send message"}
-                >
-                  {isStreaming ? (
-                    <GrClose className="composer-icon" aria-hidden="true" />
-                  ) : (
-                    <IoArrowUp className="composer-icon" aria-hidden="true" />
-                  )}
-                </GlassButton>
+                <div className="composer-actions">
+                  {/* Image upload button */}
+                  <GlassButton
+                    variant="round"
+                    width={32}
+                    height={32}
+                    glassClassName="composer-action-button-glass"
+                    disabled={!canAddMoreImages || !thread}
+                    onClick={openFilePicker}
+                    aria-label="Attach image"
+                    title={
+                      canAddMoreImages
+                        ? "Attach image"
+                        : `Max ${MAX_IMAGES_PER_MESSAGE} images`
+                    }
+                  >
+                    <IoImageOutline
+                      className="composer-icon"
+                      aria-hidden="true"
+                    />
+                  </GlassButton>
+
+                  {/* Send/Stop button */}
+                  <GlassButton
+                    variant="round"
+                    width={32}
+                    height={32}
+                    glassClassName="composer-send-button-glass"
+                    disabled={(!hasContent && !isStreaming) || !thread}
+                    onClick={isStreaming ? cancelStream : handleSend}
+                    aria-label={
+                      isStreaming ? "Stop generation" : "Send message"
+                    }
+                  >
+                    {isStreaming ? (
+                      <GrClose className="composer-icon" aria-hidden="true" />
+                    ) : (
+                      <IoArrowUp className="composer-icon" aria-hidden="true" />
+                    )}
+                  </GlassButton>
+                </div>
               </div>
             </div>
           </GlassSurface>

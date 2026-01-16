@@ -64,24 +64,29 @@
 
 /* Dropdown */
 .model-picker-dropdown {
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 0;
   min-width: 280px;
   max-width: 400px;
-  max-height: 300px;
-  background: var(--color-background-elevated);
-  border: 1px solid var(--color-border-primary);
+  /* Visuals handled by GlassSurface */
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  /* Note: positioning is now handled via inline styles and portal */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.model-picker-dropdown .glass-surface__content {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  /* padding is set via GlassSurface padding prop */
+  max-height: 300px;
+  width: 100%;
 }
 
 .model-picker-search {
   padding: 0.5rem;
   border-bottom: 1px solid var(--color-border-primary);
+  flex-shrink: 0;
 }
 
 .model-picker-search-input {
@@ -107,6 +112,8 @@
 .model-picker-list {
   overflow-y: auto;
   flex: 1;
+  min-height: 0; /* Important for flex container scrolling */
+  padding: 0.25rem 0;
 }
 
 .model-picker-option {

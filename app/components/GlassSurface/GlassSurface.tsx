@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useId, useState } from "react";
 import { useAppStore } from "../../state/store";
 import "./GlassSurface.css";
 
-export interface GlassSurfaceProps {
+export interface GlassSurfaceProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode;
   width?: number | string;
   height?: number | string;
@@ -14,6 +15,7 @@ export interface GlassSurfaceProps {
   displace?: number;
   backgroundOpacity?: number;
   saturation?: number;
+  padding?: number | string;
   distortionScale?: number;
   redOffset?: number;
   greenOffset?: number;
@@ -55,6 +57,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
   displace = 0,
   backgroundOpacity = 0,
   saturation = 1,
+  padding = "0.5rem",
   distortionScale = -180,
   redOffset = 0,
   greenOffset = 10,
@@ -64,6 +67,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
   mixBlendMode = "difference",
   className = "",
   style = {},
+  ...props
 }) => {
   const glassEffectEnabled = useAppStore(
     (s) => s.settings.glassEffectEnabled ?? true,
@@ -219,8 +223,16 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
       <div
         className={`glass-surface glass-surface--simple ${className}`}
         style={simpleStyle}
+        {...props}
       >
-        <div className="glass-surface__content">{children}</div>
+        <div
+          className="glass-surface__content"
+          style={{
+            padding: typeof padding === "number" ? `${padding}px` : padding,
+          }}
+        >
+          {children}
+        </div>
       </div>
     );
   }
@@ -240,6 +252,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
       ref={containerRef}
       className={`glass-surface ${svgFiltersSupported ? "glass-surface--svg" : "glass-surface--fallback"} ${className}`}
       style={containerStyle}
+      {...props}
     >
       <svg className="glass-surface__filter" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -323,7 +336,14 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
         </defs>
       </svg>
 
-      <div className="glass-surface__content">{children}</div>
+      <div
+        className="glass-surface__content"
+        style={{
+          padding: typeof padding === "number" ? `${padding}px` : padding,
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 };
