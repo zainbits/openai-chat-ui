@@ -347,6 +347,8 @@ export default function ChatArea() {
 
   // Combined streaming state for both regular loading and regeneration
   const isStreamingActive = isLoading || isRegenerating;
+  // Track previous streaming state to detect when streaming ends
+  const wasStreamingRef = useRef(false);
 
   // Check if the last message is an empty assistant message (streaming in progress)
   // Only show typing indicator if there's no content AND no thinking yet
@@ -387,11 +389,26 @@ export default function ChatArea() {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Reset scroll tracking when streaming starts
+  // Track message count to detect new messages
+  const prevMessageCountRef = useRef(messages.length);
+
+  // Reset scroll tracking when a new message is added (user sends a message)
   useEffect(() => {
-    if (isStreamingActive) {
+    const currentCount = messages.length;
+    const prevCount = prevMessageCountRef.current;
+
+    // Reset scroll tracking when new messages are added (not during streaming updates)
+    // This happens when user sends a new message
+    if (currentCount > prevCount && !wasStreamingRef.current) {
       userScrolledUpRef.current = false;
     }
+
+    prevMessageCountRef.current = currentCount;
+  }, [messages.length]);
+
+  // Track streaming state changes
+  useEffect(() => {
+    wasStreamingRef.current = isStreamingActive;
   }, [isStreamingActive]);
 
   // Auto-scroll to bottom when messages change, unless user scrolled up or just saved an edit
@@ -399,8 +416,8 @@ export default function ChatArea() {
     const el = listRef.current;
     if (!el) return;
 
-    // Don't auto-scroll if user has scrolled up during streaming
-    if (userScrolledUpRef.current && isStreamingActive) {
+    // Don't auto-scroll if user has scrolled up (respect during and after streaming)
+    if (userScrolledUpRef.current) {
       return;
     }
 

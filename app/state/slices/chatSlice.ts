@@ -22,7 +22,10 @@ export interface ChatSlice {
   ) => void;
   addAssistantMessage: (threadId: string) => void;
   appendToLastMessage: (threadId: string, token: string) => void;
-  appendThinkingToLastMessage: (threadId: string, thinkingToken: string) => void;
+  appendThinkingToLastMessage: (
+    threadId: string,
+    thinkingToken: string,
+  ) => void;
   removeMessagesAfterIndex: (threadId: string, index: number) => void;
   setThreadPreview: (threadId: string, preview: string) => void;
   updateMessageContent: (
