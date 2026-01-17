@@ -522,22 +522,22 @@ export default function SettingsModal({
                   devices.
                 </Text>
                 <div>
-                    <Text size="xs" fw={500} mb={4}>
-                      Background Blur Strength ({lowSpecBlur}px)
-                    </Text>
-                    <Text size="xs" c="dimmed" mb="xs">
+                  <Text size="xs" fw={500} mb={4}>
+                    Background Blur Strength ({lowSpecBlur}px)
+                  </Text>
+                  <Text size="xs" c="dimmed" mb="xs">
                     Adjust the blur amount for UI elements to improve
-                      readability.
-                    </Text>
-                    <Slider
-                      value={lowSpecBlur}
-                      onChange={handleLowSpecBlurChange}
-                      min={0}
-                      max={20}
-                      step={1}
-                      label={(value) => `${value}px`}
-                    />
-                  </div>
+                    readability.
+                  </Text>
+                  <Slider
+                    value={lowSpecBlur}
+                    onChange={handleLowSpecBlurChange}
+                    min={0}
+                    max={20}
+                    step={1}
+                    label={(value) => `${value}px`}
+                  />
+                </div>
               </div>
             </div>
           </Tabs.Panel>
