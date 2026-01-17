@@ -13,9 +13,14 @@ A beautiful, customizable chat interface for OpenAI-compatible APIs with modern 
 - 🎯 **Custom Model Presets** - Create and manage multiple model configurations with custom system prompts
 - 💬 **Thread Management** - Organize conversations with search, filtering, and pinning
 - 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
-- 🔒 **Local Storage** - All data persisted locally in your browser
+- 🔒 **Local Storage** - All data persisted locally in your browser (IndexedDB for images)
 - ⚡ **Auto-Generated Titles** - AI-powered chat titles generated automatically
 - 🎛️ **Configurable Settings** - Connect to any OpenAI-compatible API endpoint
+- 🖼️ **Multimodal Support** - Attach images to messages (JPEG, PNG, GIF, WebP; up to 4 per message)
+- 🧠 **AI Reasoning Display** - Collapsible thinking blocks for models with extended reasoning
+- 🌐 **Multiple API Providers** - Built-in support for OpenAI, Anthropic, Groq, Cerebras, OpenRouter, or custom endpoints
+- ☁️ **Cloud Sync** - Optional sync of custom models to a cloud backend
+- 📦 **Export/Import** - Backup and restore your data as JSON
 
 ## Getting Started
 
@@ -61,6 +66,13 @@ yarn build
 yarn start
 ```
 
+### Run Tests
+
+```bash
+yarn test        # Watch mode
+yarn test:run    # Single run
+```
+
 ## Architecture
 
 ### Tech Stack
@@ -68,29 +80,41 @@ yarn start
 - **React 19** with React Router 7
 - **TypeScript 5.8** for type safety
 - **Mantine UI** for components and notifications
+- **Zustand** for state management
 - **DOMPurify** for XSS protection in markdown rendering
 - **Marked** for markdown parsing
 - **Vite** for blazing fast builds
+- **Vitest** for testing
 
 ### Project Structure
 
 ```
 app/
-├── api/           # OpenAI-compatible API client
+├── api/           # API clients (OpenAI-compatible, cloud sync)
 ├── components/    # React components with co-located CSS
-│   ├── ChatArea/     # Main chat message display
-│   ├── Composer/     # Message input with quick actions
-│   ├── BlurButton/   # Blur effect button component
-│   ├── BlurSurface/  # Backdrop blur surface component
-│   ├── ModelChips/   # Model selector chips
-│   ├── ModelEditorModal/  # Create/edit model presets
-│   ├── SettingsModal/     # API and app settings
-│   └── Sidebar/      # Thread list and navigation
-├── state/         # React context state management
+│   ├── BlurButton/       # Blur effect button component
+│   ├── BlurSurface/      # Backdrop blur surface component
+│   ├── ChatArea/         # Main chat message display
+│   ├── CloudModelsTab/   # Cloud sync management UI
+│   ├── Composer/         # Message input with image attachments
+│   ├── ConfirmModal/     # Reusable confirmation dialogs
+│   ├── ConflictModal/    # Cloud sync conflict resolution
+│   ├── ErrorBoundary/    # React error boundary
+│   ├── ImageViewer/      # Full-screen image viewer
+│   ├── LoadingSkeleton/  # Loading state placeholders
+│   ├── ModelChips/       # Model selector chips
+│   ├── ModelEditorModal/ # Create/edit model presets
+│   ├── ModelPicker/      # LLM model dropdown selector
+│   ├── SettingsModal/    # API and app settings (tabbed)
+│   ├── Sidebar/          # Thread list and navigation
+│   └── ThinkingBlock/    # Collapsible AI reasoning display
+├── hooks/         # Custom React hooks
+├── state/         # Zustand store and slices
 ├── styles/        # Global CSS and variables
+├── tests/         # Vitest test files
 ├── theme/         # Centralized color/theme system
 ├── types.ts       # TypeScript type definitions
-└── utils/         # Utility functions (markdown, storage, time)
+└── utils/         # Utility functions (markdown, storage, IndexedDB)
 ```
 
 ### Key Features
@@ -102,6 +126,21 @@ The API client handles Server-Sent Events (SSE) for real-time token streaming wi
 #### Theming System
 
 All colors are managed centrally in `theme/colors.ts` and automatically generate CSS custom properties for consistent styling.
+
+## Supported API Providers
+
+The app includes built-in presets for popular AI providers:
+
+| Provider   | Base URL                         |
+| ---------- | -------------------------------- |
+| OpenAI     | `https://api.openai.com/v1`      |
+| Anthropic  | `https://api.anthropic.com/v1`   |
+| Groq       | `https://api.groq.com/openai/v1` |
+| Cerebras   | `https://api.cerebras.ai/v1`     |
+| OpenRouter | `https://openrouter.ai/api/v1`   |
+| Custom     | Any OpenAI-compatible endpoint   |
+
+You can also override the base URL for any provider to use a proxy server.
 
 ## Keyboard Shortcuts
 
@@ -115,7 +154,7 @@ All colors are managed centrally in `theme/colors.ts` and automatically generate
 
 ```bash
 docker build -t custommodels-chat .
-docker run -p 3000:3000 custommodels-chat
+docker run -p 4111:4111 custommodels-chat
 ```
 
 ### GitHub Pages
