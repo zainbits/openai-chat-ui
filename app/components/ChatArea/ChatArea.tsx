@@ -389,13 +389,18 @@ export default function ChatArea() {
     }
   }, [isStreamingActive]);
 
-  // Auto-scroll to bottom when messages change, unless user scrolled up
+  // Auto-scroll to bottom when messages change, unless user scrolled up or just saved an edit
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
 
     // Don't auto-scroll if user has scrolled up during streaming
     if (userScrolledUpRef.current && isStreamingActive) {
+      return;
+    }
+
+    // Don't auto-scroll if we just saved an edit (preserve scroll position)
+    if (justSavedEditRef.current) {
       return;
     }
 
@@ -525,9 +530,13 @@ export default function ChatArea() {
     setEditContent(content);
   }, []);
 
+  // Track if we just saved an edit (to prevent auto-scroll)
+  const justSavedEditRef = useRef(false);
+
   // Handle saving edit
   const handleSaveEdit = useCallback(() => {
     if (editingIndex !== null && thread) {
+      justSavedEditRef.current = true;
       updateMessageContent(thread.id, editingIndex, editContent);
       setEditingIndex(null);
       setEditContent("");
@@ -536,6 +545,10 @@ export default function ChatArea() {
         color: "green",
         autoClose: 2000,
       });
+      // Reset flag after a short delay to allow the effect to run
+      setTimeout(() => {
+        justSavedEditRef.current = false;
+      }, 100);
     }
   }, [editingIndex, thread, editContent, updateMessageContent]);
 
