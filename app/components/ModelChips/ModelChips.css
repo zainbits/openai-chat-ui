@@ -1,9 +1,15 @@
 /* Model Chips Styles */
+.model-chips-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
 .model-chips {
   display: flex;
+  align-items: center;
   overflow-x: auto;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 4px 0.5rem; /* Small vertical padding to prevent border clipping */
   /* Ensure proper touch handling on mobile */
   -webkit-overflow-scrolling: touch;
   /* Prevent text selection on mobile */
@@ -11,12 +17,28 @@
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  /* Hide scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.model-chips::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Always add left padding on mobile to clear hamburger button */
+@media (max-width: 767px) {
+  .model-chips {
+    padding-left: calc(1rem + 40px + 0.5rem);
+  }
 }
 
 .model-chip-container {
   flex-shrink: 0;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: 0.25rem;
 }
 
 .add-model-button {
@@ -30,13 +52,30 @@
   flex-shrink: 0;
 }
 
-.model-chips-offset {
-  padding-left: 4rem;
+/* Active model chip styling */
+.model-chip-active {
+  box-shadow: 0 0 0 2px var(--color-primary-400) !important;
 }
 
-/* Responsive */
-@media (min-width: 768px) {
-  .model-chips-offset {
-    padding-left: 0;
-  }
+.active-check {
+  margin-left: 2px;
+  color: var(--color-success-400);
+  flex-shrink: 0;
 }
+
+.model-chip-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.model-chip-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Responsive - offset is now handled in components.css */

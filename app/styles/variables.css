@@ -1,58 +1,38 @@
-/* CSS Custom Properties - Auto-generated from TypeScript theme */
+/* =============================================================================
+   Design Tokens - Centralized Color System
+   
+   Industry Standard: Design Token Architecture
+   - Primitive tokens: Raw color values (--color-*)
+   - Semantic tokens: Context-aware aliases (--text-*, --bg-*, --border-*)
+   - Component tokens: Specific use cases (--btn-*, --input-*)
+   
+   Naming Convention: BEM-inspired with semantic prefixes
+   ============================================================================= */
+
 :root {
-  /* Text Colors */
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #ffffffe6; /* 90% */
-  --color-text-muted: #ffffffb3; /* 70% */
-  --color-text-disabled: #ffffff80; /* 50% */
-  --color-text-inverse: #000000;
+  /* ===========================================================================
+     PRIMITIVE TOKENS - Base Color Palette
+     These are the raw color values used throughout the app.
+     Never use these directly in components - use semantic tokens instead.
+     =========================================================================== */
 
-  /* Background Colors */
-  --color-background-body: #0f172a;
-  --color-background-surface: #ffffff1a; /* 10% */
-  --color-background-surface-hover: #ffffff26; /* 15% */
-  --color-background-surface-active: #ffffff33; /* 20% */
-  --color-background-overlay: #00000080; /* 50% */
-
-  /* Border Colors */
-  --color-border-primary: #ffffff1a; /* 10% */
-  --color-border-secondary: #ffffff33; /* 20% */
-  --color-border-accent: #ffffff66; /* 40% */
-
-  /* Interactive States */
-  --color-interactive-hover: #ffffff1a; /* 10% */
-  --color-interactive-pressed: #ffffff26; /* 15% */
-  --color-interactive-focus: #0a84ff;
-  --color-interactive-disabled: #ffffff0d; /* 5% */
-
-  /* Status Colors */
-  --color-status-connected: #10b981;
-  --color-status-connecting: #f59e0b;
-  --color-status-error: #ef4444;
-  --color-status-unknown: #6b7280;
-
-  /* Model Colors */
-  --color-models-default: #60a5fa;
-  --color-models-general: #60a5fa;
-  --color-models-linux: #34d399;
-  --color-models-creative: #38bdf8;
-
-  /* Scrollbar Colors */
-  --color-scrollbar-track: transparent;
-  --color-scrollbar-thumb: #ffffff33; /* 20% */
-  --color-scrollbar-thumb-hover: #ffffff4d; /* 30% */
-
-  /* Glass Surface Colors (for fallbacks only) */
-  --color-glass-light-background: #ffffff40; /* 25% */
-  --color-glass-light-border: #ffffff4d; /* 30% */
-  --color-glass-dark-background: #ffffff1a; /* 10% */
-  --color-glass-dark-border: #ffffff33; /* 20% */
-
-  /* Base Color Palette - Available if needed */
+  /* --- Neutral Colors (White/Black with Alpha) --- */
   --color-white: #ffffff;
   --color-black: #000000;
+  --color-white-alpha-5: rgba(255, 255, 255, 0.05);
+  --color-white-alpha-10: rgba(255, 255, 255, 0.1);
+  --color-white-alpha-15: rgba(255, 255, 255, 0.15);
+  --color-white-alpha-20: rgba(255, 255, 255, 0.2);
+  --color-white-alpha-25: rgba(255, 255, 255, 0.25);
+  --color-white-alpha-30: rgba(255, 255, 255, 0.3);
+  --color-white-alpha-40: rgba(255, 255, 255, 0.4);
+  --color-white-alpha-50: rgba(255, 255, 255, 0.5);
+  --color-white-alpha-70: rgba(255, 255, 255, 0.7);
+  --color-white-alpha-90: rgba(255, 255, 255, 0.9);
+  --color-black-alpha-40: rgba(0, 0, 0, 0.4);
+  --color-black-alpha-50: rgba(0, 0, 0, 0.5);
 
-  /* Primary Colors */
+  /* --- Primary Blue Palette --- */
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
   --color-primary-200: #bfdbfe;
@@ -64,7 +44,7 @@
   --color-primary-800: #1e40af;
   --color-primary-900: #1e3a8a;
 
-  /* Success Colors */
+  /* --- Success Green Palette --- */
   --color-success-50: #ecfdf5;
   --color-success-100: #d1fae5;
   --color-success-200: #a7f3d0;
@@ -76,7 +56,7 @@
   --color-success-800: #065f46;
   --color-success-900: #064e3b;
 
-  /* Danger Colors */
+  /* --- Danger Red Palette --- */
   --color-danger-50: #fef2f2;
   --color-danger-100: #fee2e2;
   --color-danger-200: #fecaca;
@@ -87,8 +67,9 @@
   --color-danger-700: #b91c1c;
   --color-danger-800: #991b1b;
   --color-danger-900: #7f1d1d;
+  --color-danger-alpha-15: rgba(239, 68, 68, 0.15);
 
-  /* Warning Colors */
+  /* --- Warning Amber Palette --- */
   --color-warning-50: #fffbeb;
   --color-warning-100: #fef3c7;
   --color-warning-200: #fde68a;
@@ -100,7 +81,7 @@
   --color-warning-800: #92400e;
   --color-warning-900: #78350f;
 
-  /* Gray Colors */
+  /* --- Neutral Gray Palette --- */
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
   --color-gray-200: #e5e7eb;
@@ -113,7 +94,7 @@
   --color-gray-900: #111827;
   --color-gray-950: #030712;
 
-  /* Sky Colors */
+  /* --- Sky Blue Palette --- */
   --color-sky-50: #f0f9ff;
   --color-sky-100: #e0f2fe;
   --color-sky-200: #bae6fd;
@@ -125,7 +106,7 @@
   --color-sky-800: #075985;
   --color-sky-900: #0c4a6e;
 
-  /* Slate Colors */
+  /* --- Slate Gray Palette --- */
   --color-slate-50: #f8fafc;
   --color-slate-100: #f1f5f9;
   --color-slate-200: #e2e8f0;
@@ -135,6 +116,161 @@
   --color-slate-600: #475569;
   --color-slate-700: #334155;
   --color-slate-800: #1e293b;
-  --color-slate-900: #0f172a;
+  --color-slate-900: #212121;
   --color-slate-950: #020617;
+
+  /* ===========================================================================
+     SEMANTIC TOKENS - Contextual Color Assignments
+     Use these in components for consistent theming and easy dark/light switching.
+     =========================================================================== */
+
+  /* --- Text Colors --- */
+  --text-primary: var(--color-white);
+  --text-secondary: var(--color-white-alpha-90);
+  --text-muted: var(--color-white-alpha-70);
+  --text-disabled: var(--color-white-alpha-50);
+  --text-inverse: var(--color-black);
+
+  /* --- Background Colors --- */
+  --bg-body: var(--color-slate-900);
+  --bg-surface: #181818;
+  --bg-surface-hover: var(--color-white-alpha-15);
+  --bg-surface-active: var(--color-white-alpha-20);
+  --bg-overlay: var(--color-black-alpha-50);
+  --bg-elevated: var(--color-gray-800);
+
+  /* --- Border Colors --- */
+  --border-primary: var(--color-white-alpha-10);
+  --border-secondary: var(--color-white-alpha-20);
+  --border-accent: var(--color-white-alpha-40);
+
+  /* --- Interactive States --- */
+  --interactive-hover: var(--color-white-alpha-10);
+  --interactive-pressed: var(--color-white-alpha-15);
+  --interactive-focus: #0a84ff;
+  --interactive-disabled: var(--color-white-alpha-5);
+
+  /* --- Status Indicator Colors --- */
+  --status-connected: var(--color-success-500);
+  --status-connecting: var(--color-warning-500);
+  --status-error: var(--color-danger-500);
+  --status-unknown: var(--color-gray-500);
+
+  /* --- Model Indicator Colors --- */
+  --model-default: var(--color-primary-400);
+  --model-general: var(--color-primary-400);
+  --model-linux: var(--color-success-400);
+  --model-creative: var(--color-sky-400);
+
+  /* --- Scrollbar Colors --- */
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: var(--color-white-alpha-20);
+  --scrollbar-thumb-hover: var(--color-white-alpha-30);
+
+  /* --- Z-Index Scale --- */
+  --z-index-dropdown: 1000;
+  --z-index-modal: 1100;
+  --z-index-tooltip: 1200;
+  --z-index-toast: 1300;
+
+  /* ===========================================================================
+     COMPONENT TOKENS - Specific Component Use Cases
+     =========================================================================== */
+
+  /* --- Glass/Frosted Surface Effects --- */
+  --glass-bg-light: var(--color-white-alpha-25);
+  --glass-bg-dark: var(--color-white-alpha-10);
+  --glass-border-light: var(--color-white-alpha-30);
+  --glass-border-dark: var(--color-white-alpha-20);
+
+  /* --- Shadow Colors (for box-shadow, drop-shadow) --- */
+  --shadow-color-light: rgba(17, 17, 26, 0.05);
+  --shadow-color-medium: rgba(17, 17, 26, 0.1);
+  --shadow-color-heavy: rgba(31, 38, 135, 0.2);
+  --shadow-primary-glow: rgba(59, 130, 246, 0.2);
+  --shadow-primary-subtle: rgba(59, 130, 246, 0.1);
+  --shadow-soft: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.15);
+  --shadow-heavy: rgba(0, 0, 0, 0.2);
+
+  /* --- Danger/Error Alpha Variants --- */
+  --color-danger-alpha-5: rgba(239, 68, 68, 0.05);
+  --color-danger-alpha-10: rgba(239, 68, 68, 0.1);
+
+  /* --- Simple Glass Mode Colors (used when glass effects are disabled) --- */
+  --simple-glass-bg-light: rgba(255, 255, 255, 0.6);
+  --simple-glass-bg-dark: rgba(30, 30, 30, 0.8);
+  --simple-glass-border-light: rgba(0, 0, 0, 0.1);
+  --simple-glass-border-dark: rgba(255, 255, 255, 0.1);
+
+  /* --- Simple Button Mode Colors --- */
+  --simple-button-bg-light: rgba(255, 255, 255, 0.5);
+  --simple-button-bg-dark: rgba(40, 40, 40, 0.5);
+  --simple-button-border-light: rgba(0, 0, 0, 0.12);
+  --simple-button-border-dark: rgba(255, 255, 255, 0.12);
+  --simple-button-bg-hover-light: rgba(255, 255, 255, 0.65);
+  --simple-button-bg-hover-dark: rgba(50, 50, 50, 0.65);
+  --simple-button-bg-active-light: rgba(240, 240, 240, 0.7);
+  --simple-button-bg-active-dark: rgba(35, 35, 35, 0.7);
+
+  /* --- Accent Colors for Highlights --- */
+  --accent-primary: var(--color-primary-500);
+  --accent-primary-light: var(--color-primary-400);
+  --accent-danger: var(--color-danger-500);
+  --accent-danger-light: var(--color-danger-400);
+  --accent-danger-bg: var(--color-danger-alpha-15);
+
+  /* ===========================================================================
+     LEGACY COMPATIBILITY TOKENS
+     These map the old naming convention to new tokens for backwards compatibility.
+     TODO: Migrate all usages to new naming convention, then remove these.
+     =========================================================================== */
+
+  /* Text (old naming) */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-inverse: var(--text-inverse);
+
+  /* Background (old naming) */
+  --color-background-body: var(--bg-body);
+  --color-background-surface: var(--bg-surface);
+  --color-background-surface-hover: var(--bg-surface-hover);
+  --color-background-surface-active: var(--bg-surface-active);
+  --color-background-overlay: var(--bg-overlay);
+
+  /* Border (old naming) */
+  --color-border-primary: var(--border-primary);
+  --color-border-secondary: var(--border-secondary);
+  --color-border-accent: var(--border-accent);
+
+  /* Interactive (old naming) */
+  --color-interactive-hover: var(--interactive-hover);
+  --color-interactive-pressed: var(--interactive-pressed);
+  --color-interactive-focus: var(--interactive-focus);
+  --color-interactive-disabled: var(--interactive-disabled);
+
+  /* Status (old naming) */
+  --color-status-connected: var(--status-connected);
+  --color-status-connecting: var(--status-connecting);
+  --color-status-error: var(--status-error);
+  --color-status-unknown: var(--status-unknown);
+
+  /* Models (old naming) */
+  --color-models-default: var(--model-default);
+  --color-models-general: var(--model-general);
+  --color-models-linux: var(--model-linux);
+  --color-models-creative: var(--model-creative);
+
+  /* Scrollbar (old naming) */
+  --color-scrollbar-track: var(--scrollbar-track);
+  --color-scrollbar-thumb: var(--scrollbar-thumb);
+  --color-scrollbar-thumb-hover: var(--scrollbar-thumb-hover);
+
+  /* Glass (old naming) */
+  --color-glass-light-background: var(--glass-bg-light);
+  --color-glass-light-border: var(--glass-border-light);
+  --color-glass-dark-background: var(--glass-bg-dark);
+  --color-glass-dark-border: var(--glass-border-dark);
 }

@@ -3,10 +3,10 @@
 @import "./styles/variables.css";
 @import "./styles/components.css";
 
-/* Custom font configuration */
+/* Custom font configuration - Outfit for a distinctive, modern look */
 :root {
   --font-sans:
-    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Outfit", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
@@ -17,12 +17,14 @@
 
 html,
 body {
-  background: var(--color-background-body, #0f172a);
-  color: var(--color-text-primary, rgb(255, 255, 255));
+  background: var(--bg-body);
+  color: var(--text-primary);
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);
   height: 100dvh; /* Use dynamic viewport height for mobile compatibility */
+  font-weight: 400;
+  letter-spacing: -0.01em;
 
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;

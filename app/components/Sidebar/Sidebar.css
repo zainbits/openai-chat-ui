@@ -1,3 +1,27 @@
+/* Sidebar Overlay - for closing sidebar on mobile when clicking outside */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  z-index: 49;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.sidebar-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Only show overlay on mobile */
+@media (max-width: 767px) {
+  .sidebar-overlay {
+    display: block;
+  }
+}
+
 /* Sidebar Styles */
 .sidebar {
   background: var(--color-background-surface);
@@ -55,7 +79,7 @@
 .sidebar-controls {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   gap: 0.5rem;
 }
 
@@ -109,21 +133,6 @@
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
-}
-
-.mobile-close {
-  background: none;
-  border: none;
-  color: var(--color-text-primary);
-  cursor: pointer;
-  display: block;
-}
-
-/* Hide mobile close button on desktop */
-@media (min-width: 768px) {
-  .mobile-close {
-    display: none;
-  }
 }
 
 .search-input {
@@ -217,11 +226,23 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--color-text-primary);
+
+  /* Flex layout for content + actions */
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.thread-content-wrapper {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .thread-item:hover {
   background: var(--color-interactive-hover);
-  transform: translateY(-1px);
 }
 
 .thread-item.active {
@@ -275,18 +296,132 @@
   white-space: nowrap;
 }
 
-.thread-menu-button {
-  padding: 0.25rem 0.5rem;
+/* Thread Actions */
+.thread-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+  /* Option: hide until hover */
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.thread-item:hover .thread-actions,
+.thread-item:focus-within .thread-actions,
+.thread-item.active .thread-actions {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .thread-actions {
+    opacity: 1;
+  }
+}
+
+.thread-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
   border-radius: 4px;
   background: none;
   border: none;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  padding: 0;
 }
 
-.thread-menu-button:hover {
+.thread-action-btn:hover {
   background: var(--color-interactive-hover);
+  color: var(--color-text-primary);
+}
+
+.thread-action-btn.thread-action-btn-danger:hover {
+  background: var(--color-danger-alpha-10);
+  color: var(--color-danger-400);
+}
+
+/* Thread Menu Dropdown */
+.thread-menu-dropdown {
+  background: var(--color-gray-800);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.thread-menu-item {
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  border-radius: 6px;
+  gap: 8px;
+}
+
+.thread-menu-item:hover {
+  background: var(--color-interactive-hover);
+}
+
+.thread-menu-item-danger {
+  color: var(--color-danger-400);
+}
+
+.thread-menu-item-danger:hover {
+  background: var(--accent-danger-bg);
+}
+
+/* ============================================================================
+   Pending Delete State
+   ============================================================================ */
+.thread-item-pending-delete {
+  opacity: 0.5;
+  background: var(--color-danger-alpha-5);
+  border-color: var(--color-danger-500);
+  pointer-events: auto;
+  animation: fadeOut 5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0.2;
+  }
+}
+
+.thread-title-deleted {
+  text-decoration: line-through;
+  color: var(--color-text-disabled);
+}
+
+.thread-preview-deleted {
+  color: var(--color-danger-400);
+  font-style: italic;
+}
+
+.undo-delete-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-danger-400);
+  background: var(--color-danger-alpha-10);
+  border: 1px solid var(--color-danger-400);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.undo-delete-btn:hover {
+  background: var(--color-danger-alpha-15);
+  color: var(--color-danger-300);
 }
 
 /* Responsive */
@@ -294,9 +429,5 @@
   .sidebar {
     position: relative;
     transform: translateX(0);
-  }
-
-  .mobile-close {
-    display: none;
   }
 }

@@ -1,11 +1,14 @@
 import type { Route } from "./+types/home";
-import { AppStateProvider } from "../state/AppState";
+import { useEffect } from "react";
+import { useAppStore } from "../state/store";
 import Sidebar from "../components/Sidebar";
 import ModelChips from "../components/ModelChips";
 import ChatArea from "../components/ChatArea";
 import GlassButton from "../components/GlassButton";
+import ErrorBoundary from "../components/ErrorBoundary";
+import LoadingSkeleton from "../components/LoadingSkeleton";
 import { GrMenu } from "react-icons/gr";
-import { useAppState } from "../state/AppState";
+import { CONNECTION_CHECK_INTERVAL_MS } from "../constants";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -14,34 +17,109 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
+/**
+ * Inline fallback component for sidebar errors
+ */
+function SidebarFallback() {
+  return (
+    <aside className="sidebar-fallback" role="alert">
+      <p>Sidebar failed to load</p>
+      <button onClick={() => window.location.reload()}>Reload</button>
+    </aside>
+  );
+}
+
+/**
+ * Inline fallback component for chat area errors
+ */
+function ChatAreaFallback() {
+  return (
+    <div className="chat-fallback" role="alert">
+      <p>Chat failed to load</p>
+      <button onClick={() => window.location.reload()}>Reload</button>
+    </div>
+  );
+}
+
+/**
+ * Inline fallback component for model chips errors
+ */
+function ModelChipsFallback() {
+  return (
+    <div className="model-chips-fallback" role="alert">
+      <p>Models unavailable</p>
+    </div>
+  );
+}
+
+/**
+ * Main home content component
+ */
 function HomeContent() {
-  const { data, setData } = useAppState();
-  const toggleSidebar = () =>
-    setData((d) => ({ ...d, ui: { ...d.ui, sidebarOpen: !d.ui.sidebarOpen } }));
+  const sidebarOpen = useAppStore((s) => s.ui.sidebarOpen);
+  const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+  const hydrate = useAppStore((s) => s._hydrate);
+  const hydrated = useAppStore((s) => s._hydrated);
+  const checkConnection = useAppStore((s) => s.checkConnection);
+
+  // Hydrate state from IndexedDB on mount
+  useEffect(() => {
+    if (!hydrated) {
+      hydrate();
+    }
+  }, [hydrated, hydrate]);
+
+  // Check connection on mount and periodically
+  useEffect(() => {
+    if (!hydrated) return;
+
+    // Initial check
+    checkConnection();
+
+    // Periodic check
+    const interval = setInterval(checkConnection, CONNECTION_CHECK_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [hydrated, checkConnection]);
+
+  // Show loading skeleton until hydrated
+  if (!hydrated) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <div className="app-container">
-      <Sidebar />
-      <div className="main-content">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      <ErrorBoundary fallback={<SidebarFallback />}>
+        <Sidebar />
+      </ErrorBoundary>
+      <div className="main-content" id="main-content">
         <GlassButton
-          className={`mobile-toggle ${!data.ui.sidebarOpen ? "visible" : ""}`}
+          className={`mobile-toggle ${!sidebarOpen ? "visible" : ""}`}
           onClick={toggleSidebar}
-          aria-label="Open sidebar"
+          aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+          aria-expanded={sidebarOpen}
           width={40}
           height={40}
           borderRadius={8}
         >
-          <GrMenu className="w-6 h-6" />
+          <GrMenu className="menu-icon" aria-hidden="true" />
         </GlassButton>
 
-        <div className="flex-1 relative min-h-0">
-          <ChatArea />
+        <div className="chat-wrapper">
+          <ErrorBoundary fallback={<ChatAreaFallback />}>
+            <ChatArea />
+          </ErrorBoundary>
           <div
-            className={`absolute top-0 left-0 right-0 z-10 ${
-              !data.ui.sidebarOpen ? "model-chips-offset" : ""
+            className={`model-chips-container ${
+              !sidebarOpen ? "model-chips-offset" : ""
             }`}
           >
-            <ModelChips />
+            <ErrorBoundary fallback={<ModelChipsFallback />}>
+              <ModelChips />
+            </ErrorBoundary>
           </div>
         </div>
       </div>
@@ -49,10 +127,13 @@ function HomeContent() {
   );
 }
 
+/**
+ * Home page component with error boundary
+ */
 export default function Home() {
   return (
-    <AppStateProvider>
+    <ErrorBoundary>
       <HomeContent />
-    </AppStateProvider>
+    </ErrorBoundary>
   );
 }

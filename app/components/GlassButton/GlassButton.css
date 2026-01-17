@@ -17,6 +17,35 @@
   touch-action: manipulation;
 }
 
+/* Glass button content wrapper */
+.glass-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Glass button with padding variants */
+.glass-button-content.glass-button-px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.glass-button-content.glass-button-px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.glass-button-content.glass-button-px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Text size variants */
+.glass-button-content.glass-button-text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
 .glass-button:focus-visible {
   outline: 2px solid var(--color-interactive-focus);
   outline-offset: 2px;
@@ -26,4 +55,70 @@
 .glass-button:active {
   transform: scale(0.95);
   transition: transform 0.1s ease;
+}
+
+/* Simple mode - no glass effects for performance */
+.glass-button--simple {
+  background: light-dark(
+    var(--simple-button-bg-light),
+    var(--simple-button-bg-dark)
+  );
+  border: 1px solid
+    light-dark(
+      var(--simple-button-border-light),
+      var(--simple-button-border-dark)
+    );
+  box-shadow: 0 1px 3px var(--shadow-soft);
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
+}
+
+.glass-button--simple:hover {
+  background: light-dark(
+    var(--simple-button-bg-hover-light),
+    var(--simple-button-bg-hover-dark)
+  );
+  box-shadow: 0 2px 6px var(--shadow-medium);
+}
+
+.glass-button--simple:active {
+  background: light-dark(
+    var(--simple-button-bg-active-light),
+    var(--simple-button-bg-active-dark)
+  );
+}
+
+/* Simple button content wrapper */
+.glass-button-content--simple {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem;
+  gap: 4px;
+}
+
+/* Padding variants for simple mode */
+.glass-button-content--simple.glass-button-px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.glass-button-content--simple.glass-button-px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.glass-button-content--simple.glass-button-px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Text size variants for simple mode */
+.glass-button-content--simple.glass-button-text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
 }

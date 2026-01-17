@@ -6,15 +6,18 @@
   right: 0;
   bottom: 0;
   background: transparent;
-  overflow: hidden;
   z-index: 0; /* Ensure chat area is below the mobile toggle button */
+  display: flex;
+  flex-direction: column;
 }
 
 .messages-container {
-  height: 100dvh; /* Use dynamic viewport height for mobile compatibility */
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   background: transparent;
-  padding: 4rem 1rem 10rem 1rem;
+  /* Dynamic bottom padding based on composer height (set via JS) with extra buffer for scroll-behind effect */
+  padding: 64px 20px calc(var(--composer-height, 160px) + 24px) 20px;
 }
 
 .messages-container::-webkit-scrollbar {
@@ -44,15 +47,144 @@
   text-align: center;
   color: var(--color-text-muted);
   font-size: 0.875rem;
-  padding: 4rem 0;
+  padding: 64px 0;
 }
 
+/* ============================================================================
+   Enhanced Empty State
+   ============================================================================ */
+.empty-state-enhanced {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  min-height: 60vh;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.empty-state-illustration {
+  filter: drop-shadow(0 4px 24px var(--shadow-primary-glow));
+}
+
+.empty-state-hint {
+  margin-top: 1.5rem;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.01em;
+}
+
+/* ============================================================================
+   Typing Indicator
+   ============================================================================ */
+.typing-indicator {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-text-muted);
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   Streaming Message Styles
+   ============================================================================ */
+.message-bubble.streaming {
+  border-color: var(--accent-primary);
+  box-shadow:
+    0 0 0 1px var(--accent-primary) inset,
+    0 4px 20px var(--shadow-primary-subtle);
+}
+
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: var(--color-primary-400);
+  margin-left: 2px;
+  animation: cursorBlink 1s ease-in-out infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes cursorBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   Message Bubble Styles
+   ============================================================================ */
 .message-bubble {
   background: var(--color-background-surface);
   backdrop-filter: blur(12px);
   border-radius: 12px;
   border: 1px solid var(--color-border-primary);
-  padding: 1rem;
+  padding: 16px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .message-role {
@@ -64,6 +196,63 @@
 .message-content {
   color: var(--color-text-secondary);
   line-height: 1.6;
+}
+
+/* ============================================================================
+   Message Images
+   ============================================================================ */
+.message-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.message-image-container {
+  position: relative;
+  max-width: 300px;
+  max-height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-primary);
+  background: var(--color-background-surface);
+}
+
+.message-image {
+  display: block;
+  max-width: 100%;
+  max-height: 300px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.message-image:hover {
+  transform: scale(1.02);
+}
+
+.message-images-missing {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px dashed var(--color-border-primary);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  background: var(--color-background-surface);
+}
+
+/* Responsive image sizing */
+@media (max-width: 768px) {
+  .message-image-container {
+    max-width: 200px;
+    max-height: 200px;
+  }
+
+  .message-image {
+    max-height: 200px;
+  }
 }
 
 .message-content h1,
@@ -102,8 +291,413 @@
   padding: 0;
 }
 
-.regenerate-section {
-  margin-top: 0.75rem;
+/* ============================================================================
+   Code Blocks with Copy Button
+   ============================================================================ */
+.code-block-wrapper {
+  margin: 1.25em 0;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-primary);
+  background-color: var(--color-interactive-disabled);
+  overflow: hidden;
+}
+
+.code-block-header {
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-background-surface-hover);
+  border-bottom: 1px solid var(--color-border-primary);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+.code-lang {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+}
+
+.code-block-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copy-code-btn,
+.sanitize-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  gap: 0.25rem;
+}
+
+.copy-code-btn:hover,
+.sanitize-copy-btn:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-background-surface-active);
+}
+
+.copy-code-btn.copied,
+.sanitize-copy-btn.copied {
+  color: var(--color-success-400);
+}
+
+.btn-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* Override existing pre styles when inside wrapper */
+.message-content .code-block-wrapper pre {
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  background-color: transparent;
+  padding: 1rem;
+}
+
+/* ============================================================================
+   Message Actions & Regenerate Button
+   ============================================================================ */
+.message-actions {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.message-bubble:hover .message-actions,
+.message-bubble:focus-within .message-actions {
+  opacity: 1;
+}
+
+/* Always show when regenerating */
+.message-actions:has(.regenerating) {
+  opacity: 1;
+}
+
+/* Always show actions on last assistant message */
+.message-actions.always-visible {
+  opacity: 1;
+}
+
+.regenerate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.regenerate-btn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  background: var(--color-background-elevated);
+  border-color: var(--color-border-secondary);
+}
+
+.regenerate-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.regenerate-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.regenerate-btn.regenerating {
+  color: var(--color-primary-400);
+  border-color: var(--color-primary-400);
+}
+
+.regenerate-icon {
+  flex-shrink: 0;
+}
+
+.regenerate-btn.regenerating .regenerate-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.regenerate-text {
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   Copy Button Styles
+   ============================================================================ */
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.copy-btn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  background: var(--color-background-elevated);
+  border-color: var(--color-border-secondary);
+}
+
+.copy-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.copy-btn.copied {
+  color: var(--color-success-400);
+  border-color: var(--color-success-400);
+}
+
+.copy-icon {
+  flex-shrink: 0;
+}
+
+.copy-text {
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   Edit Button Styles
+   ============================================================================ */
+.edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.edit-btn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  background: var(--color-background-elevated);
+  border-color: var(--color-border-secondary);
+}
+
+.edit-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.edit-icon {
+  flex-shrink: 0;
+}
+
+.edit-text {
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   Edit Container Styles
+   ============================================================================ */
+.edit-container {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border-primary);
+}
+
+/* In-place edit mode - no top border/margin since it replaces content */
+.edit-container.in-place {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.edit-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  background: var(--color-background-surface);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 8px;
+  resize: vertical;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.edit-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary-400);
+  box-shadow: 0 0 0 2px var(--shadow-primary-subtle);
+}
+
+.edit-textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+.edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.edit-save-btn,
+.edit-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  border: 1px solid transparent;
+}
+
+.edit-save-btn {
+  color: var(--color-success-400);
+  background: var(--color-success-alpha-10);
+  border-color: var(--color-success-400);
+}
+
+.edit-save-btn:hover {
+  background: var(--color-success-alpha-20);
+  color: var(--color-success-300);
+}
+
+.edit-cancel-btn {
+  color: var(--color-text-muted);
+  background: transparent;
+  border-color: var(--color-border-primary);
+}
+
+.edit-cancel-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-background-elevated);
+  border-color: var(--color-border-secondary);
+}
+
+.edit-save-btn:active,
+.edit-cancel-btn:active {
+  transform: scale(0.97);
+}
+
+/* ============================================================================
+   Failed Response Styles
+   ============================================================================ */
+.message-bubble.failed {
+  border-color: var(--color-danger-500);
+  background: var(--color-danger-alpha-5);
+}
+
+.message-failed {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-danger-400);
+  font-size: 0.875rem;
+}
+
+.failed-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Always show actions on failed messages */
+.message-bubble.failed .message-actions {
+  opacity: 1;
+  border-top-color: var(--color-danger-500);
+}
+
+.message-bubble.failed .regenerate-btn {
+  color: var(--color-danger-400);
+  border-color: var(--color-danger-400);
+}
+
+.message-bubble.failed .regenerate-btn:hover:not(:disabled) {
+  background: var(--color-danger-alpha-10);
+  color: var(--color-danger-300);
+}
+
+/* ============================================================================
+   Mobile Responsive Styles
+   ============================================================================ */
+@media (max-width: 768px) {
+  /* Always show actions on mobile (no hover) */
+  .message-actions {
+    opacity: 1;
+  }
+
+  /* Make buttons larger for touch targets */
+  .regenerate-btn,
+  .copy-btn,
+  .edit-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    min-height: 36px;
+  }
+
+  .regenerate-icon,
+  .copy-icon,
+  .edit-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Edit container responsive */
+  .edit-textarea {
+    min-height: 100px;
+    font-size: 1rem;
+  }
+
+  .edit-save-btn,
+  .edit-cancel-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    min-height: 36px;
+  }
 }
