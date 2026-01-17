@@ -59,7 +59,10 @@
 /* Model chips container */
 .model-chips-container {
   position: absolute;
-  top: 0;
+  /* Match hamburger position exactly: top: 1rem, and vertically center the 32px chips with 40px hamburger */
+  /* Hamburger: top 1rem (16px) + height 40px / 2 = center at 36px */
+  /* Chips: 32px height, 4px padding top = need top at 36px - 16px - 4px = 16px = 1rem */
+  top: 1rem;
   left: 0;
   right: 0;
   z-index: 10;
@@ -88,7 +91,8 @@
 }
 
 .model-chips-offset {
-  padding-left: 4rem;
+  /* Align with hamburger icon: 1rem (left) + 40px (button width) + 0.5rem (gap) = ~4rem */
+  padding-left: calc(1rem + 40px + 0.5rem);
   /* Ensure proper touch handling */
   pointer-events: auto;
 }

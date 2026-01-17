@@ -106,7 +106,6 @@ export default function ModelChips() {
             </div>
           );
         })}
-        <div style={{ flexGrow: 1 }} aria-hidden="true" />
         <div className="add-model-button">
           <GlassButton
             variant="round"
