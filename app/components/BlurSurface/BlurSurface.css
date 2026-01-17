@@ -1,0 +1,44 @@
+.blur-surface {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.26s ease-out;
+  /* Performance optimizations */
+  will-change: transform, opacity, backdrop-filter;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  isolation: isolate;
+  contain: paint;
+  /* Visual styling */
+  background: light-dark(
+    var(--simple-glass-bg-light),
+    var(--simple-glass-bg-dark)
+  );
+  border: 1px solid
+    light-dark(
+      var(--simple-glass-border-light),
+      var(--simple-glass-border-dark)
+    );
+  box-shadow: 0 2px 8px var(--shadow-soft);
+}
+
+.blur-surface__content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: inherit;
+  position: relative;
+  z-index: 1;
+}
+
+.blur-surface:focus-visible {
+  outline: 2px solid var(--color-interactive-focus);
+  outline-offset: 2px;
+}

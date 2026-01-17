@@ -185,14 +185,6 @@ export const tokens = {
     thumbHover: cssVar("scrollbar-thumb-hover"),
   },
 
-  // Glass effects
-  glass: {
-    bgLight: cssVar("glass-bg-light"),
-    bgDark: cssVar("glass-bg-dark"),
-    borderLight: cssVar("glass-border-light"),
-    borderDark: cssVar("glass-border-dark"),
-  },
-
   // Shadows
   shadow: {
     light: cssVar("shadow-color-light"),
@@ -341,16 +333,6 @@ export const appTheme = {
     track: "transparent",
     thumb: "rgba(255, 255, 255, 0.2)",
     thumbHover: "rgba(255, 255, 255, 0.3)",
-  },
-  glass: {
-    light: {
-      background: "rgba(255, 255, 255, 0.25)",
-      border: "rgba(255, 255, 255, 0.3)",
-    },
-    dark: {
-      background: "rgba(255, 255, 255, 0.1)",
-      border: "rgba(255, 255, 255, 0.2)",
-    },
   },
 } as const;
 

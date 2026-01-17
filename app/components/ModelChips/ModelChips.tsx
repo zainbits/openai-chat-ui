@@ -5,7 +5,7 @@ import {
   selectActiveModel,
 } from "../../state/store";
 import ModelEditorModal from "../ModelEditorModal";
-import GlassButton from "../GlassButton";
+import BlurButton from "../BlurButton";
 import "./ModelChips.css";
 
 /**
@@ -61,7 +61,7 @@ export default function ModelChips() {
           const isActive = activeModel?.id === m.id;
           return (
             <div key={m.id} className="model-chip-container">
-              <GlassButton
+              <BlurButton
                 onClick={() => selectModel(m.id)}
                 width="auto"
                 height={32}
@@ -102,19 +102,19 @@ export default function ModelChips() {
                     )}
                   </div>
                 </div>
-              </GlassButton>
+              </BlurButton>
             </div>
           );
         })}
         <div className="add-model-button">
-          <GlassButton
+          <BlurButton
             variant="round"
             width={32}
             onClick={openNewModelEditor}
             aria-label="Add new model"
           >
             <span aria-hidden="true">+</span>
-          </GlassButton>
+          </BlurButton>
         </div>
       </div>
       <ModelEditorModal

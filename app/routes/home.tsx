@@ -4,7 +4,7 @@ import { useAppStore } from "../state/store";
 import Sidebar from "../components/Sidebar";
 import ModelChips from "../components/ModelChips";
 import ChatArea from "../components/ChatArea";
-import GlassButton from "../components/GlassButton";
+import BlurButton from "../components/BlurButton";
 import ErrorBoundary from "../components/ErrorBoundary";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import { GrMenu } from "react-icons/gr";
@@ -96,7 +96,7 @@ function HomeContent() {
         <Sidebar />
       </ErrorBoundary>
       <div className="main-content" id="main-content">
-        <GlassButton
+        <BlurButton
           className={`mobile-toggle ${!sidebarOpen ? "visible" : ""}`}
           onClick={toggleSidebar}
           aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
@@ -106,7 +106,7 @@ function HomeContent() {
           borderRadius={8}
         >
           <GrMenu className="menu-icon" aria-hidden="true" />
-        </GlassButton>
+        </BlurButton>
 
         <div className="chat-wrapper">
           <ErrorBoundary fallback={<ChatAreaFallback />}>

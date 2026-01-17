@@ -117,7 +117,7 @@ export interface AppSettings {
   apiProvider?: string; // Provider ID (e.g., "openai", "anthropic", "custom")
   defaultModel: string;
   streamingEnabled: boolean;
-  glassEffectEnabled: boolean;
+  /** Blur amount for backdrop-filter effects */
   lowSpecBlur?: number;
   /** Whether to expand AI thinking blocks by default */
   showThinkingExpanded?: boolean;
