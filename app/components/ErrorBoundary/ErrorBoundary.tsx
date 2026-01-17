@@ -1,6 +1,6 @@
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
-import GlassButton from "../GlassButton";
-import GlassSurface from "../GlassSurface";
+import BlurButton from "../BlurButton";
+import BlurSurface from "../BlurSurface";
 import "./ErrorBoundary.css";
 
 interface Props {
@@ -60,7 +60,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       // Default fallback UI
       return (
         <div className="error-boundary" role="alert" aria-live="assertive">
-          <GlassSurface
+          <BlurSurface
             width={400}
             height="auto"
             borderRadius={16}
@@ -90,31 +90,31 @@ export default class ErrorBoundary extends Component<Props, State> {
               )}
 
               <div className="error-boundary-actions">
-                <GlassButton
+                <BlurButton
                   onClick={this.handleReset}
                   color="primary"
                   width="auto"
                   height={40}
                   borderRadius={8}
-                  glassClassName="glass-button-px-4"
+                  blurClassName="blur-button-px-4"
                   aria-label="Try again"
                 >
                   Try Again
-                </GlassButton>
-                <GlassButton
+                </BlurButton>
+                <BlurButton
                   onClick={this.handleReload}
                   color="secondary"
                   width="auto"
                   height={40}
                   borderRadius={8}
-                  glassClassName="glass-button-px-4"
+                  blurClassName="blur-button-px-4"
                   aria-label="Reload page"
                 >
                   Reload Page
-                </GlassButton>
+                </BlurButton>
               </div>
             </div>
-          </GlassSurface>
+          </BlurSurface>
         </div>
       );
     }

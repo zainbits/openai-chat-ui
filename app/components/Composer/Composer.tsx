@@ -1,8 +1,8 @@
 import React, { useCallback, useState, useRef, useEffect } from "react";
 import { useAppStore, selectActiveThread } from "../../state/store";
 import { useChat } from "../../hooks";
-import GlassSurface from "../GlassSurface";
-import GlassButton from "../GlassButton";
+import BlurSurface from "../BlurSurface";
+import BlurButton from "../BlurButton";
 import ModelPicker from "../ModelPicker";
 import { GrClose } from "react-icons/gr";
 import { IoArrowUp, IoImageOutline } from "react-icons/io5";
@@ -335,7 +335,7 @@ export default function Composer() {
         )}
 
         <div className="composer-input-area">
-          <GlassSurface width="100%" height="auto" padding={0}>
+          <BlurSurface width="100%" height="auto" padding={0}>
             <div className="composer-input-container">
               <div className="composer-textarea-wrapper">
                 <textarea
@@ -358,11 +358,11 @@ export default function Composer() {
 
                 <div className="composer-actions">
                   {/* Image upload button */}
-                  <GlassButton
+                  <BlurButton
                     variant="round"
                     width={32}
                     height={32}
-                    glassClassName="composer-action-button-glass"
+                    blurClassName="composer-action-button-blur"
                     disabled={!canAddMoreImages || !thread}
                     onClick={openFilePicker}
                     aria-label="Attach image"
@@ -376,14 +376,14 @@ export default function Composer() {
                       className="composer-icon"
                       aria-hidden="true"
                     />
-                  </GlassButton>
+                  </BlurButton>
 
                   {/* Send/Stop button */}
-                  <GlassButton
+                  <BlurButton
                     variant="round"
                     width={32}
                     height={32}
-                    glassClassName="composer-send-button-glass"
+                    blurClassName="composer-send-button-blur"
                     disabled={(!hasContent && !isStreaming) || !thread}
                     onClick={isStreaming ? cancelStream : handleSend}
                     aria-label={
@@ -395,11 +395,11 @@ export default function Composer() {
                     ) : (
                       <IoArrowUp className="composer-icon" aria-hidden="true" />
                     )}
-                  </GlassButton>
+                  </BlurButton>
                 </div>
               </div>
             </div>
-          </GlassSurface>
+          </BlurSurface>
         </div>
       </div>
     </footer>

@@ -106,10 +106,7 @@ export default function SettingsModal({
   const [streamingEnabled, setStreamingEnabled] = useState(
     settings.streamingEnabled,
   );
-  const [glassEffectEnabled, setGlassEffectEnabled] = useState(
-    settings.glassEffectEnabled ?? true,
-  );
-  const [lowSpecBlur, setLowSpecBlur] = useState(settings.lowSpecBlur ?? 5);
+  const [lowSpecBlur, setLowSpecBlur] = useState(settings.lowSpecBlur ?? 8);
   const [showThinkingExpanded, setShowThinkingExpanded] = useState(
     settings.showThinkingExpanded ?? true,
   );
@@ -250,7 +247,6 @@ export default function SettingsModal({
       apiKey,
       apiProvider: selectedProvider,
       streamingEnabled,
-      glassEffectEnabled,
       lowSpecBlur,
     });
     onClose();
@@ -259,25 +255,13 @@ export default function SettingsModal({
     apiKey,
     selectedProvider,
     streamingEnabled,
-    glassEffectEnabled,
     lowSpecBlur,
     updateSettings,
     onClose,
   ]);
 
   /**
-   * Handles glass effect toggle - saves immediately
-   */
-  const handleGlassEffectChange = useCallback(
-    (enabled: boolean) => {
-      setGlassEffectEnabled(enabled);
-      updateSettings({ glassEffectEnabled: enabled });
-    },
-    [updateSettings],
-  );
-
-  /**
-   * Handles low spec blur change - saves immediately
+   * Handles blur amount change - saves immediately
    */
   const handleLowSpecBlurChange = useCallback(
     (value: number) => {
@@ -537,34 +521,23 @@ export default function SettingsModal({
                   Adjust visual effects for better performance on lower-powered
                   devices.
                 </Text>
-                <Switch
-                  label="Enable glass effects"
-                  description="Disable for better performance on mobile devices"
-                  checked={glassEffectEnabled}
-                  onChange={(e) =>
-                    handleGlassEffectChange(e.currentTarget.checked)
-                  }
-                  aria-describedby="glass-effect-description"
-                />
-                {!glassEffectEnabled && (
-                  <div style={{ marginTop: "1rem" }}>
-                    <Text size="xs" fw={500} mb={4}>
-                      Background Blur Strength ({lowSpecBlur}px)
-                    </Text>
-                    <Text size="xs" c="dimmed" mb="xs">
-                      Adjust the blur amount for non-glass elements to improve
-                      readability.
-                    </Text>
-                    <Slider
-                      value={lowSpecBlur}
-                      onChange={handleLowSpecBlurChange}
-                      min={0}
-                      max={20}
-                      step={1}
-                      label={(value) => `${value}px`}
-                    />
-                  </div>
-                )}
+                <div>
+                  <Text size="xs" fw={500} mb={4}>
+                    Background Blur Strength ({lowSpecBlur}px)
+                  </Text>
+                  <Text size="xs" c="dimmed" mb="xs">
+                    Adjust the blur amount for UI elements to improve
+                    readability.
+                  </Text>
+                  <Slider
+                    value={lowSpecBlur}
+                    onChange={handleLowSpecBlurChange}
+                    min={0}
+                    max={20}
+                    step={1}
+                    label={(value) => `${value}px`}
+                  />
+                </div>
               </div>
             </div>
           </Tabs.Panel>

@@ -92,17 +92,17 @@
   color: var(--color-text-primary);
 }
 
-.composer-send-button-glass {
+.composer-send-button-blur {
   background-color: var(--color-white-alpha-20) !important;
   border-radius: 50% !important;
 }
 
-.composer-send-button-glass .composer-icon {
+.composer-send-button-blur .composer-icon {
   color: var(--color-white);
 }
 
 /* Ensure the send button itself is perfectly round */
-.composer-actions .glass-button {
+.composer-actions .blur-button {
   border-radius: 50% !important;
   overflow: hidden;
 }
@@ -110,16 +110,16 @@
 /* ============================================================================
    Image Attachment Button
    ============================================================================ */
-.composer-action-button-glass {
+.composer-action-button-blur {
   background-color: var(--color-white-alpha-10) !important;
   border-radius: 50% !important;
 }
 
-.composer-action-button-glass:hover:not(:disabled) {
+.composer-action-button-blur:hover:not(:disabled) {
   background-color: var(--color-white-alpha-20) !important;
 }
 
-.composer-action-button-glass .composer-icon {
+.composer-action-button-blur .composer-icon {
   color: var(--color-text-secondary);
 }
 

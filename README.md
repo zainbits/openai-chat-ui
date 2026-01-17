@@ -1,6 +1,6 @@
 # CustomModels Chat
 
-A beautiful, customizable chat interface for OpenAI-compatible APIs with glassmorphism UI, streaming responses, and custom model configurations.
+A beautiful, customizable chat interface for OpenAI-compatible APIs with modern blur effects, streaming responses, and custom model configurations.
 
 ![React](https://img.shields.io/badge/React-19-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)
@@ -8,7 +8,7 @@ A beautiful, customizable chat interface for OpenAI-compatible APIs with glassmo
 
 ## Features
 
-- 🎨 **Beautiful Glass Morphism UI** - Stunning visual effects with SVG-based glass surfaces and fallbacks
+- 🎨 **Modern Blur UI** - Clean visual effects with configurable backdrop blur
 - 🔄 **Streaming Responses** - Real-time token streaming from AI models
 - 🎯 **Custom Model Presets** - Create and manage multiple model configurations with custom system prompts
 - 💬 **Thread Management** - Organize conversations with search, filtering, and pinning
@@ -80,8 +80,8 @@ app/
 ├── components/    # React components with co-located CSS
 │   ├── ChatArea/     # Main chat message display
 │   ├── Composer/     # Message input with quick actions
-│   ├── GlassButton/  # Glass morphism button component
-│   ├── GlassSurface/ # SVG-based glass effect component
+│   ├── BlurButton/   # Blur effect button component
+│   ├── BlurSurface/  # Backdrop blur surface component
 │   ├── ModelChips/   # Model selector chips
 │   ├── ModelEditorModal/  # Create/edit model presets
 │   ├── SettingsModal/     # API and app settings
@@ -94,10 +94,6 @@ app/
 ```
 
 ### Key Features
-
-#### Glass Morphism Effect
-
-The `GlassSurface` component uses SVG filters with displacement maps to create a realistic glass refraction effect, with proper fallbacks for browsers that don't support advanced backdrop filters.
 
 #### Streaming Chat
 

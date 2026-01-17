@@ -177,11 +177,7 @@
      COMPONENT TOKENS - Specific Component Use Cases
      =========================================================================== */
 
-  /* --- Glass/Frosted Surface Effects --- */
-  --glass-bg-light: var(--color-white-alpha-25);
-  --glass-bg-dark: var(--color-white-alpha-10);
-  --glass-border-light: var(--color-white-alpha-30);
-  --glass-border-dark: var(--color-white-alpha-20);
+  /* --- Blur Surface Effects --- */
 
   /* --- Shadow Colors (for box-shadow, drop-shadow) --- */
   --shadow-color-light: rgba(17, 17, 26, 0.05);
@@ -197,7 +193,7 @@
   --color-danger-alpha-5: rgba(239, 68, 68, 0.05);
   --color-danger-alpha-10: rgba(239, 68, 68, 0.1);
 
-  /* --- Simple Glass Mode Colors (used when glass effects are disabled) --- */
+  /* --- Blur Surface Colors --- */
   --simple-glass-bg-light: rgba(255, 255, 255, 0.6);
   --simple-glass-bg-dark: rgba(30, 30, 30, 0.8);
   --simple-glass-border-light: rgba(0, 0, 0, 0.1);
@@ -267,10 +263,4 @@
   --color-scrollbar-track: var(--scrollbar-track);
   --color-scrollbar-thumb: var(--scrollbar-thumb);
   --color-scrollbar-thumb-hover: var(--scrollbar-thumb-hover);
-
-  /* Glass (old naming) */
-  --color-glass-light-background: var(--glass-bg-light);
-  --color-glass-light-border: var(--glass-border-light);
-  --color-glass-dark-background: var(--glass-bg-dark);
-  --color-glass-dark-border: var(--glass-border-dark);
 }

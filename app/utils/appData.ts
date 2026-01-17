@@ -142,9 +142,6 @@ const normalizeSettings = (
     streamingEnabled: isBoolean(value.streamingEnabled)
       ? value.streamingEnabled
       : defaults.streamingEnabled,
-    glassEffectEnabled: isBoolean(value.glassEffectEnabled)
-      ? value.glassEffectEnabled
-      : defaults.glassEffectEnabled,
     lowSpecBlur: isNumber(value.lowSpecBlur)
       ? value.lowSpecBlur
       : defaults.lowSpecBlur,

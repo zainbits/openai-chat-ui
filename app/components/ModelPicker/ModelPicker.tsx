@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { useAppStore } from "../../state/store";
-import GlassSurface from "../GlassSurface";
+import BlurSurface from "../BlurSurface";
 import "./ModelPicker.css";
 
 /**
@@ -19,7 +19,6 @@ export default function ModelPicker() {
   const selectedLlmModel = useAppStore((s) => s.ui.selectedLlmModel);
   const defaultModel = useAppStore((s) => s.settings.defaultModel);
   const setSelectedLlmModel = useAppStore((s) => s.setSelectedLlmModel);
-  const lowSpecBlur = useAppStore((s) => s.settings.lowSpecBlur ?? 5);
 
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -217,17 +216,12 @@ export default function ModelPicker() {
       {isOpen &&
         hasModels &&
         createPortal(
-          <GlassSurface
+          <BlurSurface
             className="model-picker-dropdown"
             role="listbox"
             width="auto"
             height="auto"
             borderRadius={8}
-            blur={lowSpecBlur}
-            brightness={30}
-            opacity={0.6}
-            borderWidth={0.05}
-            displace={0.4}
             padding={0}
             style={dropdownPosition}
           >
@@ -277,7 +271,7 @@ export default function ModelPicker() {
                 ))
               )}
             </div>
-          </GlassSurface>,
+          </BlurSurface>,
           document.body,
         )}
     </div>
