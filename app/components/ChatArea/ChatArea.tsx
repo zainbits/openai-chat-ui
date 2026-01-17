@@ -659,25 +659,9 @@ export default function ChatArea() {
                       Images unavailable
                     </div>
                   )}
-                  {isFailedResponse ? (
-                    <div className="message-content message-failed">
-                      <span className="failed-icon">⚠</span>
-                      <span>Response failed. Try regenerating.</span>
-                    </div>
-                  ) : m.content ? (
-                    <div
-                      className="message-content"
-                      dangerouslySetInnerHTML={{
-                        __html: renderMarkdown(m.content),
-                      }}
-                    />
-                  ) : null}
-                  {isStreamingActive && isLastMessage && isAssistantMessage && (
-                    <span className="streaming-cursor" aria-hidden="true" />
-                  )}
-                  {/* Edit mode UI */}
-                  {editingIndex === idx && (
-                    <div className="edit-container">
+                  {/* In-place edit mode - replaces content when editing */}
+                  {editingIndex === idx ? (
+                    <div className="edit-container in-place">
                       <textarea
                         ref={editTextareaRef}
                         className="edit-textarea"
@@ -729,6 +713,21 @@ export default function ChatArea() {
                         </button>
                       </div>
                     </div>
+                  ) : isFailedResponse ? (
+                    <div className="message-content message-failed">
+                      <span className="failed-icon">⚠</span>
+                      <span>Response failed. Try regenerating.</span>
+                    </div>
+                  ) : m.content ? (
+                    <div
+                      className="message-content"
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdown(m.content),
+                      }}
+                    />
+                  ) : null}
+                  {isStreamingActive && isLastMessage && isAssistantMessage && (
+                    <span className="streaming-cursor" aria-hidden="true" />
                   )}
                   {isAssistantMessage &&
                     (!isEmptyAssistant || isFailedResponse) && (
