@@ -22,7 +22,7 @@ export interface ChatSlice {
   ) => void;
   addAssistantMessage: (threadId: string) => void;
   appendToLastMessage: (threadId: string, token: string) => void;
-  setThinkingOnLastMessage: (threadId: string, thinking: string) => void;
+  appendThinkingToLastMessage: (threadId: string, thinkingToken: string) => void;
   removeMessagesAfterIndex: (threadId: string, index: number) => void;
   setThreadPreview: (threadId: string, preview: string) => void;
   updateMessageContent: (
@@ -243,16 +243,17 @@ export const createChatSlice: StateCreator<AppStore, [], [], ChatSlice> = (
       };
     }),
 
-  setThinkingOnLastMessage: (threadId, thinking) =>
+  appendThinkingToLastMessage: (threadId, thinkingToken) =>
     set((state) => {
       const thread = state.chats[threadId];
       if (!thread || thread.messages.length === 0) return state;
 
       const messages = [...thread.messages];
       const lastIndex = messages.length - 1;
+      const currentThinking = messages[lastIndex].thinking ?? "";
       messages[lastIndex] = {
         ...messages[lastIndex],
-        thinking,
+        thinking: currentThinking + thinkingToken,
       };
 
       return {

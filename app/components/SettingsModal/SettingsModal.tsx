@@ -110,6 +110,9 @@ export default function SettingsModal({
     settings.glassEffectEnabled ?? true,
   );
   const [lowSpecBlur, setLowSpecBlur] = useState(settings.lowSpecBlur ?? 5);
+  const [showThinkingExpanded, setShowThinkingExpanded] = useState(
+    settings.showThinkingExpanded ?? true,
+  );
   const [verifying, setVerifying] = useState(false);
   const [nukeModalOpen, setNukeModalOpen] = useState(false);
   const [deleteChatsModalOpen, setDeleteChatsModalOpen] = useState(false);
@@ -280,6 +283,17 @@ export default function SettingsModal({
     (value: number) => {
       setLowSpecBlur(value);
       updateSettings({ lowSpecBlur: value });
+    },
+    [updateSettings],
+  );
+
+  /**
+   * Handles show thinking expanded change - saves immediately
+   */
+  const handleShowThinkingExpandedChange = useCallback(
+    (enabled: boolean) => {
+      setShowThinkingExpanded(enabled);
+      updateSettings({ showThinkingExpanded: enabled });
     },
     [updateSettings],
   );
@@ -497,6 +511,24 @@ export default function SettingsModal({
 
           <Tabs.Panel value="interface" pt="md">
             <div className="modal-content">
+              <div className="data-section">
+                <Text size="sm" fw={500} mb="xs">
+                  AI Responses
+                </Text>
+                <Text size="xs" c="dimmed" mb="sm">
+                  Configure how AI responses are displayed.
+                </Text>
+                <Switch
+                  label="Show AI reasoning expanded"
+                  description="Automatically expand the thinking block when AI shares its reasoning"
+                  checked={showThinkingExpanded}
+                  onChange={(e) =>
+                    handleShowThinkingExpandedChange(e.currentTarget.checked)
+                  }
+                  aria-describedby="thinking-expanded-description"
+                />
+              </div>
+
               <div className="data-section">
                 <Text size="sm" fw={500} mb="xs">
                   Visual Effects

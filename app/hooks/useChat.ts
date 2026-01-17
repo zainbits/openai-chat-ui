@@ -167,8 +167,8 @@ export function useChat(): UseChatReturn {
   const addUserMessage = useAppStore((s) => s.addUserMessage);
   const addAssistantMessage = useAppStore((s) => s.addAssistantMessage);
   const appendToLastMessage = useAppStore((s) => s.appendToLastMessage);
-  const setThinkingOnLastMessage = useAppStore(
-    (s) => s.setThinkingOnLastMessage,
+  const appendThinkingToLastMessage = useAppStore(
+    (s) => s.appendThinkingToLastMessage,
   );
   const removeMessagesAfterIndex = useAppStore(
     (s) => s.removeMessagesAfterIndex,
@@ -207,8 +207,8 @@ export function useChat(): UseChatReturn {
         onToken: (token) => {
           appendToLastMessage(threadId, token);
         },
-        onThinking: (thinking) => {
-          setThinkingOnLastMessage(threadId, thinking);
+        onThinking: (thinkingToken) => {
+          appendThinkingToLastMessage(threadId, thinkingToken);
         },
         onDone: handlers.onDone,
         onError: handlers.onError,
@@ -218,7 +218,7 @@ export function useChat(): UseChatReturn {
       getClient,
       getEffectiveLlmModel,
       appendToLastMessage,
-      setThinkingOnLastMessage,
+      appendThinkingToLastMessage,
     ],
   );
 

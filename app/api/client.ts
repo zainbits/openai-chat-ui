@@ -59,8 +59,8 @@ export interface ChatOptions {
   signal?: AbortSignal;
   /** Callback invoked for each content token received (streaming only) */
   onToken?: (token: string) => void;
-  /** Callback invoked with complete thinking content when thinking finishes */
-  onThinking?: (thinking: string) => void;
+  /** Callback invoked for each thinking token received (streaming) */
+  onThinking?: (thinkingToken: string) => void;
   /** Callback invoked when streaming completes */
   onDone?: () => void;
   /** Callback invoked on error */
@@ -453,18 +453,17 @@ export class OpenAICompatibleClient extends BaseApiClient {
 
   /**
    * Parses Server-Sent Events stream for OpenAI format
-   * Streams content tokens but accumulates thinking and emits once complete
+   * Streams both content and thinking tokens in real-time
    * Properly buffers incomplete chunks to handle message boundaries
    */
   private async parseSSEStream(
     body: ReadableStream<Uint8Array>,
     onToken?: (token: string) => void,
-    onThinking?: (thinking: string) => void,
+    onThinking?: (thinkingToken: string) => void,
   ): Promise<void> {
     const reader = body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
-    let accumulatedThinking = "";
 
     try {
       while (true) {
@@ -472,7 +471,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
         if (done) {
           // Process any remaining buffered data
           if (buffer.trim()) {
-            accumulatedThinking += this.processSSELine(buffer, onToken);
+            this.processSSELine(buffer, onToken, onThinking);
           }
           break;
         }
@@ -491,21 +490,12 @@ export class OpenAICompatibleClient extends BaseApiClient {
           if (trimmed.startsWith("data:")) {
             const payload = trimmed.slice(5).trim();
             if (payload === "[DONE]") {
-              // Emit accumulated thinking before finishing
-              if (accumulatedThinking && onThinking) {
-                onThinking(accumulatedThinking);
-              }
               return;
             }
 
-            accumulatedThinking += this.processSSELine(payload, onToken);
+            this.processSSELine(payload, onToken, onThinking);
           }
         }
-      }
-
-      // Emit accumulated thinking at the end
-      if (accumulatedThinking && onThinking) {
-        onThinking(accumulatedThinking);
       }
     } finally {
       reader.releaseLock();
@@ -514,12 +504,13 @@ export class OpenAICompatibleClient extends BaseApiClient {
 
   /**
    * Process a single SSE data payload
-   * Returns thinking content to accumulate, streams content via callback
+   * Streams both content and thinking tokens via callbacks
    */
   private processSSELine(
     payload: string,
     onToken?: (token: string) => void,
-  ): string {
+    onThinking?: (thinkingToken: string) => void,
+  ): void {
     try {
       const data = JSON.parse(payload);
       const delta = data?.choices?.[0]?.delta;
@@ -530,15 +521,16 @@ export class OpenAICompatibleClient extends BaseApiClient {
         onToken(content);
       }
 
-      // Handle thinking tokens - return to accumulate
+      // Handle thinking tokens - stream immediately
       // Some APIs return thinking in delta.thinking, delta.reasoning, or delta.reasoning_content
-      return (
-        delta?.thinking ?? delta?.reasoning ?? delta?.reasoning_content ?? ""
-      );
+      const thinking =
+        delta?.thinking ?? delta?.reasoning ?? delta?.reasoning_content ?? "";
+      if (thinking && onThinking) {
+        onThinking(thinking);
+      }
     } catch {
       // Non-JSON lines in some implementations; ignore
     }
-    return "";
   }
 
   /**
@@ -756,18 +748,17 @@ export class AnthropicClient extends BaseApiClient {
 
   /**
    * Parses Server-Sent Events stream for Anthropic format
-   * Streams content tokens but accumulates thinking and emits once complete
+   * Streams both content and thinking tokens in real-time
    * Properly buffers incomplete chunks to handle message boundaries
    */
   private async parseAnthropicStream(
     body: ReadableStream<Uint8Array>,
     onToken?: (token: string) => void,
-    onThinking?: (thinking: string) => void,
+    onThinking?: (thinkingToken: string) => void,
   ): Promise<void> {
     const reader = body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
-    let accumulatedThinking = "";
     // Track current content block type to route deltas correctly
     let currentBlockType: "text" | "thinking" | null = null;
 
@@ -781,8 +772,8 @@ export class AnthropicClient extends BaseApiClient {
               buffer,
               currentBlockType,
               onToken,
+              onThinking,
             );
-            accumulatedThinking += result.thinking;
             if (result.newBlockType !== undefined) {
               currentBlockType = result.newBlockType;
             }
@@ -804,10 +795,6 @@ export class AnthropicClient extends BaseApiClient {
           if (trimmed.startsWith("data:")) {
             const payload = trimmed.slice(5).trim();
             if (payload === "[DONE]") {
-              // Emit accumulated thinking before finishing
-              if (accumulatedThinking && onThinking) {
-                onThinking(accumulatedThinking);
-              }
               return;
             }
 
@@ -815,13 +802,9 @@ export class AnthropicClient extends BaseApiClient {
               payload,
               currentBlockType,
               onToken,
+              onThinking,
             );
-            accumulatedThinking += result.thinking;
             if (result.shouldStop) {
-              // Emit accumulated thinking before stopping
-              if (accumulatedThinking && onThinking) {
-                onThinking(accumulatedThinking);
-              }
               return;
             }
             if (result.newBlockType !== undefined) {
@@ -830,11 +813,6 @@ export class AnthropicClient extends BaseApiClient {
           }
         }
       }
-
-      // Emit accumulated thinking at the end
-      if (accumulatedThinking && onThinking) {
-        onThinking(accumulatedThinking);
-      }
     } finally {
       reader.releaseLock();
     }
@@ -842,30 +820,33 @@ export class AnthropicClient extends BaseApiClient {
 
   /**
    * Process a single Anthropic SSE data payload
-   * Returns thinking content to accumulate, streams content via callback
+   * Streams both content and thinking tokens via callbacks
    */
   private processAnthropicLine(
     payload: string,
     currentBlockType: "text" | "thinking" | null,
     onToken?: (token: string) => void,
+    onThinking?: (thinkingToken: string) => void,
   ): {
     shouldStop?: boolean;
     newBlockType?: "text" | "thinking" | null;
-    thinking: string;
   } {
     try {
       const data = JSON.parse(payload);
 
       if (data.type === "content_block_start") {
         // Track what type of block we're receiving
-        return { newBlockType: data.content_block?.type ?? null, thinking: "" };
+        return { newBlockType: data.content_block?.type ?? null };
       } else if (data.type === "content_block_delta") {
         // Route delta to appropriate callback based on block type or delta type
         const deltaType = data.delta?.type;
 
         if (deltaType === "thinking_delta" || currentBlockType === "thinking") {
-          // Return thinking to accumulate
-          return { thinking: data.delta?.thinking ?? "" };
+          // Stream thinking immediately
+          const thinking = data.delta?.thinking ?? "";
+          if (thinking && onThinking) {
+            onThinking(thinking);
+          }
         } else if (deltaType === "text_delta" || currentBlockType === "text") {
           // Stream text immediately
           const text = data.delta?.text ?? "";
@@ -874,14 +855,14 @@ export class AnthropicClient extends BaseApiClient {
           }
         }
       } else if (data.type === "content_block_stop") {
-        return { newBlockType: null, thinking: "" };
+        return { newBlockType: null };
       } else if (data.type === "message_stop") {
-        return { shouldStop: true, thinking: "" };
+        return { shouldStop: true };
       }
     } catch {
       // Non-JSON lines; ignore
     }
-    return { thinking: "" };
+    return {};
   }
 
   /**

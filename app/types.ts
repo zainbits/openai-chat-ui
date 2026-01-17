@@ -119,6 +119,8 @@ export interface AppSettings {
   streamingEnabled: boolean;
   glassEffectEnabled: boolean;
   lowSpecBlur?: number;
+  /** Whether to expand AI thinking blocks by default */
+  showThinkingExpanded?: boolean;
   // Cloud sync settings
   cloudSyncEnabled?: boolean;
   adminApiUrl?: string;

@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { useAppStore } from "../../state/store";
 import { renderMarkdown } from "../../utils/markdown";
 import "./ThinkingBlock.css";
 
@@ -8,10 +9,13 @@ interface ThinkingBlockProps {
 
 /**
  * Collapsible block for displaying AI thinking/reasoning content
- * Thinking content is received all at once (not streamed)
+ * Respects the user's preference for expanded/collapsed default state
  */
 export default function ThinkingBlock({ thinking }: ThinkingBlockProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const showThinkingExpanded = useAppStore(
+    (s) => s.settings.showThinkingExpanded ?? true,
+  );
+  const [isExpanded, setIsExpanded] = useState(showThinkingExpanded);
 
   const toggleExpanded = useCallback(() => {
     setIsExpanded((prev) => !prev);

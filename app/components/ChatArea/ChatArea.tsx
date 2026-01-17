@@ -349,10 +349,15 @@ export default function ChatArea() {
   const isStreamingActive = isLoading || isRegenerating;
 
   // Check if the last message is an empty assistant message (streaming in progress)
+  // Only show typing indicator if there's no content AND no thinking yet
   const isStreaming = useMemo(() => {
     if (!isStreamingActive || messages.length === 0) return false;
     const lastMessage = messages[messages.length - 1];
-    return lastMessage?.role === "assistant" && lastMessage?.content === "";
+    return (
+      lastMessage?.role === "assistant" &&
+      lastMessage?.content === "" &&
+      !lastMessage?.thinking
+    );
   }, [isStreamingActive, messages]);
 
   // Detect when user scrolls up during streaming to cancel auto-scroll
@@ -595,7 +600,9 @@ export default function ChatArea() {
             {messages.map((m, idx) => {
               const isLastMessage = m.ts === messages[messages.length - 1]?.ts;
               const isAssistantMessage = m.role === "assistant";
-              const isEmptyAssistant = isAssistantMessage && m.content === "";
+              // Message is "empty" only if it has no content AND no thinking
+              const isEmptyAssistant =
+                isAssistantMessage && m.content === "" && !m.thinking;
               // Show regenerate on last assistant message (even if empty/failed)
               const showRegenerateButton =
                 isLastMessage && isAssistantMessage && !isStreamingActive;
