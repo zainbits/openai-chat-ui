@@ -204,14 +204,14 @@
   --simple-glass-border-dark: rgba(255, 255, 255, 0.1);
 
   /* --- Simple Button Mode Colors --- */
-  --simple-button-bg-light: rgba(255, 255, 255, 0.7);
-  --simple-button-bg-dark: rgba(40, 40, 40, 0.9);
+  --simple-button-bg-light: rgba(255, 255, 255, 0.5);
+  --simple-button-bg-dark: rgba(40, 40, 40, 0.5);
   --simple-button-border-light: rgba(0, 0, 0, 0.12);
   --simple-button-border-dark: rgba(255, 255, 255, 0.12);
-  --simple-button-bg-hover-light: rgba(255, 255, 255, 0.9);
-  --simple-button-bg-hover-dark: rgba(50, 50, 50, 0.95);
-  --simple-button-bg-active-light: rgba(240, 240, 240, 0.9);
-  --simple-button-bg-active-dark: rgba(35, 35, 35, 0.95);
+  --simple-button-bg-hover-light: rgba(255, 255, 255, 0.65);
+  --simple-button-bg-hover-dark: rgba(50, 50, 50, 0.65);
+  --simple-button-bg-active-light: rgba(240, 240, 240, 0.7);
+  --simple-button-bg-active-dark: rgba(35, 35, 35, 0.7);
 
   /* --- Accent Colors for Highlights --- */
   --accent-primary: var(--color-primary-500);

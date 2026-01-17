@@ -17,6 +17,20 @@
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  /* Hide scrollbar */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.model-chips::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Always add left padding on mobile to clear hamburger button */
+@media (max-width: 767px) {
+  .model-chips {
+    padding-left: calc(1rem + 40px + 0.5rem);
+  }
 }
 
 .model-chip-container {
