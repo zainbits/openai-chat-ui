@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { IoChevronBack, IoChevronForward, IoClose } from "react-icons/io5";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import "./ImageViewer.css";
 
 interface ImageViewerProps {
@@ -88,7 +88,7 @@ export default function ImageViewer({
         onClick={onClose}
         aria-label="Close image viewer"
       >
-        <IoClose />
+        <X />
       </button>
 
       {/* Navigation - Previous */}
@@ -99,7 +99,7 @@ export default function ImageViewer({
           disabled={!canGoPrev}
           aria-label="Previous image"
         >
-          <IoChevronBack />
+          <ChevronLeft />
         </button>
       )}
 
@@ -120,7 +120,7 @@ export default function ImageViewer({
           disabled={!canGoNext}
           aria-label="Next image"
         >
-          <IoChevronForward />
+          <ChevronRight />
         </button>
       )}
 

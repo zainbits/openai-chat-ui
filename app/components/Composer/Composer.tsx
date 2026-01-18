@@ -4,8 +4,7 @@ import { useChat } from "../../hooks";
 import BlurSurface from "../BlurSurface";
 import BlurButton from "../BlurButton";
 import ModelPicker from "../ModelPicker";
-import { GrClose } from "react-icons/gr";
-import { IoArrowUp, IoImageOutline } from "react-icons/io5";
+import { X, ArrowUp, Image } from "lucide-react";
 import type { ImageAttachment } from "../../types";
 import "./Composer.css";
 
@@ -327,7 +326,7 @@ export default function Composer() {
                   onClick={() => removeImage(img.id)}
                   aria-label="Remove image"
                 >
-                  <GrClose />
+                  <X size={16} />
                 </button>
               </div>
             ))}
@@ -372,10 +371,7 @@ export default function Composer() {
                         : `Max ${MAX_IMAGES_PER_MESSAGE} images`
                     }
                   >
-                    <IoImageOutline
-                      className="composer-icon"
-                      aria-hidden="true"
-                    />
+                    <Image className="composer-icon" aria-hidden="true" />
                   </BlurButton>
 
                   {/* Send/Stop button */}
@@ -391,9 +387,9 @@ export default function Composer() {
                     }
                   >
                     {isStreaming ? (
-                      <GrClose className="composer-icon" aria-hidden="true" />
+                      <X className="composer-icon" aria-hidden="true" />
                     ) : (
-                      <IoArrowUp className="composer-icon" aria-hidden="true" />
+                      <ArrowUp className="composer-icon" aria-hidden="true" />
                     )}
                   </BlurButton>
                 </div>

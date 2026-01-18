@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Menu, Button, Modal, TextInput, Group } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { TbPin, TbPinnedOff, TbPencil, TbTrash, TbDots } from "react-icons/tb";
+import { Pin, PinOff, Pencil, Trash2, MoreHorizontal } from "lucide-react";
 import { useAppStore } from "../../state/store";
 import { toRelativeTime } from "../../utils/time";
 import type { ChatThread } from "../../types";
@@ -97,7 +97,7 @@ const ThreadActions = React.memo(function ThreadActions({
         aria-label="Rename thread"
         title="Rename"
       >
-        <TbPencil size={14} />
+        <Pencil size={14} />
       </button>
 
       <button
@@ -109,7 +109,7 @@ const ThreadActions = React.memo(function ThreadActions({
         aria-label="Delete thread"
         title="Delete"
       >
-        <TbTrash size={14} />
+        <Trash2 size={14} />
       </button>
 
       <Menu shadow="md" width={144} position="bottom-end" withArrow>
@@ -119,16 +119,14 @@ const ThreadActions = React.memo(function ThreadActions({
             aria-label="More options"
             title="More"
           >
-            <TbDots size={14} />
+            <MoreHorizontal size={14} />
           </button>
         </Menu.Target>
 
         <Menu.Dropdown className="thread-menu-dropdown">
           <Menu.Item
             className="thread-menu-item"
-            leftSection={
-              pinned ? <TbPinnedOff size={16} /> : <TbPin size={16} />
-            }
+            leftSection={pinned ? <PinOff size={16} /> : <Pin size={16} />}
             onClick={(e) => {
               e.stopPropagation();
               onPin();
