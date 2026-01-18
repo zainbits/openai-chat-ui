@@ -297,10 +297,13 @@ export default function ModelEditorModal({
           />
           <Textarea
             label="System Prompt"
-            minRows={3}
+            minRows={4}
+            maxRows={12}
+            autosize
             value={system}
             onChange={(e) => setSystem(e.currentTarget.value)}
             aria-describedby="system-prompt-description"
+            classNames={{ input: "system-prompt-textarea" }}
           />
           <NumberInput
             label="Temperature"

@@ -5,6 +5,12 @@
   gap: 1rem;
 }
 
+/* System Prompt Textarea */
+.system-prompt-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
 .modal-actions {
   display: flex;
   flex-wrap: wrap;
