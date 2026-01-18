@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { Button, Modal, TextInput, Group } from "@mantine/core";
+import { Button, Modal, TextInput, Group, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { Pin, PinOff, Pencil, Trash2 } from "lucide-react";
 import { useAppStore } from "../../state/store";
@@ -88,41 +88,44 @@ const ThreadActions = React.memo(function ThreadActions({
 }: ThreadActionsProps) {
   return (
     <div className="thread-actions" onClick={(e) => e.stopPropagation()}>
-      <button
-        className="thread-action-btn"
-        onClick={(e) => {
-          e.stopPropagation();
-          onRename();
-        }}
-        aria-label="Rename thread"
-        title="Rename"
-      >
-        <Pencil size={14} />
-      </button>
+      <Tooltip label="Rename" openDelay={200}>
+        <button
+          className="thread-action-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRename();
+          }}
+          aria-label="Rename thread"
+        >
+          <Pencil size={14} />
+        </button>
+      </Tooltip>
 
-      <button
-        className="thread-action-btn thread-action-btn-danger"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete();
-        }}
-        aria-label="Delete thread"
-        title="Delete"
-      >
-        <Trash2 size={14} />
-      </button>
+      <Tooltip label="Delete" openDelay={200}>
+        <button
+          className="thread-action-btn thread-action-btn-danger"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          aria-label="Delete thread"
+        >
+          <Trash2 size={14} />
+        </button>
+      </Tooltip>
 
-      <button
-        className="thread-action-btn"
-        onClick={(e) => {
-          e.stopPropagation();
-          onPin();
-        }}
-        aria-label={pinned ? "Unpin thread" : "Pin thread"}
-        title={pinned ? "Unpin" : "Pin"}
-      >
-        {pinned ? <PinOff size={14} /> : <Pin size={14} />}
-      </button>
+      <Tooltip label={pinned ? "Unpin" : "Pin"} openDelay={200}>
+        <button
+          className="thread-action-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPin();
+          }}
+          aria-label={pinned ? "Unpin thread" : "Pin thread"}
+        >
+          {pinned ? <PinOff size={14} /> : <Pin size={14} />}
+        </button>
+      </Tooltip>
     </div>
   );
 });

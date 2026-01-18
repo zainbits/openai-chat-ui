@@ -483,7 +483,8 @@
   transform: scale(0.97);
 }
 
-.copy-btn.copied {
+.copy-btn.copied,
+.copy-btn.copied:hover {
   color: var(--color-success-400);
   border-color: var(--color-success-400);
 }
