@@ -10,7 +10,12 @@
     "typecheck": "react-router typegen && tsc",
     "test": "vitest",
     "test:run": "vitest run",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,css,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,css,json,md}\"",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,css,json,md}": "prettier --write",
+    "*.{ts,tsx}": "bash -c 'yarn typecheck'"
   },
   "dependencies": {
     "@mantine/core": "^8.2.5",
@@ -33,7 +38,9 @@
     "@types/node": "^20",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
+    "husky": "^9.1.7",
     "jsdom": "^24.0.0",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.4.1",
     "typescript": "^5.8.3",
     "vite": "^6.3.3",
