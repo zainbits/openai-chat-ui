@@ -73,6 +73,13 @@ yarn test        # Watch mode
 yarn test:run    # Single run
 ```
 
+### Other Commands
+
+```bash
+yarn typecheck   # TypeScript type checking
+yarn format      # Format code with Prettier
+```
+
 ## Architecture
 
 ### Tech Stack
@@ -185,7 +192,7 @@ Options:
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License
 
 ---
 
