@@ -103,6 +103,11 @@ const normalizeUiState = (value: unknown, defaults: UiState): UiState => {
       ? value.activeThread
       : defaults.activeThread;
 
+  const selectedLlmModel =
+    value.selectedLlmModel === null || isString(value.selectedLlmModel)
+      ? value.selectedLlmModel
+      : defaults.selectedLlmModel;
+
   return {
     ...defaults,
     sidebarOpen: isBoolean(value.sidebarOpen)
@@ -118,6 +123,7 @@ const normalizeUiState = (value: unknown, defaults: UiState): UiState => {
     selectedModel: isString(value.selectedModel)
       ? value.selectedModel
       : defaults.selectedModel,
+    selectedLlmModel,
   };
 };
 
