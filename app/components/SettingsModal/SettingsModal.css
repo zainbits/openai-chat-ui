@@ -48,3 +48,8 @@
   border: 1px solid var(--mantine-color-red-9);
   background: rgba(var(--mantine-color-red-9-rgb), 0.05);
 }
+
+/* Switch cursor */
+.modal-content .mantine-Switch-track {
+  cursor: pointer;
+}

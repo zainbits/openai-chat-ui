@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { Menu, Button, Modal, TextInput, Group } from "@mantine/core";
+import { Button, Modal, TextInput, Group } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { Pin, PinOff, Pencil, Trash2, MoreHorizontal } from "lucide-react";
+import { Pin, PinOff, Pencil, Trash2 } from "lucide-react";
 import { useAppStore } from "../../state/store";
 import { toRelativeTime } from "../../utils/time";
 import type { ChatThread } from "../../types";
@@ -112,30 +112,17 @@ const ThreadActions = React.memo(function ThreadActions({
         <Trash2 size={14} />
       </button>
 
-      <Menu shadow="md" width={144} position="bottom-end" withArrow>
-        <Menu.Target>
-          <button
-            className="thread-action-btn"
-            aria-label="More options"
-            title="More"
-          >
-            <MoreHorizontal size={14} />
-          </button>
-        </Menu.Target>
-
-        <Menu.Dropdown className="thread-menu-dropdown">
-          <Menu.Item
-            className="thread-menu-item"
-            leftSection={pinned ? <PinOff size={16} /> : <Pin size={16} />}
-            onClick={(e) => {
-              e.stopPropagation();
-              onPin();
-            }}
-          >
-            {pinned ? "Unpin" : "Pin"}
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+      <button
+        className="thread-action-btn"
+        onClick={(e) => {
+          e.stopPropagation();
+          onPin();
+        }}
+        aria-label={pinned ? "Unpin thread" : "Pin thread"}
+        title={pinned ? "Unpin" : "Pin"}
+      >
+        {pinned ? <PinOff size={14} /> : <Pin size={14} />}
+      </button>
     </div>
   );
 });

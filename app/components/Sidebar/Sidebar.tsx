@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useAppStore, useThreads } from "../../state/store";
 import { groupByDateBucket } from "../../utils/time";
 import SettingsModal from "../SettingsModal";
