@@ -5,6 +5,7 @@ A beautiful, customizable chat interface for OpenAI-compatible APIs with modern 
 ![React](https://img.shields.io/badge/React-19-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)
 ![Mantine](https://img.shields.io/badge/Mantine-8.2-violet)
+![Lucide](https://img.shields.io/badge/Lucide-0.562-orange)
 
 ## Features
 
@@ -88,6 +89,7 @@ yarn format      # Format code with Prettier
 - **TypeScript 5.8** for type safety
 - **Mantine UI** for components and notifications
 - **Zustand** for state management
+- **Lucide React** for icons
 - **DOMPurify** for XSS protection in markdown rendering
 - **Marked** for markdown parsing
 - **Vite** for blazing fast builds
@@ -113,7 +115,7 @@ app/
 │   ├── ModelEditorModal/ # Create/edit model presets
 │   ├── ModelPicker/      # LLM model dropdown selector
 │   ├── SettingsModal/    # API and app settings (tabbed)
-│   ├── Sidebar/          # Thread list and navigation
+│   ├── Sidebar/          # Thread list and navigation (ThreadListItem, ThreadFilters, SidebarHeader)
 │   └── ThinkingBlock/    # Collapsible AI reasoning display
 ├── hooks/         # Custom React hooks
 ├── state/         # Zustand store and slices

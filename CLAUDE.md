@@ -58,16 +58,20 @@ User input → `Composer` → `useChat()` hook → `app/api/client.ts` (SSE stre
 
 ### Component Structure
 
-Components use co-located CSS (`ComponentName/index.tsx` + `ComponentName.css`).
+Components use co-located CSS (`ComponentName/ComponentName.tsx` + `ComponentName.css`).
 
 Key components:
 
 - `ChatArea` - Message display with markdown rendering
 - `Composer` - Input with image attachments (max 4)
-- `Sidebar` - Thread list with search/sort
+- `Sidebar` - Thread list with search/sort (includes sub-components: `ThreadListItem`, `ThreadFilters`, `SidebarHeader`)
 - `ModelChips` - Model preset selector
 - `SettingsModal` - Tabbed settings (API, models, cloud sync)
 - `ThinkingBlock` - Collapsible AI reasoning display
+
+### Icons
+
+Uses **Lucide React** (`lucide-react`) for all icons throughout the application.
 
 ### Type Definitions
 

@@ -378,23 +378,6 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.message-bubble:hover .message-actions,
-.message-bubble:focus-within .message-actions {
-  opacity: 1;
-}
-
-/* Always show when regenerating */
-.message-actions:has(.regenerating) {
-  opacity: 1;
-}
-
-/* Always show actions on last assistant message */
-.message-actions.always-visible {
-  opacity: 1;
 }
 
 .regenerate-btn {
@@ -723,11 +706,6 @@
    Mobile Responsive Styles
    ============================================================================ */
 @media (max-width: 768px) {
-  /* Always show actions on mobile (no hover) */
-  .message-actions {
-    opacity: 1;
-  }
-
   /* Make buttons larger for touch targets */
   .regenerate-btn,
   .copy-btn,

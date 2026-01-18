@@ -752,9 +752,7 @@ export default function ChatArea() {
                   )}
                   {isAssistantMessage &&
                     (!isEmptyAssistant || isFailedResponse) && (
-                      <div
-                        className={`message-actions ${isLastMessage ? "always-visible" : ""}`}
-                      >
+                      <div className="message-actions">
                         {!isFailedResponse && (
                           <CopyButton content={m.content} />
                         )}
