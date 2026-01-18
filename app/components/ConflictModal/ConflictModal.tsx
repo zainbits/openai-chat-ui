@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, Button, Text, Group, Badge, ScrollArea } from "@mantine/core";
-import { FiMonitor, FiCloud } from "react-icons/fi";
+import { Monitor, Cloud } from "lucide-react";
 import type { CustomModel } from "../../types";
 import "./ConflictModal.css";
 
@@ -80,7 +80,7 @@ export default function ConflictModal({
             <Badge
               color="blue"
               variant="light"
-              leftSection={<FiMonitor size={12} />}
+              leftSection={<Monitor size={12} />}
             >
               Your Changes
             </Badge>
@@ -181,7 +181,7 @@ export default function ConflictModal({
             <Badge
               color="green"
               variant="light"
-              leftSection={<FiCloud size={12} />}
+              leftSection={<Cloud size={12} />}
             >
               Server Version
             </Badge>

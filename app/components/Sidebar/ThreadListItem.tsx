@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { Menu, Button, Modal, TextInput, Group } from "@mantine/core";
+import { Button, Modal, TextInput, Group, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { TbPin, TbPinnedOff, TbPencil, TbTrash, TbDots } from "react-icons/tb";
+import { Pin, PinOff, Pencil, Trash2 } from "lucide-react";
 import { useAppStore } from "../../state/store";
 import { toRelativeTime } from "../../utils/time";
 import type { ChatThread } from "../../types";
@@ -88,56 +88,44 @@ const ThreadActions = React.memo(function ThreadActions({
 }: ThreadActionsProps) {
   return (
     <div className="thread-actions" onClick={(e) => e.stopPropagation()}>
-      <button
-        className="thread-action-btn"
-        onClick={(e) => {
-          e.stopPropagation();
-          onRename();
-        }}
-        aria-label="Rename thread"
-        title="Rename"
-      >
-        <TbPencil size={14} />
-      </button>
+      <Tooltip label="Rename" openDelay={200}>
+        <button
+          className="thread-action-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRename();
+          }}
+          aria-label="Rename thread"
+        >
+          <Pencil size={14} />
+        </button>
+      </Tooltip>
 
-      <button
-        className="thread-action-btn thread-action-btn-danger"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete();
-        }}
-        aria-label="Delete thread"
-        title="Delete"
-      >
-        <TbTrash size={14} />
-      </button>
+      <Tooltip label="Delete" openDelay={200}>
+        <button
+          className="thread-action-btn thread-action-btn-danger"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          aria-label="Delete thread"
+        >
+          <Trash2 size={14} />
+        </button>
+      </Tooltip>
 
-      <Menu shadow="md" width={144} position="bottom-end" withArrow>
-        <Menu.Target>
-          <button
-            className="thread-action-btn"
-            aria-label="More options"
-            title="More"
-          >
-            <TbDots size={14} />
-          </button>
-        </Menu.Target>
-
-        <Menu.Dropdown className="thread-menu-dropdown">
-          <Menu.Item
-            className="thread-menu-item"
-            leftSection={
-              pinned ? <TbPinnedOff size={16} /> : <TbPin size={16} />
-            }
-            onClick={(e) => {
-              e.stopPropagation();
-              onPin();
-            }}
-          >
-            {pinned ? "Unpin" : "Pin"}
-          </Menu.Item>
-        </Menu.Dropdown>
-      </Menu>
+      <Tooltip label={pinned ? "Unpin" : "Pin"} openDelay={200}>
+        <button
+          className="thread-action-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPin();
+          }}
+          aria-label={pinned ? "Unpin thread" : "Pin thread"}
+        >
+          {pinned ? <PinOff size={14} /> : <Pin size={14} />}
+        </button>
+      </Tooltip>
     </div>
   );
 });

@@ -11,13 +11,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import {
-  FiRefreshCw,
-  FiEdit2,
-  FiTrash2,
-  FiCloud,
-  FiCloudOff,
-} from "react-icons/fi";
+import { RefreshCw, Pencil, Trash2, Cloud, CloudOff } from "lucide-react";
 import { useAppStore } from "../../state/store";
 import ConfirmModal from "../ConfirmModal";
 import type { CustomModel } from "../../types";
@@ -160,7 +154,7 @@ export default function CloudModelsTab({ onEditModel }: CloudModelsTabProps) {
             <Badge
               color="green"
               variant="light"
-              leftSection={<FiCloud size={12} />}
+              leftSection={<Cloud size={12} />}
             >
               Configured
             </Badge>
@@ -168,7 +162,7 @@ export default function CloudModelsTab({ onEditModel }: CloudModelsTabProps) {
             <Badge
               color="gray"
               variant="light"
-              leftSection={<FiCloudOff size={12} />}
+              leftSection={<CloudOff size={12} />}
             >
               Not Configured
             </Badge>
@@ -206,7 +200,7 @@ export default function CloudModelsTab({ onEditModel }: CloudModelsTabProps) {
             onClick={handleSync}
             loading={syncing}
             disabled={!configured}
-            leftSection={<FiRefreshCw size={14} />}
+            leftSection={<RefreshCw size={14} />}
           >
             Sync from Cloud
           </Button>
@@ -262,7 +256,7 @@ export default function CloudModelsTab({ onEditModel }: CloudModelsTabProps) {
                       size="sm"
                       onClick={() => onEditModel(model.id)}
                     >
-                      <FiEdit2 size={14} />
+                      <Pencil size={14} />
                     </ActionIcon>
                   </Tooltip>
                   <Tooltip label="Delete model">
@@ -272,7 +266,7 @@ export default function CloudModelsTab({ onEditModel }: CloudModelsTabProps) {
                       color="red"
                       onClick={() => confirmDelete(model)}
                     >
-                      <FiTrash2 size={14} />
+                      <Trash2 size={14} />
                     </ActionIcon>
                   </Tooltip>
                 </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@mantine/core";
+import { Settings } from "lucide-react";
 import { useAppStore } from "../../state/store";
 import { getConnectionStatusClass } from "../../theme/colors";
 import type { ConnectionStatus } from "../../types";
@@ -69,7 +70,7 @@ export default function SidebarHeader({ onSettingsClick }: SidebarHeaderProps) {
           className="settings-button"
           aria-label="Open settings"
         >
-          ⚙️
+          <Settings size={16} />
         </Button>
         <div className="connection-status" role="status" aria-live="polite">
           <span

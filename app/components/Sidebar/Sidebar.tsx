@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useAppStore, useThreads } from "../../state/store";
 import { groupByDateBucket } from "../../utils/time";
 import SettingsModal from "../SettingsModal";
@@ -67,7 +67,6 @@ export default function Sidebar() {
           : true,
       )
       .sort((a, b) => {
-        if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
         if (sortBy === "date") return b.updatedAt - a.updatedAt;
         if (sortBy === "name") return a.title.localeCompare(b.title);
         if (sortBy === "model") return a.modelId.localeCompare(b.modelId);
@@ -75,16 +74,30 @@ export default function Sidebar() {
       });
   }, [threads, searchQuery, selectedModel, sortBy]);
 
-  // Group threads by date bucket
+  // Separate pinned and unpinned threads
+  const { pinned, unpinned } = useMemo(() => {
+    const pinned: ChatThread[] = [];
+    const unpinned: ChatThread[] = [];
+    for (const t of filtered) {
+      if (t.isPinned) {
+        pinned.push(t);
+      } else {
+        unpinned.push(t);
+      }
+    }
+    return { pinned, unpinned };
+  }, [filtered]);
+
+  // Group unpinned threads by date bucket
   const grouped = useMemo(() => {
     const map = new Map<string, ChatThread[]>();
-    for (const t of filtered) {
+    for (const t of unpinned) {
       const bucket = groupByDateBucket(t.updatedAt);
       if (!map.has(bucket)) map.set(bucket, []);
       map.get(bucket)!.push(t);
     }
     return Array.from(map.entries());
-  }, [filtered]);
+  }, [unpinned]);
 
   return (
     <>
@@ -109,6 +122,28 @@ export default function Sidebar() {
           />
 
           <div className="thread-list" role="list" aria-label="Chat threads">
+            {pinned.length > 0 && (
+              <div
+                className="thread-group thread-group-pinned"
+                role="group"
+                aria-label="Pinned threads"
+              >
+                <div
+                  className="thread-group-title"
+                  role="heading"
+                  aria-level={2}
+                >
+                  Pinned
+                </div>
+                <div className="thread-items" role="list">
+                  {pinned.map((t) => (
+                    <div key={t.id} role="listitem">
+                      <ThreadListItem thread={t} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {grouped.map(([bucket, items]) => (
               <div
                 key={bucket}

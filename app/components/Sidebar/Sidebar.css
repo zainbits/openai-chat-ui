@@ -53,8 +53,6 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-border-primary);
 }
 
 .app-title {
@@ -83,7 +81,12 @@
 }
 
 .settings-button {
-  padding: 0.25rem;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: var(--color-text-primary);

@@ -219,6 +219,27 @@ function EnhancedEmptyState() {
 }
 
 /**
+ * Animated checkmark component with draw-in effect
+ */
+function AnimatedCheckmark() {
+  return (
+    <svg
+      className="copy-icon checkmark-animated"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path className="checkmark-path" d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+
+/**
  * Copy button component for assistant messages
  */
 function CopyButton({ content }: { content: string }) {
@@ -228,11 +249,6 @@ function CopyButton({ content }: { content: string }) {
     try {
       await navigator.clipboard.writeText(content);
       setCopied(true);
-      notifications.show({
-        message: "Copied to clipboard",
-        color: "green",
-        autoClose: 2000,
-      });
       setTimeout(() => setCopied(false), 2000);
     } catch {
       notifications.show({
@@ -246,26 +262,11 @@ function CopyButton({ content }: { content: string }) {
     <button
       className={`copy-btn ${copied ? "copied" : ""}`}
       onClick={handleCopy}
-      title="Copy to clipboard"
       aria-label={copied ? "Copied" : "Copy to clipboard"}
     >
-      {copied ? (
+      <span className="copy-icon-wrapper">
         <svg
-          className="copy-icon"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M20 6L9 17l-5-5" />
-        </svg>
-      ) : (
-        <svg
-          className="copy-icon"
+          className={`copy-icon copy-icon-default ${copied ? "icon-exit" : ""}`}
           width="16"
           height="16"
           viewBox="0 0 24 24"
@@ -278,7 +279,8 @@ function CopyButton({ content }: { content: string }) {
           <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
         </svg>
-      )}
+        {copied && <AnimatedCheckmark />}
+      </span>
       <span className="copy-text">{copied ? "Copied!" : "Copy"}</span>
     </button>
   );
@@ -289,12 +291,7 @@ function CopyButton({ content }: { content: string }) {
  */
 function EditButton({ onEdit }: { onEdit: () => void }) {
   return (
-    <button
-      className="edit-btn"
-      onClick={onEdit}
-      title="Edit message"
-      aria-label="Edit message"
-    >
+    <button className="edit-btn" onClick={onEdit} aria-label="Edit message">
       <svg
         className="edit-icon"
         width="16"
@@ -699,7 +696,7 @@ export default function ChatArea() {
                         <button
                           className="edit-save-btn"
                           onClick={handleSaveEdit}
-                          title="Save (Ctrl+Enter)"
+                          aria-label="Save (Ctrl+Enter)"
                         >
                           <svg
                             width="16"
@@ -718,7 +715,7 @@ export default function ChatArea() {
                         <button
                           className="edit-cancel-btn"
                           onClick={handleCancelEdit}
-                          title="Cancel (Esc)"
+                          aria-label="Cancel (Esc)"
                         >
                           <svg
                             width="16"
@@ -755,9 +752,7 @@ export default function ChatArea() {
                   )}
                   {isAssistantMessage &&
                     (!isEmptyAssistant || isFailedResponse) && (
-                      <div
-                        className={`message-actions ${isLastMessage ? "always-visible" : ""}`}
-                      >
+                      <div className="message-actions">
                         {!isFailedResponse && (
                           <CopyButton content={m.content} />
                         )}
@@ -771,7 +766,6 @@ export default function ChatArea() {
                             className={`regenerate-btn ${isRegenerating ? "regenerating" : ""}`}
                             disabled={isRegenerating}
                             onClick={regenerateLastMessage}
-                            title="Regenerate response"
                             aria-label={
                               isRegenerating
                                 ? "Regenerating response"

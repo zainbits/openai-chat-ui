@@ -7,7 +7,7 @@ import ChatArea from "../components/ChatArea";
 import BlurButton from "../components/BlurButton";
 import ErrorBoundary from "../components/ErrorBoundary";
 import LoadingSkeleton from "../components/LoadingSkeleton";
-import { GrMenu } from "react-icons/gr";
+import { Menu } from "lucide-react";
 import { CONNECTION_CHECK_INTERVAL_MS } from "../constants";
 
 export function meta({}: Route.MetaArgs) {
@@ -105,7 +105,7 @@ function HomeContent() {
           height={40}
           borderRadius={8}
         >
-          <GrMenu className="menu-icon" aria-hidden="true" />
+          <Menu className="menu-icon" aria-hidden="true" />
         </BlurButton>
 
         <div className="chat-wrapper">
