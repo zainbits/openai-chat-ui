@@ -124,7 +124,6 @@ export const createChatSlice: StateCreator<AppStore, [], [], ChatSlice> = (
         [threadId]: {
           ...state.chats[threadId],
           isPinned: !state.chats[threadId].isPinned,
-          updatedAt: Date.now(),
         },
       },
     })),
