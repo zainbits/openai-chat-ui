@@ -325,7 +325,9 @@ export default function ChatArea() {
   const updateMessageContent = useAppStore(
     (state) => state.updateMessageContent,
   );
-  const { isLoading, isRegenerating, regenerateLastMessage } = useChat();
+  const forkThread = useAppStore((state) => state.forkThread);
+  const { isLoading, isRegenerating, regenerateLastMessage, sendMessage } =
+    useChat();
 
   const messages = useMemo(() => thread?.messages ?? [], [thread]);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -598,6 +600,46 @@ export default function ChatArea() {
     [handleCancelEdit, handleSaveEdit],
   );
 
+  // Handle "Run" from edit - forks the chat and runs from that point
+  const handleRunFromEdit = useCallback(async () => {
+    if (editingIndex === null || !thread) return;
+
+    const editedContent = editContent.trim();
+    if (!editedContent) {
+      notifications.show({
+        message: "Cannot run with empty message",
+        color: "red",
+      });
+      return;
+    }
+
+    // Fork the thread up to the editing index (excludes the message being edited)
+    const newThread = forkThread(thread.id, editingIndex);
+    if (!newThread) {
+      notifications.show({
+        message: "Failed to create new chat",
+        color: "red",
+      });
+      return;
+    }
+
+    // Clear edit state
+    setEditingIndex(null);
+    setEditContent("");
+
+    // Send the edited message in the new thread
+    // Small delay to ensure the new thread is active
+    setTimeout(() => {
+      void sendMessage(editedContent);
+    }, 50);
+
+    notifications.show({
+      message: "New chat created from edit",
+      color: "green",
+      autoClose: 2000,
+    });
+  }, [editingIndex, thread, editContent, forkThread, sendMessage]);
+
   return (
     <main className="chat-main" role="main" aria-label="Chat conversation">
       <section
@@ -711,6 +753,26 @@ export default function ChatArea() {
                             <path d="M20 6L9 17l-5-5" />
                           </svg>
                           <span>Save</span>
+                        </button>
+                        <button
+                          className="edit-run-btn"
+                          onClick={handleRunFromEdit}
+                          aria-label="Run in new chat"
+                          title="Create new chat and run from this point"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                          </svg>
+                          <span>Run</span>
                         </button>
                         <button
                           className="edit-cancel-btn"

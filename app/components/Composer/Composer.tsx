@@ -335,7 +335,7 @@ export default function Composer() {
         )}
 
         <div className="composer-input-area">
-          <BlurSurface width="100%" height="auto" padding={0}>
+          <BlurSurface width="100%" height="auto" padding={0} borderRadius={12}>
             <div className="composer-input-container">
               <div className="composer-textarea-wrapper">
                 <textarea

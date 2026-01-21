@@ -39,6 +39,13 @@ export interface ChatSlice {
     content: string,
   ) => void;
   setThreadTokenUsage: (threadId: string, usage: TokenUsage) => void;
+  /**
+   * Creates a new thread by forking an existing thread up to a specific message index.
+   * The new thread will have the same title with "(1)" appended, same model, and
+   * messages up to (but not including) the specified index.
+   * Returns the new thread.
+   */
+  forkThread: (threadId: string, upToIndex: number) => ChatThread | null;
 }
 
 const createThreadForModel = (modelId: string): ChatThread => {
@@ -353,4 +360,40 @@ export const createChatSlice: StateCreator<AppStore, [], [], ChatSlice> = (
         },
       };
     }),
+
+  forkThread: (threadId, upToIndex) => {
+    const sourceThread = get().chats[threadId];
+    if (!sourceThread || upToIndex < 0) return null;
+
+    const now = Date.now();
+    // Copy messages up to (but not including) the specified index
+    const forkedMessages = sourceThread.messages
+      .slice(0, upToIndex)
+      .map((m) => ({
+        ...m,
+        ts: now + Math.random(), // Ensure unique timestamps
+      }));
+
+    // Generate new title with (1) suffix
+    const baseTitle = sourceThread.title.replace(/\s*\(\d+\)$/, ""); // Remove existing (N) suffix if any
+    const newTitle = `${baseTitle} (1)`.slice(0, MAX_THREAD_TITLE_LENGTH);
+
+    const newThread: ChatThread = {
+      id: generateId(),
+      modelId: sourceThread.modelId,
+      title: newTitle,
+      isPinned: false,
+      messages: forkedMessages,
+      createdAt: now,
+      updatedAt: now,
+      preview: sourceThread.preview,
+    };
+
+    set((state) => ({
+      chats: { ...state.chats, [newThread.id]: newThread },
+      ui: { ...state.ui, activeThread: newThread.id, sidebarOpen: true },
+    }));
+
+    return newThread;
+  },
 });
