@@ -56,7 +56,7 @@ export const createPersistenceSlice: StateCreator<
   nukeAll: () => {
     void clearAppDataFromDb();
     void clearImageStore();
-    // Reset state to defaults
+    // Reset state to defaults (including ephemeral streaming state)
     set({
       models: STARTER_MODELS,
       chats: {},
@@ -64,6 +64,9 @@ export const createPersistenceSlice: StateCreator<
       settings: DEFAULT_SETTINGS,
       availableModels: [],
       connectionStatus: "unknown",
+      isLoading: false,
+      isRegenerating: false,
+      tokenUsage: null,
     });
   },
 });
