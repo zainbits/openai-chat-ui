@@ -8,6 +8,15 @@ export type Role = "user" | "assistant";
 export type ThinkingEffort = "low" | "medium" | "high";
 
 /**
+ * Token usage from API response
+ */
+export interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
+/**
  * Content part for multimodal messages (OpenAI Vision API format)
  */
 export interface TextContentPart {
@@ -85,6 +94,11 @@ export interface ChatThread {
   createdAt: number;
   updatedAt: number;
   preview: string;
+  /**
+   * Token usage from the last API response for this thread.
+   * Persisted so it survives page refresh.
+   */
+  tokenUsage?: TokenUsage;
 }
 
 export type ChatsById = Record<string, ChatThread>;

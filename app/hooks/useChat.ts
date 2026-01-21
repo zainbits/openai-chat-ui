@@ -161,6 +161,8 @@ export function useChat(): UseChatReturn {
   const isRegenerating = useAppStore((s) => s.isRegenerating);
   const setIsLoading = useAppStore((s) => s.setIsLoading);
   const setIsRegenerating = useAppStore((s) => s.setIsRegenerating);
+  const setTokenUsage = useAppStore((s) => s.setTokenUsage);
+  const setThreadTokenUsage = useAppStore((s) => s.setThreadTokenUsage);
 
   // Get store actions and state
   const getClient = useAppStore((s) => s.getClient);
@@ -210,6 +212,10 @@ export function useChat(): UseChatReturn {
         onThinking: (thinkingToken) => {
           appendThinkingToLastMessage(threadId, thinkingToken);
         },
+        onUsage: (usage) => {
+          setTokenUsage(usage);
+          setThreadTokenUsage(threadId, usage);
+        },
         onDone: handlers.onDone,
         onError: handlers.onError,
       });
@@ -219,6 +225,8 @@ export function useChat(): UseChatReturn {
       getEffectiveLlmModel,
       appendToLastMessage,
       appendThinkingToLastMessage,
+      setTokenUsage,
+      setThreadTokenUsage,
     ],
   );
 

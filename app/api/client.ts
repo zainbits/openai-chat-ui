@@ -9,6 +9,7 @@ import type {
   StreamHandle,
   ThinkingEffort,
   ContentPart,
+  TokenUsage,
 } from "../types";
 import {
   DEFAULT_CHAT_TEMPERATURE,
@@ -61,6 +62,8 @@ export interface ChatOptions {
   onToken?: (token: string) => void;
   /** Callback invoked for each thinking token received (streaming) */
   onThinking?: (thinkingToken: string) => void;
+  /** Callback invoked with token usage when available */
+  onUsage?: (usage: TokenUsage) => void;
   /** Callback invoked when streaming completes */
   onDone?: () => void;
   /** Callback invoked on error */
@@ -346,6 +349,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
       messages: opts.messages,
       temperature: opts.temperature ?? DEFAULT_CHAT_TEMPERATURE,
       stream: true,
+      stream_options: { include_usage: true },
     };
 
     if (opts.thinkingEnabled) {
@@ -377,7 +381,12 @@ export class OpenAICompatibleClient extends BaseApiClient {
       throw new Error(`Chat request failed: ${res.status} - ${errorText}`);
     }
 
-    await this.parseSSEStream(res.body, opts.onToken, opts.onThinking);
+    await this.parseSSEStream(
+      res.body,
+      opts.onToken,
+      opts.onThinking,
+      opts.onUsage,
+    );
   }
 
   /**
@@ -460,6 +469,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
     body: ReadableStream<Uint8Array>,
     onToken?: (token: string) => void,
     onThinking?: (thinkingToken: string) => void,
+    onUsage?: (usage: TokenUsage) => void,
   ): Promise<void> {
     const reader = body.getReader();
     const decoder = new TextDecoder();
@@ -471,7 +481,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
         if (done) {
           // Process any remaining buffered data
           if (buffer.trim()) {
-            this.processSSELine(buffer, onToken, onThinking);
+            this.processSSELine(buffer, onToken, onThinking, onUsage);
           }
           break;
         }
@@ -493,7 +503,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
               return;
             }
 
-            this.processSSELine(payload, onToken, onThinking);
+            this.processSSELine(payload, onToken, onThinking, onUsage);
           }
         }
       }
@@ -510,6 +520,7 @@ export class OpenAICompatibleClient extends BaseApiClient {
     payload: string,
     onToken?: (token: string) => void,
     onThinking?: (thinkingToken: string) => void,
+    onUsage?: (usage: TokenUsage) => void,
   ): void {
     try {
       const data = JSON.parse(payload);
@@ -527,6 +538,15 @@ export class OpenAICompatibleClient extends BaseApiClient {
         delta?.thinking ?? delta?.reasoning ?? delta?.reasoning_content ?? "";
       if (thinking && onThinking) {
         onThinking(thinking);
+      }
+
+      // Handle usage data - typically sent in the final chunk
+      if (data?.usage && onUsage) {
+        onUsage({
+          prompt_tokens: data.usage.prompt_tokens ?? 0,
+          completion_tokens: data.usage.completion_tokens ?? 0,
+          total_tokens: data.usage.total_tokens ?? 0,
+        });
       }
     } catch {
       // Non-JSON lines in some implementations; ignore
@@ -670,7 +690,12 @@ export class AnthropicClient extends BaseApiClient {
       throw new Error(`Anthropic request failed: ${res.status} - ${errorText}`);
     }
 
-    await this.parseAnthropicStream(res.body, opts.onToken, opts.onThinking);
+    await this.parseAnthropicStream(
+      res.body,
+      opts.onToken,
+      opts.onThinking,
+      opts.onUsage,
+    );
   }
 
   /**
@@ -755,6 +780,7 @@ export class AnthropicClient extends BaseApiClient {
     body: ReadableStream<Uint8Array>,
     onToken?: (token: string) => void,
     onThinking?: (thinkingToken: string) => void,
+    onUsage?: (usage: TokenUsage) => void,
   ): Promise<void> {
     const reader = body.getReader();
     const decoder = new TextDecoder();
@@ -773,6 +799,7 @@ export class AnthropicClient extends BaseApiClient {
               currentBlockType,
               onToken,
               onThinking,
+              onUsage,
             );
             if (result.newBlockType !== undefined) {
               currentBlockType = result.newBlockType;
@@ -803,6 +830,7 @@ export class AnthropicClient extends BaseApiClient {
               currentBlockType,
               onToken,
               onThinking,
+              onUsage,
             );
             if (result.shouldStop) {
               return;
@@ -827,6 +855,7 @@ export class AnthropicClient extends BaseApiClient {
     currentBlockType: "text" | "thinking" | null,
     onToken?: (token: string) => void,
     onThinking?: (thinkingToken: string) => void,
+    onUsage?: (usage: TokenUsage) => void,
   ): {
     shouldStop?: boolean;
     newBlockType?: "text" | "thinking" | null;
@@ -856,6 +885,16 @@ export class AnthropicClient extends BaseApiClient {
         }
       } else if (data.type === "content_block_stop") {
         return { newBlockType: null };
+      } else if (data.type === "message_delta") {
+        // Anthropic sends usage in message_delta event
+        if (data.usage && onUsage) {
+          onUsage({
+            prompt_tokens: data.usage.input_tokens ?? 0,
+            completion_tokens: data.usage.output_tokens ?? 0,
+            total_tokens:
+              (data.usage.input_tokens ?? 0) + (data.usage.output_tokens ?? 0),
+          });
+        }
       } else if (data.type === "message_stop") {
         return { shouldStop: true };
       }

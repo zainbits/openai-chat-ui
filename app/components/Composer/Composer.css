@@ -83,6 +83,7 @@
 .composer-model-picker-container {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 /* Composer icon styling */

@@ -1,0 +1,158 @@
+/* ============================================================================
+   Context Ring Component
+   Circular progress ring showing context window usage
+   ============================================================================ */
+
+.context-ring-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.context-ring-container:hover {
+  transform: scale(1.05);
+}
+
+.context-ring-container:focus {
+  outline: none;
+}
+
+.context-ring-container:focus-visible {
+  outline: 2px solid var(--color-interactive-focus);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+/* SVG Ring */
+.context-ring-svg {
+  display: block;
+}
+
+.context-ring-background {
+  stroke: var(--color-white-alpha-15);
+}
+
+.context-ring-progress {
+  transition:
+    stroke-dashoffset 0.5s ease,
+    stroke 0.3s ease;
+}
+
+/* ============================================================================
+   Tooltip (rendered via portal to document.body)
+   ============================================================================ */
+
+.context-ring-tooltip {
+  min-width: 180px;
+  padding: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  z-index: 9999;
+  animation: context-ring-tooltip-fade-in 0.15s ease;
+  pointer-events: none;
+}
+
+/* Tooltip arrow */
+.context-ring-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--bg-elevated);
+}
+
+.context-ring-tooltip::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: var(--border-secondary);
+}
+
+@keyframes context-ring-tooltip-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.context-ring-tooltip-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.context-ring-tooltip-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.context-ring-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+}
+
+.context-ring-tooltip-label {
+  color: var(--color-text-muted);
+}
+
+.context-ring-tooltip-value {
+  color: var(--color-text-primary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.context-ring-tooltip-divider {
+  height: 1px;
+  background: var(--border-primary);
+  margin: 6px 0;
+}
+
+.context-ring-tooltip-total {
+  font-weight: 500;
+}
+
+.context-ring-tooltip-total .context-ring-tooltip-label {
+  color: var(--color-text-secondary);
+}
+
+.context-ring-tooltip-percentage {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-primary);
+}
+
+/* ============================================================================
+   Mobile adjustments
+   ============================================================================ */
+
+@media (pointer: coarse) {
+  .context-ring-container:hover {
+    transform: none;
+  }
+
+  .context-ring-tooltip {
+    pointer-events: auto;
+  }
+}

@@ -1,5 +1,10 @@
 import type { StateCreator } from "zustand";
-import type { ChatMessage, ChatThread, ChatsById } from "../../types";
+import type {
+  ChatMessage,
+  ChatThread,
+  ChatsById,
+  TokenUsage,
+} from "../../types";
 import type { AppStore } from "../types";
 import { MAX_PREVIEW_LENGTH, MAX_THREAD_TITLE_LENGTH } from "../../constants";
 import { generateId } from "../utils";
@@ -33,6 +38,7 @@ export interface ChatSlice {
     messageIndex: number,
     content: string,
   ) => void;
+  setThreadTokenUsage: (threadId: string, usage: TokenUsage) => void;
 }
 
 const createThreadForModel = (modelId: string): ChatThread => {
@@ -327,6 +333,22 @@ export const createChatSlice: StateCreator<AppStore, [], [], ChatSlice> = (
             ...thread,
             messages,
             updatedAt: Date.now(),
+          },
+        },
+      };
+    }),
+
+  setThreadTokenUsage: (threadId, usage) =>
+    set((state) => {
+      const thread = state.chats[threadId];
+      if (!thread) return state;
+
+      return {
+        chats: {
+          ...state.chats,
+          [threadId]: {
+            ...thread,
+            tokenUsage: usage,
           },
         },
       };

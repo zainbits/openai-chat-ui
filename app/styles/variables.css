@@ -137,7 +137,7 @@
   --bg-surface-hover: var(--color-white-alpha-15);
   --bg-surface-active: var(--color-white-alpha-20);
   --bg-overlay: var(--color-black-alpha-50);
-  --bg-elevated: var(--color-gray-800);
+  --bg-elevated: var(--color-slate-900);
 
   /* --- Border Colors --- */
   --border-primary: var(--color-white-alpha-10);

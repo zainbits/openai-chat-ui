@@ -4,6 +4,7 @@ import { useChat } from "../../hooks";
 import BlurSurface from "../BlurSurface";
 import BlurButton from "../BlurButton";
 import ModelPicker from "../ModelPicker";
+import ContextRing from "../ContextRing";
 import { X, ArrowUp, Image } from "lucide-react";
 import type { ImageAttachment } from "../../types";
 import "./Composer.css";
@@ -353,6 +354,8 @@ export default function Composer() {
                 {/* Model Picker */}
                 <div className="composer-model-picker-container">
                   <ModelPicker />
+                  {/* Context usage ring */}
+                  <ContextRing size={18} strokeWidth={2} />
                 </div>
 
                 <div className="composer-actions">
