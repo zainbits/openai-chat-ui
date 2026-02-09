@@ -292,6 +292,41 @@
 }
 
 /* ============================================================================
+   Markdown Table Styles
+   ============================================================================ */
+.message-content table {
+  width: 100%;
+  margin: 1.25em 0;
+  border-collapse: collapse;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-background-surface);
+}
+
+.message-content th,
+.message-content td {
+  border: 1px solid var(--color-border-primary);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.message-content thead th {
+  background: var(--color-background-surface-hover);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.message-content tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.message-content tbody tr:hover {
+  background: var(--color-background-surface-hover);
+}
+
+/* ============================================================================
    Code Blocks with Copy Button
    ============================================================================ */
 .code-block-wrapper {
