@@ -14,7 +14,10 @@ import type {
   ConnectionStatus,
   CustomModel,
 } from "../types";
-import { saveAppData } from "../utils/storage";
+import {
+  flushScheduledAppDataSave,
+  scheduleAppDataSave,
+} from "../utils/storage";
 import { createChatSlice } from "./slices/chatSlice";
 import { createConnectionSlice } from "./slices/connectionSlice";
 import { createModelSlice } from "./slices/modelSlice";
@@ -51,11 +54,44 @@ useAppStore.subscribe(
   }),
   (slice) => {
     if (useAppStore.getState()._hydrated) {
-      saveAppData(slice as AppData);
+      scheduleAppDataSave(slice as AppData);
     }
   },
   { equalityFn: shallow },
 );
+
+const FLUSH_LISTENERS_REGISTERED_KEY = "__appDataFlushListenersRegistered";
+
+type WindowWithFlushFlag = Window &
+  typeof globalThis & {
+    [FLUSH_LISTENERS_REGISTERED_KEY]?: boolean;
+  };
+
+function registerFlushListeners(): void {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return;
+  }
+
+  const appWindow = window as WindowWithFlushFlag;
+  if (appWindow[FLUSH_LISTENERS_REGISTERED_KEY]) {
+    return;
+  }
+
+  appWindow[FLUSH_LISTENERS_REGISTERED_KEY] = true;
+
+  const flush = () => {
+    void flushScheduledAppDataSave();
+  };
+
+  window.addEventListener("beforeunload", flush);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      flush();
+    }
+  });
+}
+
+registerFlushListeners();
 
 // ============================================================================
 // Selectors (for optimized re-renders)
