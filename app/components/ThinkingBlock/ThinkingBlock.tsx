@@ -14,7 +14,7 @@ interface ThinkingBlockProps {
  */
 export default function ThinkingBlock({ thinking }: ThinkingBlockProps) {
   const showThinkingExpanded = useAppStore(
-    (s) => s.settings.showThinkingExpanded ?? true,
+    (s) => s.settings.showThinkingExpanded ?? false,
   );
   const [isExpanded, setIsExpanded] = useState(showThinkingExpanded);
 

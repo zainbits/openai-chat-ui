@@ -18,7 +18,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   defaultModel: DEFAULT_MODEL,
   streamingEnabled: true,
   lowSpecBlur: 8,
-  showThinkingExpanded: true,
+  showThinkingExpanded: false,
 };
 
 export const STARTER_MODELS: CustomModel[] = [

@@ -110,7 +110,7 @@ export default function SettingsModal({
   );
   const [lowSpecBlur, setLowSpecBlur] = useState(settings.lowSpecBlur ?? 8);
   const [showThinkingExpanded, setShowThinkingExpanded] = useState(
-    settings.showThinkingExpanded ?? true,
+    settings.showThinkingExpanded ?? false,
   );
   const [verifying, setVerifying] = useState(false);
   const [nukeModalOpen, setNukeModalOpen] = useState(false);

@@ -1,8 +1,8 @@
 .thinking-block {
   margin-bottom: 0.75rem;
   border-radius: 8px;
-  background: var(--color-surface-elevated, rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
   overflow: hidden;
 }
 
@@ -15,7 +15,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  color: var(--color-text-secondary, #a0a0a0);
+  color: var(--color-text-secondary);
   font-size: 0.8125rem;
   font-weight: 500;
   text-align: left;
@@ -23,14 +23,14 @@
 }
 
 .thinking-header:hover {
-  background: var(--color-surface-hover, rgba(255, 255, 255, 0.08));
+  background: var(--color-interactive-hover);
 }
 
 .thinking-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-primary-400, #60a5fa);
+  color: var(--color-primary-400);
 }
 
 .thinking-label {
@@ -56,7 +56,7 @@
   padding-top: 0;
   font-size: 0.8125rem;
   line-height: 1.6;
-  color: var(--color-text-secondary, #a0a0a0);
+  color: var(--color-text-secondary);
   max-height: 300px;
   overflow-y: auto;
 }
@@ -70,7 +70,7 @@
 }
 
 .thinking-content pre {
-  background: var(--color-surface, rgba(0, 0, 0, 0.2));
+  background: var(--bg-surface);
   padding: 0.5rem;
   border-radius: 4px;
   overflow-x: auto;
@@ -84,7 +84,7 @@
   display: inline-block;
   width: 2px;
   height: 1em;
-  background: var(--color-primary-400, #60a5fa);
+  background: var(--color-primary-400);
   margin-left: 2px;
   animation: thinking-blink 1s infinite;
 }
@@ -108,5 +108,5 @@
 /* Expanded state */
 
 .thinking-block.expanded .thinking-header {
-  border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  border-bottom: 1px solid var(--border-primary);
 }
