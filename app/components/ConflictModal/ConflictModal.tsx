@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, Button, Text, Group, Badge, ScrollArea } from "@mantine/core";
 import { Monitor, Cloud } from "lucide-react";
 import type { CustomModel } from "../../types";
+import { useAppStore } from "../../state/store";
 import "./ConflictModal.css";
 
 interface ConflictModalProps {
@@ -45,6 +46,9 @@ export default function ConflictModal({
   onKeepServer,
   saving = false,
 }: ConflictModalProps) {
+  const blurAmount = useAppStore((s) => s.settings.lowSpecBlur ?? 8);
+  const modalBackdropFilter = blurAmount > 0 ? `blur(${blurAmount}px)` : "none";
+
   // Find which fields differ
   const differences = {
     name: isDifferent(localModel.name, serverModel.name),
@@ -68,6 +72,19 @@ export default function ConflictModal({
       title="⚠️ Conflict Detected"
       size="xl"
       centered
+      classNames={{
+        overlay: "glass-modal-overlay",
+        content: "glass-modal-content",
+        header: "glass-modal-header",
+        body: "glass-modal-body",
+        title: "glass-modal-title",
+      }}
+      styles={{
+        content: {
+          backdropFilter: modalBackdropFilter,
+          WebkitBackdropFilter: modalBackdropFilter,
+        },
+      }}
     >
       <Text size="sm" c="dimmed" mb="md">
         This model was modified on another device. Choose which version to keep:

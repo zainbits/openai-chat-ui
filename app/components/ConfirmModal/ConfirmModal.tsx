@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal, Button, Text, Group } from "@mantine/core";
+import { useAppStore } from "../../state/store";
 
 export interface ConfirmModalProps {
   /** Whether the modal is open */
@@ -37,6 +38,9 @@ function ConfirmModal({
   confirmColor = "red",
   loading = false,
 }: ConfirmModalProps) {
+  const blurAmount = useAppStore((s) => s.settings.lowSpecBlur ?? 8);
+  const modalBackdropFilter = blurAmount > 0 ? `blur(${blurAmount}px)` : "none";
+
   const handleConfirm = () => {
     onConfirm();
     onClose();
@@ -50,6 +54,19 @@ function ConfirmModal({
       size="sm"
       centered
       aria-labelledby="confirm-modal-title"
+      classNames={{
+        overlay: "glass-modal-overlay",
+        content: "glass-modal-content",
+        header: "glass-modal-header",
+        body: "glass-modal-body",
+        title: "glass-modal-title",
+      }}
+      styles={{
+        content: {
+          backdropFilter: modalBackdropFilter,
+          WebkitBackdropFilter: modalBackdropFilter,
+        },
+      }}
     >
       <Text size="sm" mb="lg">
         {message}

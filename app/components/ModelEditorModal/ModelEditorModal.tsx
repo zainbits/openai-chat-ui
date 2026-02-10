@@ -32,12 +32,14 @@ export default function ModelEditorModal({
   onClose,
   modelId,
 }: ModelEditorModalProps) {
+  const blurAmount = useAppStore((s) => s.settings.lowSpecBlur ?? 8);
   const models = useAppStore((s) => s.models);
   const addModel = useAppStore((s) => s.addModel);
   const updateModel = useAppStore((s) => s.updateModel);
   const deleteModel = useAppStore((s) => s.deleteModel);
   const getSyncClient = useAppStore((s) => s.getSyncClient);
   const setModels = useAppStore((s) => s.setModels);
+  const modalBackdropFilter = blurAmount > 0 ? `blur(${blurAmount}px)` : "none";
 
   const existing = useMemo(
     () => models.find((m) => m.id === modelId),
@@ -279,6 +281,19 @@ export default function ModelEditorModal({
         title={existing ? "Edit Model" : "New Model"}
         size="lg"
         aria-labelledby="model-editor-title"
+        classNames={{
+          overlay: "glass-modal-overlay",
+          content: "glass-modal-content",
+          header: "glass-modal-header",
+          body: "glass-modal-body",
+          title: "glass-modal-title",
+        }}
+        styles={{
+          content: {
+            backdropFilter: modalBackdropFilter,
+            WebkitBackdropFilter: modalBackdropFilter,
+          },
+        }}
       >
         <div className="modal-content">
           <TextInput

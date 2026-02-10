@@ -26,6 +26,8 @@ const RenameModal = React.memo(function RenameModal({
   onSave,
   initialValue,
 }: RenameModalProps) {
+  const blurAmount = useAppStore((s) => s.settings.lowSpecBlur ?? 8);
+  const modalBackdropFilter = blurAmount > 0 ? `blur(${blurAmount}px)` : "none";
   const [value, setValue] = useState(initialValue);
 
   useEffect(() => {
@@ -48,6 +50,19 @@ const RenameModal = React.memo(function RenameModal({
       title="Rename Thread"
       size="sm"
       centered
+      classNames={{
+        overlay: "glass-modal-overlay",
+        content: "glass-modal-content",
+        header: "glass-modal-header",
+        body: "glass-modal-body",
+        title: "glass-modal-title",
+      }}
+      styles={{
+        content: {
+          backdropFilter: modalBackdropFilter,
+          WebkitBackdropFilter: modalBackdropFilter,
+        },
+      }}
     >
       <TextInput
         label="Thread name"

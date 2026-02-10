@@ -24,8 +24,12 @@
 
 /* Sidebar Styles */
 .sidebar {
-  background: var(--color-background-surface);
-  backdrop-filter: blur(12px);
+  background: light-dark(
+    var(--simple-glass-bg-light),
+    var(--simple-glass-bg-dark)
+  );
+  -webkit-backdrop-filter: var(--sidebar-blur, none);
+  backdrop-filter: var(--sidebar-blur, none);
   position: fixed;
   top: 0;
   left: 0;
@@ -221,9 +225,15 @@
   width: 100%;
   text-align: left;
   border-radius: 8px;
-  background: var(--color-interactive-disabled);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--color-border-primary);
+  background: light-dark(
+    var(--simple-glass-bg-light),
+    var(--simple-glass-bg-dark)
+  );
+  border: 1px solid
+    light-dark(
+      var(--simple-glass-border-light),
+      var(--simple-glass-border-dark)
+    );
   padding: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -244,11 +254,11 @@
 }
 
 .thread-item:hover {
-  background: var(--color-interactive-hover);
+  background: light-dark(rgba(255, 255, 255, 0.7), rgba(50, 50, 50, 0.85));
 }
 
 .thread-item.active {
-  background: var(--color-background-surface-hover);
+  background: light-dark(rgba(255, 255, 255, 0.75), rgba(60, 60, 60, 0.9));
   box-shadow: 0 0 0 1px var(--color-border-accent);
 }
 

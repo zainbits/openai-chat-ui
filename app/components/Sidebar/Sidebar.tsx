@@ -18,6 +18,7 @@ export default function Sidebar() {
   const closeSidebar = useAppStore((s) => s.closeSidebar);
   const searchQuery = useAppStore((s) => s.ui.searchQuery);
   const selectedModel = useAppStore((s) => s.ui.selectedModel);
+  const blurAmount = useAppStore((s) => s.settings.lowSpecBlur ?? 8);
   const threads = useThreads();
 
   const [sortBy, setSortBy] = useState<SortOption>("date");
@@ -111,6 +112,13 @@ export default function Sidebar() {
         className={`sidebar ${sidebarOpen ? "open" : ""}`}
         aria-label="Chat sidebar"
         role="complementary"
+        style={
+          blurAmount > 0
+            ? ({
+                "--sidebar-blur": `blur(${blurAmount}px)`,
+              } as React.CSSProperties)
+            : undefined
+        }
       >
         <nav className="sidebar-nav" aria-label="Chat navigation">
           <SidebarHeader onSettingsClick={() => setSettingsOpen(true)} />

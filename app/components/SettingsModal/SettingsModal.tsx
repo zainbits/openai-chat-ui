@@ -41,9 +41,11 @@ export default function SettingsModal({
   onEditModel,
 }: SettingsModalProps) {
   const settings = useAppStore((s) => s.settings);
+  const blurAmount = useAppStore((s) => s.settings.lowSpecBlur ?? 8);
   const availableModels = useAppStore((s) => s.availableModels);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const setAvailableModels = useAppStore((s) => s.setAvailableModels);
+  const modalBackdropFilter = blurAmount > 0 ? `blur(${blurAmount}px)` : "none";
 
   // Get full state for export
   const getFullState = (): AppData => {
@@ -416,6 +418,19 @@ export default function SettingsModal({
         title="Settings"
         size="lg"
         aria-labelledby="settings-modal-title"
+        classNames={{
+          overlay: "glass-modal-overlay",
+          content: "glass-modal-content",
+          header: "glass-modal-header",
+          body: "glass-modal-body",
+          title: "glass-modal-title",
+        }}
+        styles={{
+          content: {
+            backdropFilter: modalBackdropFilter,
+            WebkitBackdropFilter: modalBackdropFilter,
+          },
+        }}
       >
         <Tabs defaultValue="api" classNames={{ root: "settings-tabs" }}>
           <Tabs.List className="settings-tabs-list">
@@ -667,6 +682,19 @@ export default function SettingsModal({
         title="☢️ Nuke All Data"
         size="sm"
         centered
+        classNames={{
+          overlay: "glass-modal-overlay",
+          content: "glass-modal-content",
+          header: "glass-modal-header",
+          body: "glass-modal-body",
+          title: "glass-modal-title",
+        }}
+        styles={{
+          content: {
+            backdropFilter: modalBackdropFilter,
+            WebkitBackdropFilter: modalBackdropFilter,
+          },
+        }}
       >
         <Text size="sm" mb="md">
           This will permanently delete ALL your data including chats, messages,
