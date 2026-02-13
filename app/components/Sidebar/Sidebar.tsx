@@ -121,15 +121,23 @@ export default function Sidebar() {
         }
       >
         <nav className="sidebar-nav" aria-label="Chat navigation">
-          <SidebarHeader onSettingsClick={() => setSettingsOpen(true)} />
+          <div className="sidebar-section-pr">
+            <SidebarHeader onSettingsClick={() => setSettingsOpen(true)} />
+          </div>
 
-          <ThreadFilters
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            filteredCount={filtered.length}
-          />
+          <div className="sidebar-section-pr">
+            <ThreadFilters
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              filteredCount={filtered.length}
+            />
+          </div>
 
-          <div className="thread-list" role="list" aria-label="Chat threads">
+          <div
+            className="thread-list sidebar-section-pr"
+            role="list"
+            aria-label="Chat threads"
+          >
             {pinned.length > 0 && (
               <div
                 className="thread-group thread-group-pinned"
