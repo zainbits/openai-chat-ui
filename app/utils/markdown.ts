@@ -5,6 +5,23 @@
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 
+const SAFE_LANGUAGE_RE = /^[a-z0-9._+-]+$/i;
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function sanitizeLanguage(lang?: string): string {
+  const token = (lang || "").trim().split(/\s+/)[0];
+  if (!token) return "";
+  return SAFE_LANGUAGE_RE.test(token) ? token.toLowerCase() : "plaintext";
+}
+
 // Configure marked for GitHub-Flavored Markdown
 marked.use({
   gfm: true,
@@ -14,14 +31,10 @@ marked.use({
 // Configure custom renderer for code blocks
 const renderer = {
   code({ text, lang }: { text: string; lang?: string }) {
-    const language = (lang || "").split(/\s+/)[0];
-    // Simple HTML escape for the code content
-    const escapedText = text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+    const language = sanitizeLanguage(lang);
+    const escapedText = escapeHtml(text);
+    const escapedLanguage = escapeHtml(language);
+    const languageClass = language || "plaintext";
 
     const copyButton = `
 <button class="copy-code-btn" aria-label="Copy code">
@@ -44,15 +57,20 @@ const renderer = {
     return `
 <div class="code-block-wrapper">
   <div class="code-block-header">
-    <span class="code-lang">${language}</span>
+    <span class="code-lang">${escapedLanguage}</span>
     <div class="code-block-actions">
       <span class="ascii-badge"></span>
       ${sanitizeButton}
       ${copyButton}
     </div>
   </div>
-  <pre><code class="language-${language}">${escapedText}</code></pre>
+  <pre><code class="language-${languageClass}">${escapedText}</code></pre>
 </div>`;
+  },
+  html(html: string | { text: string }) {
+    const htmlText = typeof html === "string" ? html : html.text;
+    // Treat raw HTML in messages as literal text to prevent UI spoofing.
+    return escapeHtml(htmlText);
   },
 };
 
@@ -130,6 +148,11 @@ const ALLOWED_ATTR = [
   "cx",
   "cy",
   "r",
+  "points",
+  "x1",
+  "y1",
+  "x2",
+  "y2",
   "aria-label",
 ];
 
