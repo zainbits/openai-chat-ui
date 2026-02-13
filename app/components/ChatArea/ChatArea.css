@@ -394,6 +394,22 @@
   letter-spacing: 0.05em;
 }
 
+.ascii-badge {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 50%;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  background-color: var(--badge-warning-bg);
+  color: var(--badge-warning-text);
+  border: 1px solid var(--badge-warning-border);
+}
+
 /* Override existing pre styles when inside wrapper */
 .message-content .code-block-wrapper pre {
   margin: 0;

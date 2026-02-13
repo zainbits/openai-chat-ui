@@ -54,7 +54,11 @@
   --color-danger-alpha-15: rgba(239, 68, 68, 0.15);
 
   /* --- Warning Amber Palette --- */
+  --color-warning-400: #fbbf24;
   --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-alpha-15: rgba(245, 158, 11, 0.15);
+  --color-warning-alpha-20: rgba(245, 158, 11, 0.2);
 
   /* --- Neutral Gray Palette --- */
   --color-gray-500: #6b7280;
@@ -142,6 +146,11 @@
   --simple-button-bg-hover-dark: rgba(50, 50, 50, 0.65);
   --simple-button-bg-active-light: rgba(240, 240, 240, 0.7);
   --simple-button-bg-active-dark: rgba(35, 35, 35, 0.7);
+
+  /* --- ASCII Badge (non-ASCII detection count) --- */
+  --badge-warning-bg: var(--color-warning-alpha-20);
+  --badge-warning-text: var(--color-warning-400);
+  --badge-warning-border: var(--color-warning-500);
 
   /* --- Accent Colors for Highlights --- */
   --accent-primary: var(--color-primary-500);

@@ -46,6 +46,7 @@ const renderer = {
   <div class="code-block-header">
     <span class="code-lang">${language}</span>
     <div class="code-block-actions">
+      <span class="ascii-badge"></span>
       ${sanitizeButton}
       ${copyButton}
     </div>

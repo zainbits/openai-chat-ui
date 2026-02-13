@@ -10,7 +10,7 @@ import React, {
 import { useAppStore, selectActiveThread } from "../../state/store";
 import { useChat } from "../../hooks";
 import { renderMarkdown } from "../../utils/markdown";
-import { sanitizeText } from "../../utils/textSanitizer";
+import { sanitizeText, countNonAscii } from "../../utils/textSanitizer";
 import { getImagesByIds } from "../../utils/imageStore";
 import { notifications } from "@mantine/notifications";
 import Composer from "../Composer";
@@ -534,6 +534,36 @@ export default function ChatArea() {
     container.addEventListener("click", handleCopyClick);
     return () => container.removeEventListener("click", handleCopyClick);
   }, []);
+
+  // Scan code blocks for non-ASCII characters and show badge count on ASCII buttons.
+  // Runs on messages change AND when streaming ends (DOM re-renders final content).
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+
+    // Small delay to let the DOM settle after streaming ends and markdown re-renders
+    const timer = setTimeout(() => {
+      const wrappers = container.querySelectorAll(".code-block-wrapper");
+      wrappers.forEach((wrapper) => {
+        const code = wrapper.querySelector("code");
+        const badge = wrapper.querySelector(
+          ".ascii-badge",
+        ) as HTMLElement | null;
+        if (!code || !badge) return;
+
+        const count = countNonAscii(code.textContent || "");
+        if (count > 0) {
+          badge.textContent = count > 99 ? "99+" : String(count);
+          badge.style.display = "flex";
+        } else {
+          badge.textContent = "";
+          badge.style.display = "none";
+        }
+      });
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [messages, isStreamingActive]);
 
   // Focus textarea when editing starts
   useEffect(() => {
