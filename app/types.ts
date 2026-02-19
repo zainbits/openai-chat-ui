@@ -151,6 +151,12 @@ export interface DiscoveredModel {
   object?: string;
   created?: number;
   owned_by?: string;
+  /** Context window (prompt + completion) in tokens */
+  context_length?: number;
+  /** Max prompt/input tokens supported by the model */
+  max_input_tokens?: number;
+  /** Max output/completion tokens supported by the model */
+  max_output_tokens?: number;
 }
 
 export interface OpenAIChatMessage {

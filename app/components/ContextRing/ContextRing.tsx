@@ -1,6 +1,7 @@
 import React, { useCallback, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAppStore } from "../../state/store";
+import type { DiscoveredModel } from "../../types";
 import "./ContextRing.css";
 
 /**
@@ -44,6 +45,39 @@ function getContextWindowForModel(modelId: string | null): number {
   return DEFAULT_CONTEXT_WINDOW;
 }
 
+function getContextWindowFromDiscoveredModel(
+  modelId: string | null,
+  availableModels: DiscoveredModel[],
+): number | null {
+  if (!modelId || availableModels.length === 0) {
+    return null;
+  }
+
+  const exact = availableModels.find((model) => model.id === modelId);
+  const matchedModel = exact ?? null;
+  if (!matchedModel) {
+    return null;
+  }
+
+  if (
+    typeof matchedModel.context_length === "number" &&
+    matchedModel.context_length > 0
+  ) {
+    return matchedModel.context_length;
+  }
+
+  if (
+    typeof matchedModel.max_input_tokens === "number" &&
+    matchedModel.max_input_tokens > 0 &&
+    typeof matchedModel.max_output_tokens === "number" &&
+    matchedModel.max_output_tokens > 0
+  ) {
+    return matchedModel.max_input_tokens + matchedModel.max_output_tokens;
+  }
+
+  return null;
+}
+
 /**
  * Format token count for display
  */
@@ -81,6 +115,8 @@ export default function ContextRing({
   // Prefer persisted thread token usage, fallback to streaming state for live updates
   const tokenUsage = activeThread?.tokenUsage ?? streamingTokenUsage;
   const selectedLlmModel = useAppStore((s) => s.ui.selectedLlmModel);
+  const defaultModel = useAppStore((s) => s.settings.defaultModel);
+  const availableModels = useAppStore((s) => s.availableModels);
   const [showTooltip, setShowTooltip] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
@@ -145,8 +181,15 @@ export default function ContextRing({
     }
   }, [isMobile]);
 
+  const effectiveModelId = selectedLlmModel || defaultModel || null;
+
   // Calculate ring values
-  const contextWindow = getContextWindowForModel(selectedLlmModel);
+  const discoveredContextWindow = getContextWindowFromDiscoveredModel(
+    effectiveModelId,
+    availableModels,
+  );
+  const contextWindow =
+    discoveredContextWindow ?? getContextWindowForModel(effectiveModelId);
   const usedTokens = tokenUsage?.total_tokens ?? 0;
   const percentage = Math.min((usedTokens / contextWindow) * 100, 100);
 
