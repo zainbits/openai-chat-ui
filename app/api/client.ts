@@ -533,9 +533,23 @@ export class OpenAICompatibleClient extends BaseApiClient {
       }
 
       // Handle thinking tokens - stream immediately
-      // Some APIs return thinking in delta.thinking, delta.reasoning, or delta.reasoning_content
+      // Some APIs return reasoning in delta fields, while others send it on message/final objects.
+      const messageReasoning =
+        data?.choices?.[0]?.message?.reasoning_content ??
+        data?.choices?.[0]?.reasoning_content ??
+        data?.reasoning_content;
+      const deltaReasoning =
+        typeof delta?.reasoning === "string"
+          ? delta.reasoning
+          : typeof delta?.reasoning?.content === "string"
+            ? delta.reasoning.content
+            : undefined;
       const thinking =
-        delta?.thinking ?? delta?.reasoning ?? delta?.reasoning_content ?? "";
+        delta?.thinking ??
+        delta?.reasoning_content ??
+        deltaReasoning ??
+        messageReasoning ??
+        "";
       if (thinking && onThinking) {
         onThinking(thinking);
       }
