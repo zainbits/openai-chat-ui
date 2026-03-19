@@ -135,6 +135,8 @@ export interface AppSettings {
   lowSpecBlur?: number;
   /** Whether to expand AI thinking blocks by default */
   showThinkingExpanded?: boolean;
+  /** Model IDs hidden from the model picker */
+  hiddenModels?: string[];
   // Cloud sync settings
   cloudSyncEnabled?: boolean;
   adminApiUrl?: string;

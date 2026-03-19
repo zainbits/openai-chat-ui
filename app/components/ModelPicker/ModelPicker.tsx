@@ -16,6 +16,7 @@ import "./ModelPicker.css";
  */
 export default function ModelPicker() {
   const availableModels = useAppStore((s) => s.availableModels);
+  const hiddenModels = useAppStore((s) => s.settings.hiddenModels);
   const selectedLlmModel = useAppStore((s) => s.ui.selectedLlmModel);
   const defaultModel = useAppStore((s) => s.settings.defaultModel);
   const setSelectedLlmModel = useAppStore((s) => s.setSelectedLlmModel);
@@ -31,13 +32,20 @@ export default function ModelPicker() {
   // Current effective model (selected or default)
   const currentModel = selectedLlmModel || defaultModel || null;
 
-  // Filter models based on search query
+  // Filter models based on visibility settings and search query
   const filteredModels = useMemo(() => {
     if (!availableModels || availableModels.length === 0) return [];
-    if (!searchQuery) return availableModels;
-    const query = searchQuery.toLowerCase();
-    return availableModels.filter((m) => m.id.toLowerCase().includes(query));
-  }, [availableModels, searchQuery]);
+    const hiddenSet =
+      hiddenModels && hiddenModels.length > 0 ? new Set(hiddenModels) : null;
+    let models = hiddenSet
+      ? availableModels.filter((m) => !hiddenSet.has(m.id))
+      : availableModels;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      models = models.filter((m) => m.id.toLowerCase().includes(query));
+    }
+    return models;
+  }, [availableModels, hiddenModels, searchQuery]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

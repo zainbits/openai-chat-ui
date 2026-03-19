@@ -9,6 +9,7 @@ import {
   Group,
   Tabs,
   Slider,
+  Chip,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import ConfirmModal from "../ConfirmModal";
@@ -554,6 +555,46 @@ export default function SettingsModal({
                   />
                 </div>
               </div>
+
+              {availableModels && availableModels.length > 0 && (
+                <div className="data-section">
+                  <Text size="sm" fw={500} mb="xs">
+                    Model Visibility
+                  </Text>
+                  <Text size="xs" c="dimmed" mb="sm">
+                    Toggle models on or off to control which appear in the model
+                    picker.
+                  </Text>
+                  <Chip.Group
+                    multiple
+                    value={availableModels
+                      .map((m) => m.id)
+                      .filter(
+                        (id) => !(settings.hiddenModels ?? []).includes(id),
+                      )}
+                    onChange={(visible: string[]) => {
+                      const allIds = availableModels.map((m) => m.id);
+                      const hidden = allIds.filter(
+                        (id) => !visible.includes(id),
+                      );
+                      updateSettings({ hiddenModels: hidden });
+                    }}
+                  >
+                    <Group gap="xs">
+                      {availableModels.map((m) => (
+                        <Chip
+                          key={m.id}
+                          value={m.id}
+                          size="xs"
+                          variant="outline"
+                        >
+                          {m.id}
+                        </Chip>
+                      ))}
+                    </Group>
+                  </Chip.Group>
+                </div>
+              )}
             </div>
           </Tabs.Panel>
 
